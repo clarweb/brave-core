@@ -1,0 +1,14 @@
+diff --git a/extensions/browser/BUILD.gn b/extensions/browser/BUILD.gn
+index 42ddb608b355cf1b276fd12a04bded01658fdc11..3bb4d78cda9ea7099459f73f770daf984e4c024c 100644
+--- a/extensions/browser/BUILD.gn
++++ b/extensions/browser/BUILD.gn
+@@ -41,6 +41,9 @@ source_set("browser_context_keyed_service_factories") {
+ jumbo_source_set("browser_sources") {
+   visibility = [ "./*" ]
+ 
++  # //brave/components/greaselion/browser uses this.
++  visibility += [ "//brave/components/greaselion/browser", ]
++
+   sources = [
+     "activity.cc",
+     "activity.h",
