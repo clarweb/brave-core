@@ -1,8 +1,8 @@
 diff --git a/chrome/browser/resources/settings/privacy_page/security_page.html b/chrome/browser/resources/settings/privacy_page/security_page.html
-index b228c2eaf46714cc9165bf84bddf7612f0d8ea38..2e0c499653d7ffb52b00d69e277999fd114de331 100644
+index 4354d3fa0cbd6cb8fa8c6ef87a25cd0fd6b0343e..96172c0a7523eb5629b5452dc0773a06964fb4a1 100644
 --- a/chrome/browser/resources/settings/privacy_page/security_page.html
 +++ b/chrome/browser/resources/settings/privacy_page/security_page.html
-@@ -124,6 +124,7 @@
+@@ -126,6 +126,7 @@
                </div>
              </div>
            </div>
@@ -10,7 +10,7 @@ index b228c2eaf46714cc9165bf84bddf7612f0d8ea38..2e0c499653d7ffb52b00d69e277999fd
            <div slot="noSelectionCollapse">
              <settings-toggle-button id="safeBrowsingReportingToggle"
                  pref="{{prefs.safebrowsing.scout_reporting_enabled}}"
-@@ -139,6 +140,7 @@
+@@ -141,6 +142,7 @@
                  sync-status="[[syncStatus]]">
              </settings-passwords-leak-detection-toggle>
            </div>
