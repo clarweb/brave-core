@@ -22,6 +22,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.FrameLayout;
@@ -81,6 +82,7 @@ import org.chromium.chrome.browser.tabmodel.TabModel;
 import org.chromium.components.browser_ui.widget.displaystyle.UiConfig;
 import org.chromium.chrome.browser.onboarding.OnboardingPrefManager;
 import org.chromium.chrome.browser.brave_stats.BraveStatsUtil;
+import org.chromium.chrome.browser.crypto_widget.CryptoWidgetBottomSheetDialogFragment;
 
 import java.util.List;
 
@@ -160,6 +162,15 @@ public class BraveNewTabPageLayout extends NewTabPageLayout {
         if (OnboardingPrefManager.getInstance().isNewOnboardingShown()) {
             mBadgeLayout.setVisibility(View.VISIBLE);
         }
+
+        Button btnTrade = findViewById(R.id.btn_trade);
+        btnTrade.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                CryptoWidgetBottomSheetDialogFragment cryptoWidgetBottomSheetDialogFragment = new CryptoWidgetBottomSheetDialogFragment();
+                cryptoWidgetBottomSheetDialogFragment.show(((BraveActivity) mActivity).getSupportFragmentManager(), "brave_stats_bottom_sheet_dialog_fragment");
+            }
+        });
     }
 
     protected void insertSiteSectionView() {
