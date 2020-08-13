@@ -9,6 +9,7 @@
 #include <map>
 #include <string>
 
+#include "base/values.h"
 #include "bat/ledger/internal/attestation/attestation.h"
 
 namespace bat_ledger {
@@ -29,10 +30,6 @@ class AttestationDesktop : public Attestation {
       ConfirmCallback callback) override;
 
  private:
-  void ParseCaptchaResponse(
-      const std::string& response,
-      base::Value* result);
-
   void ParseClaimSolution(
       const std::string& response,
       base::Value* result);
@@ -42,13 +39,12 @@ class AttestationDesktop : public Attestation {
       StartCallback callback);
 
   void DownloadCaptchaImage(
-      const ledger::Result result,
-      const std::string& response,
+      const ledger::UrlResponse& response,
       StartCallback callback);
 
   void OnDownloadCaptchaImage(
       const ledger::UrlResponse& response,
-      const std::string& captcha_response,
+      const ledger::UrlResponse& captcha_response,
       StartCallback callback);
 
   void OnConfirm(

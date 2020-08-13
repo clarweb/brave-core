@@ -4,9 +4,9 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "bat/ads/internal/filters/ads_history_filter_factory.h"
-#include "bat/ads/internal/filters/ads_history_date_range_filter.h"
+
 #include "bat/ads/internal/filters/ads_history_confirmation_filter.h"
-#include "bat/ads/internal/filters/ads_history_conversion_confirmation_type_filter.h"  // NOLINT
+#include "bat/ads/internal/filters/ads_history_conversion_filter.h"
 
 namespace ads {
 
@@ -21,8 +21,8 @@ std::unique_ptr<AdsHistoryFilter> AdsHistoryFilterFactory::Build(
       return std::make_unique<AdsHistoryConfirmationFilter>();
     }
 
-    case AdsHistory::FilterType::kAdConversionConfirmationType: {
-      return std::make_unique<AdsHistoryConversionConfirmationTypeFilter>();
+    case AdsHistory::FilterType::kAdConversion: {
+      return std::make_unique<AdsHistoryConversionFilter>();
     }
   }
 }

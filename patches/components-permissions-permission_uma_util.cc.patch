@@ -1,8 +1,8 @@
 diff --git a/components/permissions/permission_uma_util.cc b/components/permissions/permission_uma_util.cc
-index 6388d4e0cf1f5c8b8f2545b5410adc93855e1ac4..dba8a04488e7f8ba162a2fc704a1c7ce03bf8625 100644
+index 039722c2c8db965608d109860c9ccbaf4d8534d5..21cd7d37c97b79cb2dcefc655e80afc829da9c6f 100644
 --- a/components/permissions/permission_uma_util.cc
 +++ b/components/permissions/permission_uma_util.cc
-@@ -63,7 +63,7 @@ namespace {
+@@ -50,7 +50,7 @@ namespace {
  
  const int kPriorCountCap = 10;
  
@@ -11,9 +11,9 @@ index 6388d4e0cf1f5c8b8f2545b5410adc93855e1ac4..dba8a04488e7f8ba162a2fc704a1c7ce
    switch (type) {
      case PermissionRequestType::MULTIPLE:
        return "AudioAndVideoCapture";
-@@ -552,6 +552,7 @@ void PermissionUmaUtil::RecordPermissionAction(
-       base::UmaHistogramEnumeration("Permissions.Action.StorageAccess", action,
-                                     PermissionAction::NUM);
+@@ -559,6 +559,7 @@ void PermissionUmaUtil::RecordPermissionAction(
+       base::UmaHistogramEnumeration("Permissions.Action.WindowPlacement",
+                                     action, PermissionAction::NUM);
        break;
 +    BRAVE_PERMISSIONUMAUTIL_RECORDPERMISSIONACTION
      // The user is not prompted for these permissions, thus there is no

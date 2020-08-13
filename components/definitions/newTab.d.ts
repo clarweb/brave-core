@@ -38,6 +38,7 @@ declare namespace NewTab {
     favicon: string
     letter: string
     pinnedIndex: number | undefined
+    defaultSRTopSite: boolean | undefined
   }
 
   // This is preserved for migration reasons.
@@ -71,7 +72,7 @@ declare namespace NewTab {
     url: string
   }
 
-  export type StackWidget = 'rewards' | 'binance' | 'together' | ''
+  export type StackWidget = 'rewards' | 'binance' | 'together' | 'gemini' | ''
 
   export interface LegacyState {
     pinnedTopSites: Site[]
@@ -95,12 +96,14 @@ declare namespace NewTab {
 
   export interface PersistentState {
     togetherSupported: boolean
+    geminiSupported: boolean
     showEmptyPage: boolean
     rewardsState: RewardsWidgetState
     currentStackWidget: StackWidget
     removedStackWidgets: StackWidget[]
     widgetStackOrder: StackWidget[]
     binanceState: BinanceWidgetState
+    geminiState: GeminiWidgetState
   }
 
   export interface EphemeralState {
@@ -121,6 +124,8 @@ declare namespace NewTab {
     showRewards: boolean
     showTogether: boolean
     showBinance: boolean
+    showAddCard: boolean
+    showGemini: boolean
     brandedWallpaperOptIn: boolean
     isBrandedWallpaperNotificationDismissed: boolean
     stats: Stats,
@@ -170,6 +175,20 @@ declare namespace NewTab {
     disconnectInProgress: boolean
     authInvalid: boolean
     selectedView: string
+  }
+
+  export interface GeminiWidgetState {
+    geminiClientUrl: string
+    userAuthed: boolean
+    authInProgress: boolean
+    tickerPrices: Record<string, string>
+    selectedView: string
+    assetAddresses: Record<string, string>
+    assetAddressQRCodes: Record<string, string>
+    hideBalance: boolean
+    accountBalances: Record<string, string>
+    disconnectInProgress: boolean
+    authInvalid: boolean
   }
 
   export type BinanceTLD = 'us' | 'com'

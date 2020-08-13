@@ -55,6 +55,18 @@
     "message": "Zablokowane skrypty śledzące",
     "description": "Message for the scripts blocked row label"
   },
+  "aggressiveAdsTrackersBlocking": {
+    "message": "Blokowanie trackerów i reklam (agresywne)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with aggressive heuristics"
+  },
+  "standardAdsTrackersBlocking": {
+    "message": "Blokowanie trackerów i reklam (standardowe)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with standard heuristics"
+  },
+  "allowAdsTrackers": {
+    "message": "Zezwalaj na skrypty śledzące i reklamy",
+    "description": "Message for the option in the ads and trackers blocking select field to allow all ads and trackers"
+  },
   "connectionsUpgradedHTTPS": {
     "message": "Aktualizacje HTTPS",
     "description": "Message for the connections upgraded row label and for the main blocked resources text when there is more than one connection upgraded (plural) and no other ads/trackers blocked"
@@ -79,16 +91,16 @@
     "message": "Wszystkie pliki cookie dozwolone",
     "description": "Message for the option in the cookies select field to allow all cookies"
   },
-  "thirdPartyFingerprintingBlocked": {
-    "message": "Zablokowano opcję logowania odciskiem palca przez inne strony",
+  "standardFingerprinting": {
+    "message": "Zablokowane rozpoznawanie urządzenia (standardowe)",
     "description": "Message for the option in the fingerprinting select field to block all 3rd party recognition attempts"
   },
-  "allFingerprintingBlocked": {
-    "message": "Zablokowano próby logowania odciskiem palca",
+  "strictFingerprinting": {
+    "message": "Zablokowane rozpoznawanie urządzenia (ścisłe, strona może nie działać)",
     "description": "Message for the option in the fingerprinting select field to block all fingerprinting attempts"
   },
-  "allFingerprintingAllowed": {
-    "message": "Zezwalaj na wszystkie próby logowania odciskiem palca",
+  "allowAllFingerprinting": {
+    "message": "Zezwalaj na rozpoznawanie urządzenia",
     "description": "Message for the option in the fingerprinting select field to allow all fingerprinting attempts"
   },
   "deviceRecognitionAttempts": {
@@ -128,11 +140,11 @@
     "description": "Message for the resources blocked *blocked once* option"
   },
   "allowedOnce": {
-    "message": "Zezwól tylko teraz",
+    "message": "Zezwalaj tylko teraz",
     "description": "Message for the resources blocked *allowed once* option"
   },
   "allowScriptsOnce": {
-    "message": "Zezwól na skrypty tylko teraz",
+    "message": "Zezwalaj na skrypty tylko teraz",
     "description": "Message for the shortcut in the main interface to allow all scripts once"
   },
   "cancel": {

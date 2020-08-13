@@ -1,8 +1,9 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+// Copyright (c) 2020 The Brave Authors. All rights reserved.
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this file,
+// you can obtain one at http://mozilla.org/MPL/2.0/.
 
- (function() {
+(function() {
   'use strict';
 
   /**
@@ -23,6 +24,7 @@
       isSuperReferralActive_: Boolean,
       isBinanceSupported_: Boolean,
       isBraveTogetherSupported_: Boolean,
+      isGeminiSupported_: Boolean,
     },
 
     /** @override */
@@ -31,6 +33,7 @@
       this.isSuperReferralActive_ = false;
       this.isBinanceSupported_ = false;
       this.isBraveTogetherSupported_ = false;
+      this.isGeminiSupported_ = false;
     },
 
     /** @override */
@@ -44,10 +47,13 @@
       this.browserProxy_.getIsBraveTogetherSupported().then(isBraveTogetherSupported => {
         this.isBraveTogetherSupported_ = isBraveTogetherSupported;
       })
+      this.browserProxy_.getIsGeminiSupported().then(isGeminiSupported => {
+        this.isGeminiSupported_ = isGeminiSupported;
+      })
 
       this.addWebUIListener('super-referral-active-state-changed', (isSuperReferralActive) => {
         this.isSuperReferralActive_ = isSuperReferralActive;
       })
-    },
+    }
   });
 })();

@@ -71,7 +71,10 @@ declare namespace chrome.braveRewards {
   const tipGitHubUser: (tabId: number, githubMetaData: RewardsTip.MediaMetaData) => {}
   const getPublisherData: (windowId: number, url: string, faviconUrl: string, publisherBlob: string | undefined) => {}
   const getBalanceReport: (month: number, year: number, callback: (properties: RewardsExtension.BalanceReport) => void) => {}
-  const onWalletInitialized: {
+  const walletCreated: {
+    addListener: (callback: () => void) => void
+  }
+  const walletCreationFailed: {
     addListener: (callback: (result: RewardsExtension.Result) => void) => void
   }
   const onPublisherData: {
@@ -147,6 +150,14 @@ declare namespace chrome.braveRewards {
   }
 
   const getAnonWalletStatus: (callback: (result: RewardsExtension.Result) => void) => {}
+
+  const onCompleteReset: {
+    addListener: (callback: (properties: { success: boolean }) => void) => void
+  }
+  const initialized: {
+    addListener: (callback: (result: RewardsExtension.Result) => void) => void
+  }
+  const isInitialized: (callback: (initialized: boolean) => void) => {}
 }
 
 declare namespace chrome.binance {
@@ -161,6 +172,19 @@ declare namespace chrome.binance {
   const getConvertAssets: (callback: (supportedAssets: any) => void) => {}
   const confirmConvert: (quoteId: string, callback: (success: boolean, message: string) => void) => {}
   const revokeToken: (callback: (success: boolean) => void) => {}
+}
+
+declare namespace chrome.gemini {
+  const getClientUrl: (callback: (clientUrl: string) => void) => {}
+  const getAccessToken: (callback: (success: boolean) => void) => {}
+  const refreshAccessToken: (callback: (success: boolean) => void) => {}
+  const getTickerPrice: (asset: string, callback: (price: string) => void) => {}
+  const getAccountBalances: (callback: (balances: Record<string, string>, authInvalid: boolean) => void) => {}
+  const getDepositInfo: (asset: string, callback: (depositAddress: string, depositTag: string) => void) => {}
+  const revokeToken: (callback: (success: boolean) => void) => {}
+  const getOrderQuote: (side: string, symbol: string, spend: string, callback: (quote: any, error: string) => void) => {}
+  const executeOrder: (symbol: string, side: string, quantity: string, price: string, fee: string, quoteId: number, callback: (success: boolean) => void) => {}
+  const isSupported: (callback: (supported: boolean) => void) => {}
 }
 
 declare namespace chrome.braveTogether {
@@ -234,14 +258,15 @@ declare namespace chrome.braveShields {
   const onShieldsPanelShown: any
   const reportBrokenSite: any
 
-  interface HostnameSpecificResources {
+  interface UrlSpecificResources {
     hide_selectors: string[]
     style_selectors: any
     exceptions: string[]
     injected_script: string
     force_hide_selectors: string[]
+    generichide: boolean
   }
-  const hostnameCosmeticResources: (hostname: string, callback: (resources: HostnameSpecificResources) => void) => void
+  const urlCosmeticResources: (url: string, callback: (resources: UrlSpecificResources) => void) => void
   const hiddenClassIdSelectors: (classes: string[], ids: string[], exceptions: string[], callback: (selectors: string[], forceHideSelectors: string[]) => void) => void
 
   type BraveShieldsViewPreferences = {

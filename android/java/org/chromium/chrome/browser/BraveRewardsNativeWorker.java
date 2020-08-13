@@ -152,7 +152,7 @@ public class BraveRewardsNativeWorker {
         mHandler.post(new Runnable() {
             @Override
             public void run() {
-                Tab tab = BraveRewardsHelper.currentActiveTab();
+                Tab tab = BraveRewardsHelper.currentActiveChromeTabbedActivityTab();
                 if (tab != null && !tab.isIncognito()) {
                     OnNotifyFrontTabUrlChanged(tab.getId(), tab.getUrlString());
                 }
@@ -306,12 +306,6 @@ public class BraveRewardsNativeWorker {
             }
             grantClaimInProcess = true;
             nativeGetGrant(mNativeBraveRewardsNativeWorker, promotionId);
-        }
-    }
-
-    public int GetCurrentGrantsCount() {
-        synchronized(lock) {
-            return nativeGetCurrentGrantsCount(mNativeBraveRewardsNativeWorker);
         }
     }
 
@@ -602,13 +596,6 @@ public class BraveRewardsNativeWorker {
     }
 
     @CalledByNative
-    public void OnFetchPromotions() {
-        for (BraveRewardsObserver observer : mObservers) {
-            observer.OnFetchPromotions();
-        }
-    }
-
-    @CalledByNative
     public void OnGetExternalWallet(int error_code, String external_wallet) {
         for (BraveRewardsObserver observer : mObservers) {
             observer.OnGetExternalWallet(error_code, external_wallet);
@@ -663,7 +650,6 @@ public class BraveRewardsNativeWorker {
     private native void nativeDeleteNotification(
             long nativeBraveRewardsNativeWorker, String notification_id);
     private native void nativeGetGrant(long nativeBraveRewardsNativeWorker, String promotionId);
-    private native int nativeGetCurrentGrantsCount(long nativeBraveRewardsNativeWorker);
     private native String[] nativeGetCurrentGrant(long nativeBraveRewardsNativeWorker, int position);
     private native void nativeGetPendingContributionsTotal(long nativeBraveRewardsNativeWorker);
     private native void nativeGetRecurringDonations(long nativeBraveRewardsNativeWorker);

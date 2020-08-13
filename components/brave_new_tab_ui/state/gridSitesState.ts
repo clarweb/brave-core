@@ -7,7 +7,7 @@ import {
   generateGridSiteProperties,
   generateGridSitePropertiesFromDefaultSuperReferralTopSite,
   isExistingGridSite,
-  getGridSitesWhitelist,
+  getTopSitesWhitelist,
   isGridSitePinned,
   filterFromExcludedSites,
   filterDuplicatedSitesbyIndexOrUrl
@@ -48,13 +48,58 @@ export function gridSitesReducerSetDefaultSuperReferralTopSites (
   return state
 }
 
+export function gridSitesReducerUpdateDefaultSuperReferralTopSites (
+  state: NewTab.GridSitesState,
+  defaultSuperReferralTopSites: NewTab.DefaultSuperReferralTopSite[]
+): NewTab.GridSitesState {
+  // If defaultSRTopSite is undefined, this data is used from previous brave version.
+  // Then, set this property.
+  if (state.gridSites.length === 0 || state.gridSites[0].defaultSRTopSite !== undefined) {
+    return state
+  }
+
+  // So far, we don't tag whether this item comes from default SR or not.
+  // W/o this tag, we can't determine whether we should delete this item when
+  // history doesn't have this item. Default top sites from SR should not be
+  // deleted unless user deletes it explicitely.
+  const updatedGridSites: NewTab.Site[] = state.gridSites
+  for (const gridSite of updatedGridSites) {
+    // Tagging whether this site comes from SR data or not only once.
+    if (defaultSuperReferralTopSites.find(site => site.url === gridSite.url)) {
+      gridSite['defaultSRTopSite'] = true
+    } else {
+      gridSite['defaultSRTopSite'] = false
+    }
+  }
+  state = {
+    ...state,
+    gridSites: updatedGridSites
+  }
+  return state
+}
+
 export function gridSitesReducerSetFirstRenderData (
   state: NewTab.GridSitesState,
   topSites: chrome.topSites.MostVisitedURL[]
 ): NewTab.GridSitesState {
-  const gridSitesWhitelist = getGridSitesWhitelist(topSites)
+  const topSitesWhitelisted = getTopSitesWhitelist(topSites)
+  // |state.gridSites| has lastly used sites data for NTP.
+  // Delete sites from |state.gridSites| that don't exist in topSites(history).
+  // Then, |updatedGridSites| will only store previously used sites that topSites have.
+  const updatedGridSites: NewTab.Site[] = state.gridSites.filter((gridSite: NewTab.Site) => {
+    // Don't delete top sites came from SR's default top sites even if they
+    // are not in history.
+    if (gridSite.defaultSRTopSite) {
+      return true
+    }
+    return topSitesWhitelisted.some(site => site.url === gridSite.url)
+  })
+  state = {
+    ...state,
+    gridSites: updatedGridSites
+  }
   const newGridSites: NewTab.Site[] = []
-  for (const [index, topSite] of gridSitesWhitelist.entries()) {
+  for (const [index, topSite] of topSitesWhitelisted.entries()) {
     if (isExistingGridSite(state.gridSites, topSite)) {
       // If topSite from Chromium exists in our gridSites list,
       // skip and iterate over the next item.

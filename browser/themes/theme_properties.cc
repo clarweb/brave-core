@@ -5,6 +5,7 @@
 
 #include "brave/browser/themes/theme_properties.h"
 
+#include "base/notreached.h"
 #include "chrome/browser/themes/theme_properties.h"
 #include "ui/gfx/color_palette.h"
 
@@ -43,10 +44,6 @@ base::Optional<SkColor> MaybeGetDefaultColorForBraveLightUi(int id) {
       return kLightToolbarIcon;
     case ThemeProperties::COLOR_TOOLBAR_BUTTON_ICON_INACTIVE:
       return color_utils::AlphaBlend(kLightToolbarIcon, kLightToolbar, 0.3f);
-    case BraveThemeProperties::COLOR_WAYBACK_INFOBAR_SEPARATOR:
-      return gfx::kBraveNeutral300;
-    case BraveThemeProperties::COLOR_WAYBACK_INFOBAR_SAD_FOLDER:
-      return gfx::kBraveGrey700;
     case BraveThemeProperties::COLOR_FOR_TEST:
       return BraveThemeProperties::kLightColorForTest;
     default:
@@ -89,10 +86,6 @@ base::Optional<SkColor> MaybeGetDefaultColorForBraveDarkUi(int id) {
       return kDarkToolbarIcon;
     case ThemeProperties::COLOR_TOOLBAR_BUTTON_ICON_INACTIVE:
       return color_utils::AlphaBlend(kDarkToolbarIcon, kDarkToolbar, 0.3f);
-    case BraveThemeProperties::COLOR_WAYBACK_INFOBAR_SEPARATOR:
-      return gfx::kBraveNeutral800;
-    case BraveThemeProperties::COLOR_WAYBACK_INFOBAR_SAD_FOLDER:
-      return SK_ColorWHITE;
     case BraveThemeProperties::COLOR_FOR_TEST:
       return BraveThemeProperties::kDarkColorForTest;
     default:

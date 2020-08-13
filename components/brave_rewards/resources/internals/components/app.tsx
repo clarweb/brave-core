@@ -12,7 +12,7 @@ import { Promotions } from './promotions'
 import { General } from './general'
 import { Log } from './log'
 import { Tabs } from 'brave-ui/components'
-import { Wrapper, MainTitle, DisabledContent } from '../style'
+import { Wrapper, MainTitle, DisabledContent, Disclaimer } from '../style'
 
 // Utils
 import { getLocale } from '../../../../common/locale'
@@ -36,7 +36,18 @@ export class RewardsInternalsPage extends React.Component<Props, State> {
   }
 
   componentDidMount () {
-    this.getGeneralInfo()
+    // Process is not started until rewards is on,
+    // so we need to first check if rewards is on before we do anything
+    this.actions.getRewardsEnabled()
+  }
+
+  componentDidUpdate (prevProps: Props, prevState: State) {
+    if (
+      !prevProps.rewardsInternalsData.isRewardsEnabled &&
+      this.props.rewardsInternalsData.isRewardsEnabled
+    ) {
+      this.getGeneralInfo()
+    }
   }
 
   get actions () {
@@ -44,9 +55,9 @@ export class RewardsInternalsPage extends React.Component<Props, State> {
   }
 
   getGeneralInfo = () => {
-    this.actions.getRewardsEnabled()
     this.actions.getRewardsInternalsInfo()
     this.actions.getBalance()
+    this.actions.getExternalWallet('uphold')
   }
 
   onTabChange = (tabId: string) => {
@@ -89,18 +100,18 @@ export class RewardsInternalsPage extends React.Component<Props, State> {
   }
 
   getContributions = () => {
-    // TODO(https://github.com/brave/brave-browser/issues/8633): implement
+    this.actions.getContributions()
   }
 
   render () {
-    const { isRewardsEnabled, info, promotions, log, fullLog } = this.props.rewardsInternalsData
+    const { isRewardsEnabled, contributions, promotions, log, fullLog } = this.props.rewardsInternalsData
 
     if (!isRewardsEnabled) {
       return (
         <Wrapper id='rewardsInternalsPage'>
           <MainTitle level={2}>{getLocale('mainTitle')}</MainTitle>
           <DisabledContent>
-            {getLocale('rewardsNotEnabled')} <a href='brave://rewards' target='_blank'>brave://rewards</a>
+            {getLocale('rewardsNotEnabled')} <a href='chrome://rewards' target='_blank'>brave://rewards</a>
           </DisabledContent>
         </Wrapper>)
     }
@@ -108,7 +119,9 @@ export class RewardsInternalsPage extends React.Component<Props, State> {
     return (
       <Wrapper id='rewardsInternalsPage'>
         <MainTitle level={2}>{getLocale('mainTitle')}</MainTitle>
+        <Disclaimer>{getLocale('mainDisclaimer')}</Disclaimer>
         <Tabs
+          id={'internals-tabs'}
           activeTabId={this.state.currentTabId}
           onChange={this.onTabChange}
         >
@@ -129,7 +142,7 @@ export class RewardsInternalsPage extends React.Component<Props, State> {
             <Promotions items={promotions} onGet={this.getPromotions} />
           </div>
           <div data-key='contributions' data-title={getLocale('tabContributions')}>
-            <Contributions items={info.currentReconciles} onGet={this.getContributions} />
+            <Contributions items={contributions} onGet={this.getContributions} />
           </div>
         </Tabs>
       </Wrapper>)

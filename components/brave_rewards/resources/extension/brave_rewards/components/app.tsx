@@ -40,23 +40,37 @@ export class RewardsPanel extends React.Component<Props, State> {
   }
 
   componentDidMount () {
+    chrome.braveRewards.getWalletExists((exists: boolean) => {
+      this.props.actions.walletExists(exists)
+    })
+
+    chrome.braveRewards.isInitialized((initialized: boolean) => {
+      if (initialized) {
+        this.props.actions.initialized()
+      }
+    })
+
     chrome.braveRewards.onlyAnonWallet((only: boolean) => {
       this.setState({
         onlyAnonWallet: !!only
       })
     })
 
-    chrome.windows.getCurrent({}, this.onWindowCallback)
-
     chrome.braveRewards.getRewardsMainEnabled(((enabled: boolean) => {
       this.props.actions.onEnabledMain(enabled)
+
+      if (enabled && !this.props.rewardsPanelData.initializing) {
+        this.startRewards()
+      }
     }))
+  }
+
+  startRewards = () => {
+    chrome.windows.getCurrent({}, this.onWindowCallback)
 
     chrome.braveRewards.getAllNotifications((list: RewardsExtension.Notification[]) => {
       this.props.actions.onAllNotifications(list)
     })
-
-    this.handleGrantNotification()
 
     const { externalWallet, walletCreated } = this.props.rewardsPanelData
 
@@ -66,19 +80,39 @@ export class RewardsPanel extends React.Component<Props, State> {
       chrome.braveRewards.getRewardsParameters((parameters: RewardsExtension.RewardsParameters) => {
         rewardsPanelActions.onRewardsParameters(parameters)
       })
+
+      chrome.braveRewards.getAllNotifications((list: RewardsExtension.Notification[]) => {
+        this.props.actions.onAllNotifications(list)
+      })
+
+      chrome.windows.getCurrent({}, this.onWindowCallback)
+
+      this.handleGrantNotification()
     }
   }
 
   componentDidUpdate (prevProps: Props, prevState: State) {
+    if (!this.props.rewardsPanelData.walletCreated) {
+      return
+    }
+
     if (
       !prevProps.rewardsPanelData.walletCreated &&
       this.props.rewardsPanelData.walletCreated
     ) {
       this.getTabData()
     }
-    if (!prevProps.rewardsPanelData.enabledMain && this.props.rewardsPanelData.enabledMain) {
-      chrome.windows.getCurrent({}, this.onWindowCallback)
-      this.getBalance()
+
+    if (this.props.rewardsPanelData.enabledMain &&
+        prevProps.rewardsPanelData.initializing &&
+        !this.props.rewardsPanelData.initializing) {
+      this.startRewards()
+    }
+
+    if (!prevProps.rewardsPanelData.enabledMain &&
+        this.props.rewardsPanelData.enabledMain &&
+        !this.props.rewardsPanelData.initializing) {
+      this.startRewards()
     }
   }
 
@@ -219,11 +253,11 @@ export class RewardsPanel extends React.Component<Props, State> {
   }
 
   enableRewards = () => {
-    this.props.actions.onSettingSave('enabledMain', '1')
+    this.props.actions.toggleEnableMain(true)
   }
 
   openRewardsAddFunds = () => {
-    const { externalWallet } = this.props.rewardsPanelData
+    const { externalWallet, balance } = this.props.rewardsPanelData
 
     if (!externalWallet) {
       return
@@ -236,10 +270,7 @@ export class RewardsPanel extends React.Component<Props, State> {
       return
     }
 
-    if (externalWallet.verifyUrl) {
-      utils.handleUpholdLink(externalWallet.verifyUrl, externalWallet)
-      return
-    }
+    utils.handleUpholdLink(balance, externalWallet)
   }
 
   openTOS () {
@@ -263,14 +294,16 @@ export class RewardsPanel extends React.Component<Props, State> {
       actions.push({
         name: getMessage('addFunds'),
         action: this.openRewardsAddFunds,
-        icon: <WalletAddIcon />
+        icon: <WalletAddIcon />,
+        externalWallet: true
       })
     }
 
     return actions.concat([{
       name:  getMessage('rewardsSettings'),
       action: this.openRewards,
-      icon: <BatColorIcon />
+      icon: <BatColorIcon />,
+      externalWallet: false
     }])
   }
 
@@ -283,13 +316,11 @@ export class RewardsPanel extends React.Component<Props, State> {
       walletCorrupted,
       balance,
       externalWallet,
-      promotions,
       parameters
     } = this.props.rewardsPanelData
 
     const total = balance.total || 0
     const converted = utils.convertBalance(total, parameters.rate)
-    const claimedPromotions = utils.getClaimedPromotions(promotions || [])
 
     if (!walletCreated || walletCorrupted) {
       return (
@@ -313,7 +344,7 @@ export class RewardsPanel extends React.Component<Props, State> {
     let onVerifyClick = undefined
     if (!this.state.onlyAnonWallet) {
       walletStatus = utils.getWalletStatus(externalWallet)
-      onVerifyClick = utils.onVerifyClick.bind(this, this.actions)
+      onVerifyClick = utils.handleUpholdLink.bind(this, balance, externalWallet)
     }
 
     return (
@@ -333,7 +364,6 @@ export class RewardsPanel extends React.Component<Props, State> {
                 showSecActions={false}
                 showCopy={false}
                 onlyAnonWallet={this.state.onlyAnonWallet}
-                grants={utils.generatePromotions(claimedPromotions)}
                 converted={utils.formatConverted(converted)}
                 walletState={walletStatus}
                 onVerifyClick={onVerifyClick}

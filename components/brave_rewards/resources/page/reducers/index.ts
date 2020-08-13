@@ -22,6 +22,10 @@ const mergeReducers = (state: Rewards.State | undefined, action: any) => {
   state = promotionReducer(state, action)
   state = publishersReducer(state, action)
 
+  if (!state) {
+    state = storage.defaultState
+  }
+
   if (state !== startingState) {
     storage.debouncedSave(state)
   }

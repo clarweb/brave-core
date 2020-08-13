@@ -66,20 +66,6 @@ export const StyledBalance = styled<{}, 'div'>('div')`
   text-align: center;
 `
 
-export const StyleGrantButton = styled<{}, 'div'>('div')`
-  display: flex;
-  justify-content: center;
-
-  &:focus {
-    outline: 0;
-  }
-`
-
-export const GrantButton = styled(Button as ComponentType<ButtonProps>)`
-  min-width: 100px;
-  color: rgba(255, 255, 255, 0.8);
-`
-
 export const StyledBalanceTokens = styled<{}, 'div'>('div')`
   font-size: 36px;
   line-height: 0.61;
@@ -158,33 +144,6 @@ export const StyledBalanceConverted = styled<{}, 'div'>('div')`
   font-weight: 300;
 `
 
-export const StyledGrantWrapper = styled<{}, 'div'>('div')`
-  margin-top: 13px;
-`
-
-export const StyledGrant = styled<{}, 'div'>('div')`
-  font-family: Muli, sans-serif;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.60);
-  text-align: center;
-  margin-bottom: 3px;
-
-  b {
-    font-weight: 600;
-    color: #fff;
-    min-width: 81px;
-    text-align: right;
-    display: inline-block;
-    padding-right: 5px;
-  }
-
-  span {
-    min-width: 135px;
-    text-align: left;
-    display: inline-block;
-  }
-`
-
 export const StyledActionWrapper = styled<{}, 'div'>('div')`
   text-align: center;
   font-size: 12px;
@@ -242,9 +201,9 @@ export const StyledAlertClose = styled<{}, 'button'>('button')`
   top: 11px;
   right: 11px;
   cursor: pointer;
-  width: 15px;
-  height: 15px;
-  color: #B8B9C4;
+  width: 20px;
+  height: 20px;
+  color: #9E9FAB;
 `
 
 export const StyledBAT = styled<{}, 'div'>('div')`
@@ -386,4 +345,33 @@ export const StyledLink = styled<{}, 'a'>('a')`
   text-decoration: none;
   display: inline-block;
   cursor: pointer;
+`
+
+export const LoginMessage = styled<{}, 'div'>('div')`
+  position: absolute;
+  background: ${palette.white};
+  top: 50px;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  border-radius: 6px;
+  width: 95%;
+  box-shadow: 0 0 12px 0 rgba(12, 13, 33, 0.44);
+  z-index: 5;
+`
+
+export const LoginMessageText = styled<{}, 'div'>('div')`
+  margin: 0;
+  padding: 15px;
+  line-height: 1.3;
+`
+
+export const LoginMessageButtons = styled<{}, 'div'>('div')`
+  display: flex;
+  margin: 0 0 15px;
+  justify-content: center;
+
+  > button {
+    margin: 0 5px;
+  }
 `

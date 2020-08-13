@@ -10,10 +10,10 @@
 #include "brave/browser/android/preferences/brave_prefs.h"
 #include "brave/common/pref_names.h"
 #include "brave/components/brave_perf_predictor/browser/buildflags.h"
+#include "brave/components/brave_referrals/common/pref_names.h"
 #include "brave/components/brave_rewards/common/pref_names.h"
 #include "brave/components/brave_shields/browser/brave_shields_util.h"
 #include "brave/components/brave_sync/brave_sync_prefs.h"
-#include "chrome/browser/android/preferences/pref_service_bridge.h"
 #include "chrome/browser/content_settings/host_content_settings_map_factory.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/profiles/profile.h"
@@ -44,9 +44,6 @@ Profile* GetOriginalProfile() {
 }
 
 const char* GetPrefNameExposedToJava(int pref_index) {
-  if (pref_index < kBravePrefOffset)
-    return PrefServiceBridge::GetPrefNameExposedToJava(pref_index);
-
   DCHECK_GE(pref_index, kBravePrefOffset);
   DCHECK_LT(pref_index, BravePref::BRAVE_PREF_NUM_PREFS);
   return kBravePrefsExposedToJava[pref_index - kBravePrefOffset];
@@ -61,27 +58,34 @@ namespace android {
 void JNI_BravePrefServiceBridge_SetHTTPSEEnabled(
     JNIEnv* env,
     jboolean enabled) {
-  brave_shields::SetHTTPSEverywhereEnabled(GetOriginalProfile(),
-                                           enabled,
-                                           GURL());
+  brave_shields::SetHTTPSEverywhereEnabled(
+      HostContentSettingsMapFactory::GetForProfile(
+          GetOriginalProfile()),
+      enabled,
+      GURL(),
+      g_browser_process->local_state());
 }
 
 void JNI_BravePrefServiceBridge_SetAdBlockEnabled(
     JNIEnv* env,
     jboolean enabled) {
   brave_shields::SetAdControlType(
-      GetOriginalProfile(),
+      HostContentSettingsMapFactory::GetForProfile(
+          GetOriginalProfile()),
       static_cast<bool>(enabled) ? ControlType::BLOCK : ControlType::ALLOW,
-      GURL());
+      GURL(),
+      g_browser_process->local_state());
 }
 
 void JNI_BravePrefServiceBridge_SetFingerprintingProtectionEnabled(
     JNIEnv* env,
     jboolean enabled) {
   brave_shields::SetFingerprintingControlType(
-      GetOriginalProfile(),
+      HostContentSettingsMapFactory::GetForProfile(
+          GetOriginalProfile()),
       static_cast<bool>(enabled) ? ControlType::BLOCK : ControlType::ALLOW,
-      GURL());
+      GURL(),
+      g_browser_process->local_state());
 }
 
 void JNI_BravePrefServiceBridge_SetPlayYTVideoInBrowserEnabled(
@@ -181,42 +185,6 @@ void JNI_BravePrefServiceBridge_SetOldHttpsUpgradesCount(JNIEnv* env,
     count + profile->GetPrefs()->GetUint64(kHttpsUpgrades));
 }
 
-ScopedJavaLocalRef<jstring> JNI_BravePrefServiceBridge_GetSyncDeviceId(
-    JNIEnv* env) {
-  return ConvertUTF8ToJavaString(env,
-                                 GetOriginalProfile()->GetPrefs()->GetString(
-                                     brave_sync::prefs::kSyncDeviceId));
-}
-
-void JNI_BravePrefServiceBridge_SetSyncDeviceName(
-    JNIEnv* env,
-    const JavaParamRef<jstring>& deviceName) {
-  return GetOriginalProfile()->GetPrefs()->SetString(
-      brave_sync::prefs::kSyncDeviceName,
-      ConvertJavaStringToUTF8(env, deviceName));
-}
-
-ScopedJavaLocalRef<jstring> JNI_BravePrefServiceBridge_GetSyncDeviceName(
-    JNIEnv* env) {
-  return ConvertUTF8ToJavaString(env,
-                                 GetOriginalProfile()->GetPrefs()->GetString(
-                                     brave_sync::prefs::kSyncDeviceName));
-}
-
-void JNI_BravePrefServiceBridge_SetSyncSeed(
-    JNIEnv* env,
-    const JavaParamRef<jstring>& seed) {
-  return GetOriginalProfile()->GetPrefs()->SetString(
-      brave_sync::prefs::kSyncSeed, ConvertJavaStringToUTF8(env, seed));
-}
-
-ScopedJavaLocalRef<jstring> JNI_BravePrefServiceBridge_GetSyncSeed(
-    JNIEnv* env) {
-  return ConvertUTF8ToJavaString(env,
-                                 GetOriginalProfile()->GetPrefs()->GetString(
-                                     brave_sync::prefs::kSyncSeed));
-}
-
 void JNI_BravePrefServiceBridge_SetSafetynetCheckFailed(
     JNIEnv* env,
     jboolean value) {
@@ -225,6 +193,13 @@ void JNI_BravePrefServiceBridge_SetSafetynetCheckFailed(
 
 jboolean JNI_BravePrefServiceBridge_GetSafetynetCheckFailed(JNIEnv* env) {
   return GetOriginalProfile()->GetPrefs()->GetBoolean(kSafetynetCheckFailed);
+}
+
+void JNI_BravePrefServiceBridge_SetSafetynetStatus(
+    JNIEnv* env,
+    const JavaParamRef<jstring>& status) {
+  g_browser_process->local_state()->SetString(
+      kSafetynetStatus, ConvertJavaStringToUTF8(env, status));
 }
 
 void JNI_BravePrefServiceBridge_SetUseRewardsStagingServer(

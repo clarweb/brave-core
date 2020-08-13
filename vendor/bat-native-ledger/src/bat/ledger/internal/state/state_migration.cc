@@ -7,13 +7,12 @@
 
 #include "bat/ledger/internal/ledger_impl.h"
 #include "bat/ledger/internal/state/state_migration.h"
-#include "bat/ledger/internal/state/state_util.h"
 
 using std::placeholders::_1;
 
 namespace {
 
-const int kCurrentVersionNumber = 2;
+const int kCurrentVersionNumber = 3;
 
 }  // namespace
 
@@ -22,6 +21,7 @@ namespace braveledger_state {
 StateMigration::StateMigration(bat_ledger::LedgerImpl* ledger) :
     v1_(std::make_unique<StateMigrationV1>(ledger)),
     v2_(std::make_unique<StateMigrationV2>(ledger)),
+    v3_(std::make_unique<StateMigrationV3>(ledger)),
     ledger_(ledger) {
   DCHECK(v1_ && v2_);
 }
@@ -29,7 +29,7 @@ StateMigration::StateMigration(bat_ledger::LedgerImpl* ledger) :
 StateMigration::~StateMigration() = default;
 
 void StateMigration::Migrate(ledger::ResultCallback callback) {
-  const int current_version = GetVersion(ledger_);
+  const int current_version = ledger_->state()->GetVersion();
   const int new_version = current_version + 1;
 
   if (current_version == kCurrentVersionNumber) {
@@ -52,6 +52,10 @@ void StateMigration::Migrate(ledger::ResultCallback callback) {
       v2_->Migrate(migrate_callback);
       return;
     }
+    case 3: {
+      v3_->Migrate(migrate_callback);
+      return;
+    }
   }
 
   BLOG(0, "Migration version is not handled " << new_version);
@@ -71,7 +75,7 @@ void StateMigration::OnMigration(
 
   BLOG(1, "State: Migrated to version " << version);
 
-  SetVersion(ledger_, version);
+  ledger_->state()->SetVersion(version);
   Migrate(callback);
 }
 

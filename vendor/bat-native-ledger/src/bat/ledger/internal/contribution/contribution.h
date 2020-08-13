@@ -14,6 +14,15 @@
 #include <vector>
 
 #include "base/gtest_prod_util.h"
+#include "base/timer/timer.h"
+#include "bat/ledger/internal/contribution/contribution_ac.h"
+#include "bat/ledger/internal/contribution/contribution_anon_card.h"
+#include "bat/ledger/internal/contribution/contribution_external_wallet.h"
+#include "bat/ledger/internal/contribution/contribution_monthly.h"
+#include "bat/ledger/internal/contribution/contribution_sku.h"
+#include "bat/ledger/internal/contribution/contribution_tip.h"
+#include "bat/ledger/internal/contribution/contribution_unblinded.h"
+#include "bat/ledger/internal/contribution/unverified.h"
 #include "bat/ledger/ledger.h"
 
 namespace bat_ledger {
@@ -26,15 +35,6 @@ class Uphold;
 
 namespace braveledger_contribution {
 
-class ContributionAC;
-class ContributionAnonCard;
-class ContributionExternalWallet;
-class ContributionMonthly;
-class ContributionSKU;
-class ContributionTip;
-class Unverified;
-class Unblinded;
-
 class Contribution {
  public:
   explicit Contribution(bat_ledger::LedgerImpl* ledger);
@@ -43,12 +43,7 @@ class Contribution {
 
   void Initialize();
 
-  // Start point for contribution
-  // In this step we get balance from the server
-  void Start(ledger::ContributionQueuePtr info);
-
-  // Called when timer is triggered
-  void OnTimer(uint32_t timer_id);
+  void ProcessContributionQueue();
 
   // Sets new reconcile timer for monthly contribution in 30 days
   void SetReconcileTimer();
@@ -56,10 +51,8 @@ class Contribution {
   // Does final stage in contribution
   // Sets reports and contribution info
   void ContributionCompleted(
-      const std::string& contribution_id,
-      const ledger::RewardsType type,
-      const double amount,
-      const ledger::Result result);
+      const ledger::Result result,
+      ledger::ContributionInfoPtr contribution);
 
   void HasSufficientBalance(
     ledger::HasSufficientBalanceToReconcileCallback callback);
@@ -68,8 +61,6 @@ class Contribution {
   // This is called from global timer in impl.
   // Can be also called manually
   void StartMonthlyContribution();
-
-  void SetTimer(uint32_t* timer_id, uint64_t start_timer_in = 0);
 
   // Reset reconcile stamps
   void ResetReconcileStamp();
@@ -104,14 +95,20 @@ class Contribution {
       const std::string& contribution_id,
       ledger::ResultCallback callback);
 
+  void GetRecurringTips(ledger::PublisherInfoListCallback callback);
+
  private:
+  // Start point for contribution
+  // In this step we get balance from the server
+  void Start(ledger::ContributionQueuePtr info);
+
   void StartAutoContribute(
       const ledger::Result result,
       const uint64_t reconcile_stamp);
 
-  void ContributionCompletedSaved(const ledger::Result result);
-
-  void ProcessContributionQueue();
+  void ContributionCompletedSaved(
+      const ledger::Result result,
+      const std::string& contribution_id);
 
   void OnProcessContributionQueue(ledger::ContributionQueuePtr info);
 
@@ -165,13 +162,19 @@ class Contribution {
 
   void SetRetryTimer(
       const std::string& contribution_id,
-      const uint64_t start_timer_in = 0);
+      base::TimeDelta delay);
+
+  void OnRetryTimerElapsed(const std::string& contribution_id);
 
   void SetRetryCounter(ledger::ContributionInfoPtr contribution);
 
   void Retry(
       const ledger::Result result,
       const std::string& contribution_string);
+
+  void OnMarkUnblindedTokensAsSpendable(
+      const ledger::Result result,
+      const std::string& contribution_id);
 
   bat_ledger::LedgerImpl* ledger_;  // NOT OWNED
   std::unique_ptr<Unverified> unverified_;
@@ -183,9 +186,9 @@ class Contribution {
   std::unique_ptr<ContributionTip> tip_;
   std::unique_ptr<ContributionExternalWallet> external_wallet_;
   std::unique_ptr<ContributionAnonCard> anon_card_;
-  uint32_t last_reconcile_timer_id_;
-  std::map<std::string, uint32_t> retry_timers_;
-  uint32_t queue_timer_id_;
+  base::OneShotTimer last_reconcile_timer_;
+  std::map<std::string, base::OneShotTimer> retry_timers_;
+  base::OneShotTimer queue_timer_;
   bool queue_in_progress_ = false;
 };
 

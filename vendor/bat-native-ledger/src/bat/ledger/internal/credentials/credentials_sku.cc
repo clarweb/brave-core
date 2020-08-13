@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <utility>
 
-#include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/strings/stringprintf.h"
@@ -17,8 +16,8 @@
 #include "bat/ledger/internal/ledger_impl.h"
 #include "bat/ledger/internal/request/request_sku.h"
 #include "bat/ledger/internal/request/request_util.h"
+#include "bat/ledger/internal/response/response_sku.h"
 #include "bat/ledger/internal/static_values.h"
-#include "net/http/http_status_code.h"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -99,7 +98,10 @@ void CredentialsSKU::Start(
       trigger,
       callback);
 
-  ledger_->GetCredsBatchByTrigger(trigger.id, trigger.type, get_callback);
+  ledger_->database()->GetCredsBatchByTrigger(
+      trigger.id,
+      trigger.type,
+      get_callback);
 }
 
 void CredentialsSKU::OnStart(
@@ -122,7 +124,10 @@ void CredentialsSKU::OnStart(
           _1,
           trigger,
           callback);
-      ledger_->GetCredsBatchByTrigger(trigger.id, trigger.type, get_callback);
+      ledger_->database()->GetCredsBatchByTrigger(
+          trigger.id,
+          trigger.type,
+          get_callback);
       break;
     }
     case ledger::CredsBatchStatus::CLAIMED: {
@@ -135,7 +140,10 @@ void CredentialsSKU::OnStart(
           _1,
           trigger,
           callback);
-      ledger_->GetCredsBatchByTrigger(trigger.id, trigger.type, get_callback);
+      ledger_->database()->GetCredsBatchByTrigger(
+          trigger.id,
+          trigger.type,
+          get_callback);
       break;
     }
     case ledger::CredsBatchStatus::FINISHED: {
@@ -175,7 +183,10 @@ void CredentialsSKU::OnBlind(
       _1,
       trigger,
       callback);
-  ledger_->GetCredsBatchByTrigger(trigger.id, trigger.type, get_callback);
+  ledger_->database()->GetCredsBatchByTrigger(
+      trigger.id,
+      trigger.type,
+      get_callback);
 }
 
 void CredentialsSKU::RetryPreviousStepSaved(
@@ -210,7 +221,7 @@ void CredentialsSKU::Claim(
             _1,
             callback);
 
-    ledger_->UpdateCredsBatchStatus(
+    ledger_->database()->UpdateCredsBatchStatus(
         trigger.id,
         trigger.type,
         ledger::CredsBatchStatus::NONE,
@@ -254,7 +265,10 @@ void CredentialsSKU::OnClaim(
     ledger::ResultCallback callback) {
   BLOG(6, ledger::UrlResponseToString(__func__, response));
 
-  if (response.status_code != net::HTTP_OK) {
+  const ledger::Result result =
+      braveledger_response_util::CheckClaimSKUCreds(response);
+  if (result != ledger::Result::LEDGER_OK) {
+    BLOG(0, "Failed to claim SKU creds");
     callback(ledger::Result::RETRY);
     return;
   }
@@ -265,7 +279,7 @@ void CredentialsSKU::OnClaim(
       trigger,
       callback);
 
-  ledger_->UpdateCredsBatchStatus(
+  ledger_->database()->UpdateCredsBatchStatus(
       trigger.id,
       trigger.type,
       ledger::CredsBatchStatus::CLAIMED,
@@ -306,28 +320,23 @@ void CredentialsSKU::OnFetchSignedCreds(
     ledger::ResultCallback callback) {
   BLOG(6, ledger::UrlResponseToString(__func__, response));
 
-  if (response.status_code == net::HTTP_ACCEPTED) {
-    callback(ledger::Result::RETRY_SHORT);
-    return;
-  }
-
-  if (response.status_code != net::HTTP_OK) {
-    callback(ledger::Result::RETRY);
-    return;
-  }
-
   auto get_callback = std::bind(&CredentialsSKU::SignedCredsSaved,
       this,
       _1,
       trigger,
       callback);
-  common_->GetSignedCredsFromResponse(trigger, response.body, get_callback);
+  common_->GetSignedCredsFromResponse(trigger, response, get_callback);
 }
 
 void CredentialsSKU::SignedCredsSaved(
     const ledger::Result result,
     const CredentialsTrigger& trigger,
     ledger::ResultCallback callback) {
+  if (result == ledger::Result::RETRY_SHORT) {
+    callback(ledger::Result::RETRY_SHORT);
+    return;
+  }
+
   if (result != ledger::Result::LEDGER_OK) {
     BLOG(0, "Signed creds were not saved");
     callback(ledger::Result::RETRY);
@@ -339,7 +348,10 @@ void CredentialsSKU::SignedCredsSaved(
       _1,
       trigger,
       callback);
-  ledger_->GetCredsBatchByTrigger(trigger.id, trigger.type, get_callback);
+  ledger_->database()->GetCredsBatchByTrigger(
+      trigger.id,
+      trigger.type,
+      get_callback);
 }
 
 void CredentialsSKU::Unblind(
@@ -400,7 +412,7 @@ void CredentialsSKU::Completed(
     return;
   }
 
-  ledger_->UnblindedTokensReady();
+  ledger_->ledger_client()->UnblindedTokensReady();
   callback(result);
 }
 
@@ -420,14 +432,14 @@ void CredentialsSKU::RedeemTokens(
 
   auto url_callback = std::bind(&CredentialsSKU::OnRedeemTokens,
       this,
-                            _1,
+      _1,
       token_id_list,
       redeem,
       callback);
 
   const std::string payload = GenerateRedeemTokensPayload(redeem);
   const std::string url =
-      braveledger_request_util::GetReedemSKUUrl();
+      braveledger_request_util::GetRedeemSKUUrl();
 
   ledger_->LoadURL(
       url,
@@ -445,7 +457,10 @@ void CredentialsSKU::OnRedeemTokens(
     ledger::ResultCallback callback) {
   BLOG(6, ledger::UrlResponseToString(__func__, response));
 
-  if (response.status_code != net::HTTP_OK) {
+  const ledger::Result result =
+      braveledger_response_util::CheckRedeemSKUTokens(response);
+  if (result != ledger::Result::LEDGER_OK) {
+    BLOG(0, "Failed to parse redeem SKU tokens response");
     callback(ledger::Result::LEDGER_ERROR);
     return;
   }
@@ -457,7 +472,11 @@ void CredentialsSKU::OnRedeemTokens(
     id = redeem.order_id;
   }
 
-  ledger_->MarkUblindedTokensAsSpent(token_id_list, redeem.type, id, callback);
+  ledger_->database()->MarkUnblindedTokensAsSpent(
+      token_id_list,
+      redeem.type,
+      id,
+      callback);
 }
 
 }  // namespace braveledger_credentials

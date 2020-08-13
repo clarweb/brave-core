@@ -9,9 +9,8 @@
 <translation id="2445484935443597917">Gumawa ng Bagong Profile</translation>
 <translation id="2666990579225592931">Buksan ang Window ng Bisita</translation>
 <translation id="120759863357279975">Ang <ph name="EXTENSION_NAME"/> (extension ID "<ph name="EXTENSION_ID"/>") ay hindi pinapayagan sa Brave.</translation>
-<translation id="7450557937477381864">Isara ang Chrome</translation>
-<translation id="7008934821596358692">Upang matapos ang pag-import, isara ang lahat ng window ng Chrome.</translation>
 <translation id="6786747875388722282">Mga Extension</translation>
+<translation id="984275831282074731">Mga paraan ng pagbabayad</translation>
 <translation id="3699882589215410581">I-install at patakbuhin ang Widevine</translation>
 <translation id="8926389886865778422">Huwag nang itanong ulit</translation>
 <translation id="4726634924419692905">Magtanong kapag gusto ng isang site na i-install ang Widevine sa iyong computer.</translation>
@@ -22,7 +21,6 @@
 <translation id="8410111618231938546">Ang Google Widevine ay isang bahagi ng code ng Digital Rights Management (DRM) na hindi namin pag-aari sa Brave Software at hindi namin maaaring suriin. Naka-load ang Google Widevine sa mga server ng Google, hindi sa mga server namin. Malo-load lang ito kapag na-enable mo ang opsyong ito. Hindi namin hinihikayat ang paggamit ng DRM, ngunit iginagalang namin ang pasya ng user at kinikilala namin na ang ilang user ng Brave ay gustong gumamit ng mga serbisyong humihingi nito.
 
 Sa pamamagitan ng pag-install sa extension na ito, sumasang-ayon ka sa Mga Tuntunin ng Paggamit ng Google Widevine. Sumasang-ayon kang walang pananagutan ang Brave para sa anumang pinsala o pagkalugi na nauugnay sa paggamit mo ng Google Widevine.</translation>
-<translation id="453977518730680921">Mag-autoplay ng media</translation>
 <translation id="410351446219883937">Pag-autoplay</translation>
 <translation id="2240268017737062801">Magtanong kapag gustong mag-autoplay ng media ang isang site</translation>
 <translation id="3371702087847741961">Magtanong kapag gustong mag-autoplay ng media ang isang site (inirerekomenda)</translation>
@@ -39,11 +37,14 @@ Sa pamamagitan ng pag-install sa extension na ito, sumasang-ayon ka sa Mga Tuntu
 <translation id="7635711399568194460">Itinatago ang Brave Rewards button sa location bar kapag hindi naka-enable ang Brave Rewards</translation>
 <translation id="1520361618554057102">Ipakita palagi ang mga bookmark sa page na Bagong Tab</translation>
 <translation id="5802665280774361839">Ipakita ang awtomatikong pagkumpleto sa address bar.</translation>
+<translation id="597020512043916976">Ipakita ang mga nangungunang site sa mga iminumungkahi ng autocomplete</translation>
+<translation id="264150068416846820">Ipakita ang mga iminumungkahing site ng Brave sa mga iminumungkahi ng autocomplete</translation>
 <translation id="7781069478569868053">Page ng Bagong Tab</translation>
 <translation id="2467749191278759605">I-customize ang Brave Dashboard mo</translation>
 <translation id="1717331825806276156">Mga background image</translation>
 <translation id="1820041496463124489">Mga sponsored image</translation>
 <translation id="8173998484743827990">Brave Stats</translation>
+<translation id="5551238871320268996">Brave Together</translation>
 <translation id="6966052266404721769">Binance</translation>
 <translation id="4643117005422448078">Nangungunang Sites</translation>
 <translation id="1776831331757823105">Orasan</translation>
@@ -72,9 +73,9 @@ Sa pamamagitan ng pag-install sa extension na ito, sumasang-ayon ka sa Mga Tuntu
 <translation id="7390783310074170337">Default na view</translation>
 <translation id="130615081792797568">Simpleng view</translation>
 <translation id="2360360976480535628">Advanced na view</translation>
-<translation id="5709627087332022422">I-block ang mga cross-site tracker</translation>
-<translation id="6447842834002726250">Cookies</translation>
-<translation id="6522412052085018663">Pag-fingerprint</translation>
+<translation id="2133317862976486547">Mga tracker at ads blocking</translation>
+<translation id="4385707520896576447">Cookie blocking</translation>
+<translation id="4978786495456601191">Fingerprinting blocking</translation>
 <translation id="3570081523466826008">I-upgrade sa HTTPS ang mga koneksyon</translation>
 <translation id="4824468494729001999">I-block ang mga script</translation>
 <translation id="519861640102428255">Hitsura at Dating</translation>
@@ -83,12 +84,12 @@ Sa pamamagitan ng pag-install sa extension na ito, sumasang-ayon ka sa Mga Tuntu
 <translation id="863171915776379000">Payagan ang mga Facebook login at naka-embed na post</translation>
 <translation id="5165042248369837294">Payagan ang mga Twitter embedded tweet</translation>
 <translation id="958971637207126733">Payagan ang mga naka-embed na post sa LinkedIn</translation>
-<translation id="4699812599455071925">I-block lang ang cross-site cookies</translation>
-<translation id="5657156137487675418">Payagan ang lahat ng cookie</translation>
-<translation id="6883611015375728278">I-block ang lahat ng cookie</translation>
-<translation id="5963670684159057574">I-block ang cross-site fingerprinting</translation>
-<translation id="769702552748212954">Payagan ang lahat ng fingerprinting</translation>
-<translation id="4540198958192073185">I-block ang lahat ng fingerprinting</translation>
+<translation id="4078738236287221428">Agresibo</translation>
+<translation id="7740996059027112821">Karaniwan</translation>
+<translation id="4176463684765177261">Hindi Pinagana</translation>
+<translation id="5770288601196774623">Cross-site lang</translation>
+<translation id="3587482841069643663">Lahat</translation>
+<translation id="5533533363827555308">Istrikto, pwedeng makasira sa mga site</translation>
 <translation id="8942080017911802454">Patakaran sa Pangangasiwa ng IP ng WebRTC</translation>
 <translation id="6165508094623778733">Matuto pa</translation>
 <translation id="8798099450830957504">Default</translation>
@@ -96,8 +97,47 @@ Sa pamamagitan ng pag-install sa extension na ito, sumasang-ayon ka sa Mga Tuntu
 <translation id="5825943197137337319">Default na pampublikong interface lang</translation>
 <translation id="1689062823386843231">I-disable ang UDP na walang proxy</translation>
 <translation id="8502234992433094996">Gumamit ng Mga Serbisyo ng Google para sa Push Messaging</translation>
-<translation id="3888068426966679906">Malayuang pag-debug</translation>
-<translation id="6645631466045614531">I-access ang Pag-sync sa pamamagitan ng</translation>
+<translation id="5565355416171743213">Simulang gamitin ang sync</translation>
+<translation id="4332558599726753990">Pag-set Up ng Pag-sync</translation>
+<translation id="2187778349654214731">Para magsimula kailangang naka-install ang Brave sa lahat ng device na plano mong i-sync. Pagkatapos, secure na i-link ang mga iyon gamit ang isang sync code.</translation>
+<translation id="7530575064080939974">Pamahalaan ang iyong mga naka-sync na device</translation>
+<translation id="7575156386943878014">Sync Manager</translation>
+<translation id="1755198127524719638">Mga Setting ng Pag-sync</translation>
+<translation id="7558480201297099157">Pamahalaan ang impormasyong gusto mong i-sync sa mga device. Ang device lang na ito ang naaapektuhan ng mga setting na ito.</translation>
+<translation id="7731928563672901833">Listahan ng Device</translation>
+<translation id="28332161031213248">Kasama sa listahan ng device sa ibaba ang lahat ng device sa iyong chain ng pag-sync. Maaaring pamahalaan ang bawat device mula sa anupamang device.</translation>
+<translation id="1313162974556054106">Pangalan ng Device</translation>
+<translation id="923757506389336140"><ph name="DEVICE_NAME"/> (Ang Device na Ito)</translation>
+<translation id="3686835020221422649">Huling Aktibo</translation>
+<translation id="2569646144216067185">Bilang ng salita: <ph name="WORD_COUNT"/></translation>
+<translation id="7885157704277298658">Nakopya!</translation>
+<translation id="8802630444265810662">Isang QR code na isa-scan gamit ang isang mobile device upang i-transmit ang sync code mo</translation>
+<translation id="6221331245829088299">Nagkaroon ng error sa pagpapakita sa QR code, paki-refresh at subukan ulit.</translation>
+<translation id="298546024891487702">Upang makapagsimula, kakailanganin mong i-install ang Brave sa lahat ng device na pinaplano mong i-sync. Para maipagkabit ang mga ito, magsimula ng chain ng pag-sync na gagamitin mo upang secure na magkasamang ma-link ang lahat ng iyong device.</translation>
+<translation id="6200528822592747640">Magsimula ng bagong Chain ng Pag-sync</translation>
+<translation id="5184726904895809379">Mayroon akong Code ng Pag-sync</translation>
+<translation id="8780295742023331191">Tingnan ang Code ng Pag-sync</translation>
+<translation id="9017050385815017931">Telepono/Tablet</translation>
+<translation id="1736420071277903564">Computer</translation>
+<translation id="3407602902101449803">QR Code ng Chain ng Pag-sync</translation>
+<translation id="8369686073965491869">Sa iyong mga mobile device, mag-navigate sa Pag-sync ng Brave sa panel ng Mga Setting at i-click ang button</translation>
+<translation id="6527776448555649991">“I-scan ang Code ng Pag-sync”.</translation>
+<translation id="1400862780574843709">Gamitin ang iyong camera upang i-scan ang QR Code sa ibaba.</translation>
+<translation id="5086223971958279691">Code ng Chain ng Pag-sync</translation>
+<translation id="2899261497479389619">Sa iyong target na computer, mag-navigate sa Pag-sync ng Brave sa mga setting at i-click ang button</translation>
+<translation id="4827439149833241990">“Mayroon akong Code ng Pag-sync”.</translation>
+<translation id="24067401253841795">Ipasok ang mga salita ng sync chain code na ipinapakita sa ibaba. Ituring ang code na ito na parang isang password. Kung may ibang makakaalam nito, maaari nilang basahin at baguhin ang iyong naka-sync na data.</translation>
+<translation id="3034163433136515805">Tingnan ang QR Code</translation>
+<translation id="5373825572723282843">Maglagay ng code ng pag-sync</translation>
+<translation id="5734745018569675530">I-type sa form sa ibaba ang iyong ibinigay na mga salitang code ng chain ng pag-sync.</translation>
+<translation id="1061533051865606843">Magdagdag ng Bagong Device</translation>
+<translation id="5093410893656857925">Piliin ang Uri ng Device</translation>
+<translation id="4581190919849683048">Aling uri ng device ang gusto mong i-sync?</translation>
+<translation id="4112587618563511470">Invalid ang sync code, pakitingnan at subukan ulit.</translation>
+<translation id="2339730291919608488">Umalis sa Chain ng Pag-sync</translation>
+<translation id="115699408012835975">Kung ire-reset mo ang Sync, kakailanganin mong mag-enter ulit ng sync code mula sa ibang device upang makapag-sync dito. Sigurado ka bang gusto mong magpatuloy?</translation>
+<translation id="3396347744975515056">Ang Brave Sync ay na-upgrade at nangangailangan ng setup</translation>
+<translation id="7473245612074035141">Simulan ang Setup</translation>
 <translation id="6696935187608454456">Mga Tulong na Tip</translation>
 <translation id="2775956301559569472">Ipakita ang prompt ng Wayback Machine sa mga 404 na page</translation>
 <translation id="1807246157184219062">Light</translation>
@@ -110,6 +150,7 @@ Sa pamamagitan ng pag-install sa extension na ito, sumasang-ayon ka sa Mga Tuntu
 <translation id="7701040980221191251">Wala</translation>
 <translation id="1085027414516521238">MetaMask</translation>
 <translation id="3905324891414560921">Provider ng Web3 para sa paggamit ng Dapps</translation>
+<translation id="5913089932885076110">I-load ang Crypto Wallets sa startup</translation>
 <translation id="6554397389149987360">Ginagamit ang component ng Hangouts upang ma-enable ang pagbabahagi ng screen at iba pang feature sa browser.</translation>
 <translation id="1765684547504191670">Gumagamit ng Media Router na bahagi upang ma-enable ang Chromecast sa browser.</translation>
 <translation id="9156965752763025780">Magkakabisa ang iyong mga pagbabago sa susunod na ilunsad mong muli ang Brave.</translation>
@@ -171,10 +212,13 @@ Sa pamamagitan ng pag-install sa extension na ito, sumasang-ayon ka sa Mga Tuntu
 <translation id="6469509880167172749">Awtomatikong magpadala ng ganap na pribadong analytics ng produkto sa Brave</translation>
 <translation id="7090566321964540749">Pinapayagan lang ng hindi kilalang impormasyon na ito ang Brave na tantyahin ang kabuuang paggamit ng ilang partikular na feature.</translation>
 <translation id="9111960429693394744">Gusto mo bang gamitin ang Crypto Wallets o MetaMask for Dapps ng Brave?</translation>
+<translation id="8721775358057000783">Gusto mo bang simulan ang Crypto Wallets para sa suporta sa web3 sa page na ito?</translation>
 <translation id="7583735190612229830">I-set up ang Crypto Wallets para makaugnayan ang app na ito at ang iba pang tulad nito.</translation>
-<translation id="8337117349965899723">Gamitin ang Crypto Wallets</translation>
+<translation id="4823406846571523661">I-set up ang Crypto Wallets</translation>
 <translation id="5756155765711979898">Gamitin ang MetaMask</translation>
 <translation id="6754134632841262799">I-SET UP</translation>
+<translation id="8199661191594897555">Simulan ang Crypto Wallets at i-reload</translation>
+<translation id="8428213095426709021">Mga Setting</translation>
 <translation id="4552520379838695057">Pasensya na, nawawala ang page na iyon.</translation>
 <translation id="2609895996619941644">Gusto mo bang tingnan kung may available na naka-save na bersyon sa Wayback Machine?</translation>
 <translation id="8053093028263274061">Pasensya na, walang available na naka-save na bersyon.</translation>
@@ -185,8 +229,10 @@ Sa pamamagitan ng pag-install sa extension na ito, sumasang-ayon ka sa Mga Tuntu
 <translation id="2336228925368920074">I-bookmark ang Lahat ng Mga Tab...</translation>
 <translation id="796831669370432378">Para magdagdag ng bookmark, i-click ang button ng bookmark sa tabi ng address bar</translation>
 <translation id="4989337484121655457">Kailangan ng Full Disk Access</translation>
-<translation id="8025559074845816210">Kailangan ng Brave ng Full Disk Access para i-import ang iyong Mga Bookmark mula sa Safari.</translation>
+<translation id="5501596373144334003">Kailangan ng Brave ng Full Disk Access para ma-import ang iyong Mga Bookmark at History mula sa Safari.</translation>
 <translation id="8515328844674404333">Alamin kung paano magbigay ng Full Disk Access mula sa iyong Mga Kagustuhan sa System.</translation>
 <translation id="6414878884710400018">Buksan ang Mga Kagustuhan sa System</translation>
 <translation id="5570470519803062774">Mga Setting ng Site at Mga Shield</translation>
+<translation id="8487693399751278191">I-import ang mga bookmark ngayon...</translation>
+<translation id="2557899542277210112">Para sa mabilis na access, ilagay dito sa bookmarks bar ang iyong mga bookmark.</translation>
 </translationbundle>

@@ -6,8 +6,8 @@
 #include <memory>
 #include <utility>
 
-#include "bat/ledger/internal/media/media.h"
 #include "bat/ledger/internal/ledger_impl.h"
+#include "bat/ledger/internal/media/media.h"
 #include "bat/ledger/internal/static_values.h"
 
 using std::placeholders::_1;
@@ -54,10 +54,13 @@ std::string Media::GetLinkType(
   return type;
 }
 
-void Media::ProcessMedia(const std::map<std::string, std::string>& parts,
-                               const std::string& type,
-                               ledger::VisitDataPtr visit_data) {
-  if (parts.size() == 0 || !ledger_->GetRewardsMainEnabled() || !visit_data) {
+void Media::ProcessMedia(
+    const std::map<std::string, std::string>& parts,
+    const std::string& type,
+    ledger::VisitDataPtr visit_data) {
+  if (parts.empty() ||
+      !ledger_->state()->GetRewardsMainEnabled() ||
+      !visit_data) {
     return;
   }
 
@@ -139,7 +142,10 @@ void Media::OnMediaActivityError(ledger::VisitDataPtr visit_data,
   visit_data->path = "/";
   visit_data->name = name;
 
-  ledger_->GetPublisherActivityFromUrl(window_id, std::move(visit_data), "");
+  ledger_->publisher()->GetPublisherActivityFromUrl(
+      window_id,
+      std::move(visit_data),
+      "");
 }
 
 void Media::SaveMediaInfo(const std::string& type,

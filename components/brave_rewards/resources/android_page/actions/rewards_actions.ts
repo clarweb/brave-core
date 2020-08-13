@@ -7,6 +7,8 @@ import { action } from 'typesafe-actions'
 // Constant
 import { types } from '../constants/rewards_types'
 
+export const isInitialized = () => action(types.IS_INITIALIZED)
+
 export const createWallet = () => action(types.CREATE_WALLET)
 
 export const onWalletCreated = () => action(types.WALLET_CREATED)
@@ -192,4 +194,12 @@ export const onlyAnonWallet = () => action(types.ONLY_ANON_WALLET)
 
 export const onOnlyAnonWallet = (only: boolean) => action(types.ON_ONLY_ANON_WALLET, {
   only
+})
+
+export const toggleEnableMain = (enable: boolean) => action(types.TOGGLE_ENABLE_MAIN, {
+  enable
+})
+
+export const onInitialized = (result: boolean) => action(types.ON_INITIALIZED, {
+  result
 })

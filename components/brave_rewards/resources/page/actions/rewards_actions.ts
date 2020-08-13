@@ -7,15 +7,18 @@ import { action } from 'typesafe-actions'
 // Constant
 import { types } from '../constants/rewards_types'
 
+export const isInitialized = () => action(types.IS_INITIALIZED)
+
 export const createWallet = () => action(types.CREATE_WALLET)
 
 export const onWalletCreated = () => action(types.WALLET_CREATED)
 
 export const onWalletCreateFailed = () => action(types.WALLET_CREATE_FAILED)
 
-export const onSettingSave = (key: string, value: any) => action(types.ON_SETTING_SAVE, {
+export const onSettingSave = (key: string, value: any, persist: boolean = true) => action(types.ON_SETTING_SAVE, {
   key,
-  value
+  value,
+  persist
 })
 
 export const updateAdsRewards = () => action(types.UPDATE_ADS_REWARDS)
@@ -75,8 +78,8 @@ export const recoverWallet = (key: string) => action(types.RECOVER_WALLET, {
   key
 })
 
-export const onRecoverWalletData = (properties: Rewards.RecoverWallet) => action(types.ON_RECOVER_WALLET_DATA, {
-  properties
+export const onRecoverWalletData = (result: number) => action(types.ON_RECOVER_WALLET_DATA, {
+  result
 })
 
 export const onModalBackupClose = () => action(types.ON_MODAL_BACKUP_CLOSE)
@@ -334,4 +337,18 @@ export const getCountryCode = () => action(types.GET_COUNTRY_CODE)
 
 export const onCountryCode = (countryCode: string) => action(types.ON_COUNTRY_CODE, {
   countryCode
+})
+
+export const toggleEnableMain = (enable: boolean) => action(types.TOGGLE_ENABLE_MAIN, {
+  enable
+})
+
+export const onInitialized = (result: boolean) => action(types.ON_INITIALIZED, {
+  result
+})
+
+export const completeReset = () => action(types.COMPLETE_RESET)
+
+export const onCompleteReset = (success: boolean) => action(types.ON_COMPLETE_RESET, {
+  success
 })

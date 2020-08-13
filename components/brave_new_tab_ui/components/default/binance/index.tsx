@@ -74,16 +74,17 @@ import {
 } from './style'
 import {
   ShowIcon,
-  HideIcon
-} from './assets/icons'
+  HideIcon,
+  PartyIcon,
+  QRIcon,
+  SearchIcon
+} from '../exchangeWidget/shared-assets'
 import { StyledTitleTab } from '../widgetTitleTab'
 import currencyData from './data'
 import BinanceLogo from './assets/binance-logo'
 import { CaratLeftIcon, CaratDownIcon } from 'brave-ui/components/icons'
 import { getLocale } from '../../../../common/locale'
-import searchIcon from './assets/search-icon.png'
-import partyIcon from './assets/party.png'
-import qrIcon from './assets/qr.png'
+import cryptoColors from '../exchangeWidget/colors'
 
 interface State {
   fiatShowing: boolean
@@ -136,6 +137,7 @@ interface Props {
   disconnectInProgress: boolean
   authInvalid: boolean
   selectedView: string
+  stackPosition: number
   onShowContent: () => void
   onBuyCrypto: (coin: string, amount: string, fiat: string) => void
   onBinanceUserTLD: (userTLD: NewTab.BinanceTLD) => void
@@ -158,7 +160,6 @@ interface Props {
 class Binance extends React.PureComponent<Props, State> {
   private fiatList: string[]
   private currencyNames: Record<string, string>
-  private cryptoColors: Record<string, string>
   private convertTimer: any
   private refreshInterval: any
 
@@ -190,7 +191,6 @@ class Binance extends React.PureComponent<Props, State> {
       convertToShowing: false,
       currentConvertExpiryTime: 30
     }
-    this.cryptoColors = currencyData.cryptoColors
     this.fiatList = currencyData.fiatList
     this.currencyNames = {
       'BAT': 'Basic Attent...',
@@ -579,7 +579,7 @@ class Binance extends React.PureComponent<Props, State> {
   }
 
   renderIconAsset = (key: string, isDetail: boolean = false) => {
-    const iconColor = this.cryptoColors[key] || '#fff'
+    const iconColor = cryptoColors[key] || '#fff'
 
     return (
       <AssetIcon
@@ -606,10 +606,10 @@ class Binance extends React.PureComponent<Props, State> {
   }
 
   renderTitleTab () {
-    const { onShowContent } = this.props
+    const { onShowContent, stackPosition } = this.props
 
     return (
-      <StyledTitleTab onClick={onShowContent}>
+      <StyledTitleTab onClick={onShowContent} stackPosition={stackPosition}>
         {this.renderTitle()}
       </StyledTitleTab>
     )
@@ -663,7 +663,7 @@ class Binance extends React.PureComponent<Props, State> {
     return (
       <InvalidWrapper>
         <StyledEmoji>
-          <img src={partyIcon} />
+          <img src={PartyIcon} />
         </StyledEmoji>
         <InvalidTitle>
           {`${getLocale('binanceWidgetConverted')} ${currentConvertAmount} ${currentConvertFrom} to ${currentConvertTransAmount} ${currentConvertTo}!`}
@@ -762,7 +762,7 @@ class Binance extends React.PureComponent<Props, State> {
           {
             depositData
             ? <AssetQR onClick={this.setQR.bind(this, currentDepositAsset)}>
-                <img style={{ width: '25px', marginRight: '5px' }} src={qrIcon} />
+                <img style={{ width: '25px', marginRight: '5px' }} src={QRIcon} />
               </AssetQR>
             : null
           }
@@ -834,7 +834,7 @@ class Binance extends React.PureComponent<Props, State> {
       <>
         <ListItem>
           <ListIcon>
-            <ListImg src={searchIcon} />
+            <ListImg src={SearchIcon} />
           </ListIcon>
           <SearchInput
             type={'text'}

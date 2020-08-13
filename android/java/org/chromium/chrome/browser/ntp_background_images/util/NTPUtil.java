@@ -72,7 +72,7 @@ public class NTPUtil {
         new HashMap<String, SoftReference<Bitmap>>();
 
     public static void turnOnAds() {
-        BraveAdsNativeHelper.nativeSetAdsEnabled(Profile.getLastUsedProfile());
+        BraveAdsNativeHelper.nativeSetAdsEnabled(Profile.getLastUsedRegularProfile());
     }
 
     public static void updateOrientedUI(Context context, ViewGroup view) {
@@ -148,13 +148,14 @@ public class NTPUtil {
 
     public static int checkForNonDistruptiveBanner(NTPImage ntpImage, SponsoredTab sponsoredTab) {
         BraveRewardsNativeWorker mBraveRewardsNativeWorker = BraveRewardsNativeWorker.getInstance();
+
         if (sponsoredTab.shouldShowBanner()) {
-            if (BraveRewardsPanelPopup.isBraveRewardsEnabled()) {
-                if (BraveAdsNativeHelper.nativeIsBraveAdsEnabled(Profile.getLastUsedProfile())) {
+            if (BravePrefServiceBridge.getInstance().getBoolean(BravePref.BRAVE_REWARDS_ENABLED)) {
+                if (BraveAdsNativeHelper.nativeIsBraveAdsEnabled(Profile.getLastUsedRegularProfile())) {
                     if (ntpImage instanceof Wallpaper) {
                         return SponsoredImageUtil.BR_ON_ADS_ON;
                     }
-                } else if (BraveAdsNativeHelper.nativeIsLocaleValid(Profile.getLastUsedProfile())) {
+                } else if (BraveAdsNativeHelper.nativeIsLocaleValid(Profile.getLastUsedRegularProfile())) {
                     if (ntpImage instanceof Wallpaper) {
                         return SponsoredImageUtil.BR_ON_ADS_OFF ;
                     } else {
@@ -172,6 +173,12 @@ public class NTPUtil {
 
     public static void showNonDistruptiveBanner(ChromeActivity chromeActivity, View view, int ntpType, SponsoredTab sponsoredTab, NewTabPageListener newTabPageListener) {
         ViewGroup nonDistruptiveBannerLayout = (ViewGroup) view.findViewById(R.id.non_distruptive_banner);
+        nonDistruptiveBannerLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                clickOnBottomBanner(chromeActivity, ntpType, nonDistruptiveBannerLayout, sponsoredTab, newTabPageListener);
+            }
+        });
         nonDistruptiveBannerLayout.setVisibility(View.GONE);
 
         Handler handler = new Handler();
@@ -219,7 +226,6 @@ public class NTPUtil {
                     bannerText.setText(chromeActivity.getResources().getString(R.string.get_paid_to_see_image));
                     break;
                 case SponsoredImageUtil.BR_ON_ADS_OFF:
-                    bannerText.setMovementMethod(LinkMovementMethod.getInstance());
                     bannerText.setText(getBannerText(chromeActivity, ntpType, nonDistruptiveBannerLayout, sponsoredTab, newTabPageListener));
                     break;
                 case SponsoredImageUtil.BR_ON_ADS_OFF_BG_IMAGE:
@@ -227,7 +233,6 @@ public class NTPUtil {
                     turnOnAdsButton.setVisibility(View.VISIBLE);
                     break;
                 case SponsoredImageUtil.BR_ON_ADS_ON:
-                    bannerText.setMovementMethod(LinkMovementMethod.getInstance());
                     bannerText.setText(getBannerText(chromeActivity, ntpType, nonDistruptiveBannerLayout, sponsoredTab, newTabPageListener));
                     break;
                 }
@@ -249,32 +254,23 @@ public class NTPUtil {
         Spanned learnMoreSpanned = BraveRewardsHelper.spannedFromHtmlString(bannerText);
         SpannableString learnMoreTextSS = new SpannableString(learnMoreSpanned.toString());
 
-        ClickableSpan learnMoreClickableSpan = new ClickableSpan() {
-            @Override
-            public void onClick(@NonNull View textView) {
-                bannerLayout.setVisibility(View.GONE);
-
-                RewardsBottomSheetDialogFragment rewardsBottomSheetDialogFragment = RewardsBottomSheetDialogFragment.newInstance();
-                Bundle bundle = new Bundle();
-                bundle.putInt(SponsoredImageUtil.NTP_TYPE, ntpType);
-                rewardsBottomSheetDialogFragment.setArguments(bundle);
-                rewardsBottomSheetDialogFragment.setNewTabPageListener(newTabPageListener);
-                rewardsBottomSheetDialogFragment.show(chromeActivity.getSupportFragmentManager(), "rewards_bottom_sheet_dialog_fragment");
-                rewardsBottomSheetDialogFragment.setCancelable(false);
-
-                sponsoredTab.updateBannerPref();
-            }
-            @Override
-            public void updateDrawState(@NonNull TextPaint ds) {
-                super.updateDrawState(ds);
-                ds.setUnderlineText(false);
-            }
-        };
-
-        learnMoreTextSS.setSpan(learnMoreClickableSpan, learnMoreIndex, learnMoreIndex + chromeActivity.getResources().getString(R.string.learn_more).length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         ForegroundColorSpan brOffForegroundSpan = new ForegroundColorSpan(chromeActivity.getResources().getColor(R.color.brave_theme_color));
         learnMoreTextSS.setSpan(brOffForegroundSpan, learnMoreIndex, learnMoreIndex + chromeActivity.getResources().getString(R.string.learn_more).length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         return learnMoreTextSS;
+    }
+
+    private static void clickOnBottomBanner(ChromeActivity chromeActivity, int ntpType, View bannerLayout, SponsoredTab sponsoredTab, NewTabPageListener newTabPageListener) {
+        bannerLayout.setVisibility(View.GONE);
+
+        RewardsBottomSheetDialogFragment rewardsBottomSheetDialogFragment = RewardsBottomSheetDialogFragment.newInstance();
+        Bundle bundle = new Bundle();
+        bundle.putInt(SponsoredImageUtil.NTP_TYPE, ntpType);
+        rewardsBottomSheetDialogFragment.setArguments(bundle);
+        rewardsBottomSheetDialogFragment.setNewTabPageListener(newTabPageListener);
+        rewardsBottomSheetDialogFragment.show(chromeActivity.getSupportFragmentManager(), "rewards_bottom_sheet_dialog_fragment");
+        rewardsBottomSheetDialogFragment.setCancelable(false);
+
+        sponsoredTab.updateBannerPref();
     }
 
     public static Bitmap getWallpaperBitmap(NTPImage ntpImage, int layoutWidth, int layoutHeight) {
@@ -374,7 +370,7 @@ public class NTPUtil {
 
         imageBitmap = Bitmap.createScaledBitmap(imageBitmap, newImageWidth, newImageHeight, true);
 
-        Bitmap newBitmap = Bitmap.createBitmap(imageBitmap, startX, startY, layoutWidth, (int) layoutHeight);
+        Bitmap newBitmap = Bitmap.createBitmap(imageBitmap, (startX + layoutWidth) <= imageBitmap.getWidth() ? startX : 0, (startY + (int) layoutHeight) <= imageBitmap.getHeight() ? startY : 0, layoutWidth, (int) layoutHeight);
         Bitmap bitmapWithGradient = ImageUtils.addGradient(newBitmap);
 
         imageBitmap.recycle();
@@ -433,9 +429,8 @@ public class NTPUtil {
         sharedPreferencesEditor.apply();
     }
 
-    public static boolean shouldEnableNTPFeature(boolean isMoreTabs) {
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M
-                || (Build.VERSION.SDK_INT <= Build.VERSION_CODES.M && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && !isMoreTabs)) {
+    public static boolean shouldEnableNTPFeature() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             return true;
         }
         return false;
@@ -451,7 +446,7 @@ public class NTPUtil {
     }
 
     public static boolean isReferralEnabled() {
-        Profile mProfile = Profile.getLastUsedProfile();
+        Profile mProfile = Profile.getLastUsedRegularProfile();
         NTPBackgroundImagesBridge mNTPBackgroundImagesBridge = NTPBackgroundImagesBridge.getInstance(mProfile);
         boolean isReferralEnabled = BravePrefServiceBridge.getInstance().getInteger(BravePref.NTP_SHOW_SUPER_REFERRAL_THEMES_OPTION) == 1 ? true : false;
         return mNTPBackgroundImagesBridge.isSuperReferral() && isReferralEnabled;

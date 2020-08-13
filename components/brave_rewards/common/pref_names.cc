@@ -13,8 +13,6 @@ const char kBraveRewardsEnabled[] = "brave.rewards.enabled";
 const char kRewardsNotifications[] = "brave.rewards.notifications";
 const char kRewardsNotificationTimerInterval[]=
     "brave.rewards.notification_timer_interval";
-const char kRewardsBackupNotificationFrequency[] =
-    "brave.rewards.backup_notification_frequency";
 const char kRewardsBackupNotificationInterval[] =
     "brave.rewards.backup_notification_interval";
 const char kRewardsBackupSucceeded[] = "brave.rewards.backup_succeeded";
@@ -25,7 +23,7 @@ const char kRewardsNotificationStartupDelay[] =
     "brave.rewards.notification_startup_delay";
 const char kRewardsExternalWallets[] = "brave.rewards.external_wallets";
 const char kStateServerPublisherListStamp[] =
-    "brave.rewards.server_publisher_list_stamp";
+    "brave.rewards.publisher_prefix_list_stamp";
 const char kStateUpholdAnonAddress[] =
     "brave.rewards.uphold_anon_address";
 const char kRewardsBadgeText[] = "brave.rewards.badge_text";
@@ -47,7 +45,6 @@ const char kStateAutoContributeEnabled[] = "brave.rewards.ac.enabled";
 const char kStateAutoContributeAmount[] = "brave.rewards.ac.amount";
 const char kStateNextReconcileStamp[] = "brave.rewards.ac.next_reconcile_stamp";
 const char kStateCreationStamp[] = "brave.rewards.creation_stamp";
-const char kStateAnonymousCardId[] = "brave.rewards.wallet.anonymous_card_id";
 const char kStateRecoverySeed[] = "brave.rewards.wallet.seed";
 const char kStatePaymentId[] = "brave.rewards.wallet.payment_id";
 const char kStateInlineTipRedditEnabled[] = "brave.rewards.inline_tip.reddit";
@@ -64,5 +61,7 @@ const char kStateParametersMonthlyTipChoices[] =
     "brave.rewards.parameters.tip.monthly_choices";
 const char kStateFetchOldBalance[] =
     "brave.rewards.fetch_old_balance";
+const char kStateEmptyBalanceChecked[] =
+    "brave.rewards.empty_balance_checked";
 }  // namespace prefs
 }  // namespace brave_rewards

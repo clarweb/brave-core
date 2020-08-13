@@ -3,6 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 export const enum types {
+  IS_INITIALIZED = '@@rewards/IS_INITIALIZED',
   CREATE_WALLET = '@@rewards/CREATE_WALLET',
   WALLET_CREATED = '@@rewards/WALLET_CREATED',
   WALLET_CREATE_FAILED = '@@rewards/WALLET_CREATE_FAILED',
@@ -95,5 +96,9 @@ export const enum types {
   ON_MONTHLY_REPORT_IDS = '@@rewards/ON_MONTHLY_REPORT_IDS',
   DISMISS_PROMO_PROMPT = '@@rewards/DISMISS_PROMO_PROMPT',
   GET_COUNTRY_CODE = '@@rewards/GET_COUNTRY_CODE',
-  ON_COUNTRY_CODE = '@@rewards/ON_COUNTRY_CODE'
+  ON_COUNTRY_CODE = '@@rewards/ON_COUNTRY_CODE',
+  TOGGLE_ENABLE_MAIN = '@@rewards/TOGGLE_ENABLE_MAIN',
+  ON_INITIALIZED = '@@rewards/ON_INITIALIZED',
+  COMPLETE_RESET = '@@rewards/COMPLETE_RESET',
+  ON_COMPLETE_RESET = '@@rewards/ON_COMPLETE_RESET'
 }

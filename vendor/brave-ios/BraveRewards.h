@@ -11,14 +11,12 @@ FOUNDATION_EXPORT double BraveRewardsVersionNumber;
 FOUNDATION_EXPORT const unsigned char BraveRewardsVersionString[];
 
 #import <BraveRewards/BATBraveRewards.h>
-#import <BraveRewards/RewardsLogger.h>
 
 // Ads
 #import <BraveRewards/BATAdNotification.h>
 
 // Ledger
 #import <BraveRewards/Enums.h>
-#import <BraveRewards/Records.h>
 #import <BraveRewards/ledger.mojom.objc.h>
 #import <BraveRewards/BATRewardsNotification.h>
 #import <BraveRewards/BATPromotionSolution.h>

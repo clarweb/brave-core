@@ -21,11 +21,21 @@ std::string FetchSignedCredsUrl(
     const std::string& promotion_id,
     const std::string& claim_id);
 
-std::string GetReedemTokensUrl();
+std::string GetRedeemTokensUrl();
 
 std::string ReportClobberedClaimsUrl();
 
 std::string GetTransferTokens();
+
+std::string GetBatlossURL(const std::string& payment_id, const int32_t version);
+
+std::string GetCreateWalletURL();
+
+std::string GetRecoverWalletURL(const std::string& public_key);
+
+std::string GetClaimWalletURL(const std::string& payment_id);
+
+std::string GetBalanceWalletURL(const std::string& payment_id);
 
 }  // namespace braveledger_request_util
 

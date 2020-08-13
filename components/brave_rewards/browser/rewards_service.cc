@@ -46,10 +46,8 @@ void RewardsService::RegisterProfilePrefs(PrefRegistrySimple* registry) {
   registry->RegisterStringPref(prefs::kRewardsNotifications, "");
   registry->RegisterTimeDeltaPref(prefs::kRewardsNotificationTimerInterval,
                                   base::TimeDelta::FromDays(1));
-  registry->RegisterTimeDeltaPref(prefs::kRewardsBackupNotificationFrequency,
-                                  base::TimeDelta::FromDays(7));
   registry->RegisterTimeDeltaPref(prefs::kRewardsBackupNotificationInterval,
-                                  base::TimeDelta::FromDays(7));
+                                  base::TimeDelta::FromDays(30));
   registry->RegisterTimeDeltaPref(prefs::kRewardsNotificationStartupDelay,
                                   base::TimeDelta::FromSeconds(30));
   registry->RegisterBooleanPref(prefs::kRewardsBackupSucceeded, false);
@@ -77,7 +75,6 @@ void RewardsService::RegisterProfilePrefs(PrefRegistrySimple* registry) {
   registry->RegisterDoublePref(prefs::kStateAutoContributeAmount, 0.0);
   registry->RegisterUint64Pref(prefs::kStateNextReconcileStamp, 0ull);
   registry->RegisterUint64Pref(prefs::kStateCreationStamp, 0ull);
-  registry->RegisterStringPref(prefs::kStateAnonymousCardId, "");
   registry->RegisterStringPref(prefs::kStateRecoverySeed, "");
   registry->RegisterStringPref(prefs::kStatePaymentId, "");
   registry->RegisterBooleanPref(prefs::kStateInlineTipRedditEnabled, false);
@@ -93,6 +90,7 @@ void RewardsService::RegisterProfilePrefs(PrefRegistrySimple* registry) {
   registry->RegisterStringPref(prefs::kStateParametersTipChoices, "");
   registry->RegisterStringPref(prefs::kStateParametersMonthlyTipChoices, "");
   registry->RegisterBooleanPref(prefs::kStateFetchOldBalance, true);
+  registry->RegisterBooleanPref(prefs::kStateEmptyBalanceChecked, false);
 }
 
 }  // namespace brave_rewards

@@ -55,6 +55,18 @@
     "message": "Cross-site-seuraimet estetty",
     "description": "Message for the scripts blocked row label"
   },
+  "aggressiveAdsTrackersBlocking": {
+    "message": "Seuraimet & mainokset estetty (aggressiivinen)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with aggressive heuristics"
+  },
+  "standardAdsTrackersBlocking": {
+    "message": "Seuraimet & mainokset estetty (standardi)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with standard heuristics"
+  },
+  "allowAdsTrackers": {
+    "message": "Salli kaikki seuraimet & mainokset",
+    "description": "Message for the option in the ads and trackers blocking select field to allow all ads and trackers"
+  },
   "connectionsUpgradedHTTPS": {
     "message": "Yhteys päivitetty HTTPS:ään",
     "description": "Message for the connections upgraded row label and for the main blocked resources text when there is more than one connection upgraded (plural) and no other ads/trackers blocked"
@@ -79,16 +91,16 @@
     "message": "Kaikki evästeet sallittu",
     "description": "Message for the option in the cookies select field to allow all cookies"
   },
-  "thirdPartyFingerprintingBlocked": {
-    "message": "Sivustojen välinen sormenjälkitunnistaminen estetty",
+  "standardFingerprinting": {
+    "message": "Sormenjälkitunnistus estetty (standardi)",
     "description": "Message for the option in the fingerprinting select field to block all 3rd party recognition attempts"
   },
-  "allFingerprintingBlocked": {
-    "message": "Sormenjälkitunnistamisen asetusyritykset estetty",
+  "strictFingerprinting": {
+    "message": "Sormenjälkitunnistus estetty (ankara, voi rikkoa sivustoja)",
     "description": "Message for the option in the fingerprinting select field to block all fingerprinting attempts"
   },
-  "allFingerprintingAllowed": {
-    "message": "Kaikki tunnistetietojen asetusyritykset sallittu",
+  "allowAllFingerprinting": {
+    "message": "Salli kaikki sormenjälkitunnistaminen",
     "description": "Message for the option in the fingerprinting select field to allow all fingerprinting attempts"
   },
   "deviceRecognitionAttempts": {

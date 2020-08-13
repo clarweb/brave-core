@@ -128,10 +128,10 @@ public class BraveRewardsSiteBannerActivity extends Activity implements
         publisher.setText(publisherName);
 
         String publisherFavIconURL = mBraveRewardsNativeWorker.GetPublisherFavIconURL(currentTabId_);
-        Tab currentActiveTab = BraveRewardsHelper.currentActiveTab();
+        Tab currentActiveTab = BraveRewardsHelper.currentActiveChromeTabbedActivityTab();
         String url = currentActiveTab.getUrlString();
         String favicon_url = (publisherFavIconURL.isEmpty()) ? url : publisherFavIconURL;
-        mIconFetcher = new BraveRewardsHelper();
+        mIconFetcher = new BraveRewardsHelper(currentActiveTab);
         mIconFetcher.retrieveLargeIcon(favicon_url, this);
 
         double balance = .0;
@@ -140,9 +140,9 @@ public class BraveRewardsSiteBannerActivity extends Activity implements
             balance = rewards_balance.mTotal;
         }
 
-        DecimalFormat df = new DecimalFormat("#.#");
+        DecimalFormat df = new DecimalFormat("#.###");
         df.setRoundingMode(RoundingMode.FLOOR);
-        df.setMinimumFractionDigits(1);
+        df.setMinimumFractionDigits(3);
         String walletAmount = df.format(balance) + " "+(isAnonWallet ? getResources().getString(R.string.brave_ui_bat_points_text) : getResources().getString(R.string.brave_ui_bat_text));
 
         ((TextView)findViewById(R.id.wallet_amount_text)).setText(walletAmount);
@@ -323,8 +323,8 @@ public class BraveRewardsSiteBannerActivity extends Activity implements
             // blinded wallets)
             BraveRewardsBalance balance_obj = mBraveRewardsNativeWorker.GetWalletBalance();
             if (balance_obj != null) {
-                double braveFunds = balance_obj.mWallets.get(BraveRewardsBalance.WALLET_ANONYMOUS) +
-                        balance_obj.mWallets.get(BraveRewardsBalance.WALLET_BLINDED);
+                double braveFunds = ((balance_obj.mWallets.containsKey(BraveRewardsBalance.WALLET_ANONYMOUS) && balance_obj.mWallets.get(BraveRewardsBalance.WALLET_ANONYMOUS) != null) ? balance_obj.mWallets.get(BraveRewardsBalance.WALLET_ANONYMOUS) : .0) +
+                                    ((balance_obj.mWallets.containsKey(BraveRewardsBalance.WALLET_BLINDED) && balance_obj.mWallets.get(BraveRewardsBalance.WALLET_BLINDED) != null) ? balance_obj.mWallets.get(BraveRewardsBalance.WALLET_BLINDED) : .0);
                 if (braveFunds <= 0) {
                     note_part1 = getResources().getString(R.string.brave_ui_site_banner_connected_text);
                 }
@@ -468,9 +468,9 @@ public class BraveRewardsSiteBannerActivity extends Activity implements
                 if (rewardsBalance != null) {
                     balance = rewardsBalance.mTotal;
                 }
-                DecimalFormat df = new DecimalFormat("#.#");
+                DecimalFormat df = new DecimalFormat("#.###");
                 df.setRoundingMode(RoundingMode.FLOOR);
-                df.setMinimumFractionDigits(1);
+                df.setMinimumFractionDigits(3);
                 String walletAmount = df.format(balance) + " "
                         + (isAnonWallet ? getResources().getString(
                                    R.string.brave_ui_bat_points_text)

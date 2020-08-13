@@ -20,35 +20,19 @@ class DatabaseServerPublisherInfo: public DatabaseTable {
   explicit DatabaseServerPublisherInfo(bat_ledger::LedgerImpl* ledger);
   ~DatabaseServerPublisherInfo() override;
 
-  bool Migrate(ledger::DBTransaction* transaction, const int target) override;
-
-  void DeleteAll(ledger::ResultCallback callback);
-
-  void InsertOrUpdatePartialList(
-      const std::vector<ledger::ServerPublisherPartial>& list,
-      ledger::ResultCallback callback);
-
-  void InsertOrUpdateBannerList(
-      const std::vector<ledger::PublisherBanner>& list,
+  void InsertOrUpdate(
+      const ledger::ServerPublisherInfo& server_info,
       ledger::ResultCallback callback);
 
   void GetRecord(
       const std::string& publisher_key,
       ledger::GetServerPublisherInfoCallback callback);
 
+  void DeleteExpiredRecords(
+      const int64_t max_age_seconds,
+      ledger::ResultCallback callback);
+
  private:
-  void InsertOrUpdate(
-      ledger::DBTransaction* transaction,
-      ledger::ServerPublisherInfoPtr info);
-
-  bool CreateTableV7(ledger::DBTransaction* transaction);
-
-  bool CreateIndexV7(ledger::DBTransaction* transaction);
-
-  bool MigrateToV7(ledger::DBTransaction* transaction);
-
-  bool MigrateToV15(ledger::DBTransaction* transaction);
-
   void OnGetRecordBanner(
       ledger::PublisherBannerPtr banner,
       const std::string& publisher_key,
@@ -59,6 +43,10 @@ class DatabaseServerPublisherInfo: public DatabaseTable {
       const std::string& publisher_key,
       const ledger::PublisherBanner& banner,
       ledger::GetServerPublisherInfoCallback callback);
+
+  void OnExpiredRecordsSelected(
+      ledger::DBCommandResponsePtr response,
+      ledger::ResultCallback callback);
 
   std::unique_ptr<DatabaseServerPublisherBanner> banner_;
 };

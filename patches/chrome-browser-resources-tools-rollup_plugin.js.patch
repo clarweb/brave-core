@@ -1,12 +1,12 @@
 diff --git a/chrome/browser/resources/tools/rollup_plugin.js b/chrome/browser/resources/tools/rollup_plugin.js
-index f462ab10cb0483f3576dd55c60465d655296f10d..d1936fabc946b0ee47f438535f5e51e8cc4f1c55 100644
+index c70fe31f00179e8acba7a9d35f97181d9d57b592..613c342d82cfa9e5527d21fcaa91ac6fa3a221d2 100644
 --- a/chrome/browser/resources/tools/rollup_plugin.js
 +++ b/chrome/browser/resources/tools/rollup_plugin.js
-@@ -71,6 +71,8 @@ export default function plugin(srcPath, genPath, rootPath, host, excludes) {
+@@ -83,6 +83,8 @@ export default function plugin(srcPath, genPath, rootPath, host, excludes) {
          return joinPaths(polymerSrcPath, pathFromPolymer);
        }
  
-+      const resolvedByBrave = require(path.join(__dirname, '..', '..', 'brave_rollup_overrides')).braveResolveId({srcPath, genPath, rootPath, host, excludes}, source, origin, relativePath, joinPaths, combinePaths, chromeResourcesUrl, nonGeneratedFiles); if (resolvedByBrave) { return resolvedByBrave; }
++      const resolvedByBrave = require(path.join(__dirname, '..', '..', 'brave_rollup_overrides')).braveResolveId({srcPath, genPath, excludes}, source, origin, relativePath, joinPaths, combinePaths, chromeResourcesUrl, schemeRelativeResourcesUrl, nonGeneratedFiles); if (resolvedByBrave) { return resolvedByBrave; }
 +
        // Get path from ui/webui/resources
        let pathFromResources = '';

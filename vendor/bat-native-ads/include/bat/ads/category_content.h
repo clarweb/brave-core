@@ -21,20 +21,18 @@ struct ADS_EXPORT CategoryContent {
 
   bool operator==(
       const CategoryContent& rhs) const;
-
   bool operator!=(
       const CategoryContent& rhs) const;
-
-  std::string ToJson() const;
-  Result FromJson(
-      const std::string& json,
-      std::string* error_description = nullptr);
 
   enum class OptAction {
     kNone = 0,
     kOptIn,
     kOptOut
   };
+
+  std::string ToJson() const;
+  Result FromJson(
+      const std::string& json);
 
   std::string category;
   OptAction opt_action = OptAction::kNone;

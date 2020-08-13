@@ -3,20 +3,25 @@ import("//brave/components/brave_ads/browser/buildflags/buildflags.gni")
 import("//brave/components/brave_rewards/browser/buildflags/buildflags.gni")
 
 source_set("browser") {
+  # Remove when https://github.com/brave/brave-browser/issues/10639 is resolved
+  check_includes = false
   public_deps = [
     "buildflags",
   ]
 
   sources = [
+    "ads_service.cc",
     "ads_service.h",
     "ads_service_factory.cc",
     "ads_service_factory.h",
+    "ads_service_observer.h",
     "ads_tab_helper.cc",
     "ads_tab_helper.h",
   ]
 
   deps = [
     "//base",
+    "//brave/common",
     "//brave/components/brave_ads/common",
     "//brave/components/brave_rewards/common",
     "//brave/components/brave_rewards/browser",
@@ -42,14 +47,28 @@ source_set("browser") {
       "ad_notification.h",
       "ads_notification_handler.cc",
       "ads_notification_handler.h",
+      "ads_p2a.cc",
+      "ads_p2a.h",
       "ads_service_impl.cc",
       "ads_service_impl.h",
       "background_helper.cc",
       "background_helper.h",
-      "bundle_state_database.cc",
-      "bundle_state_database.h",
       "notification_helper.cc",
       "notification_helper.h",
+    ]
+
+    deps += [
+      "//brave/vendor/bat-native-ads",
+      "//brave/components/brave_ads/resources",
+      "//brave/components/services/bat_ads/public/cpp",
+      "//components/history/core/browser",
+      "//components/history/core/common",
+      "//components/wifi",
+      "//net",
+      "//services/network/public/cpp",
+      "//services/network/public/mojom",
+      "//ui/base",
+      "//ui/message_center/public/cpp",
     ]
 
     if (is_android) {
@@ -58,6 +77,11 @@ source_set("browser") {
         "background_helper_android.h",
         "notification_helper_android.cc",
         "notification_helper_android.h",
+      ]
+      deps += [
+        "//brave/browser/brave_ads/android:jni_headers",
+        "//brave/build/android:jni_headers",
+        "//chrome/android:jni_headers",
       ]
     }
 
@@ -68,6 +92,7 @@ source_set("browser") {
         "notification_helper_linux.cc",
         "notification_helper_linux.h",
       ]
+      deps += [ "//ui/gfx/x" ]
     }
 
     if (is_mac) {
@@ -86,40 +111,17 @@ source_set("browser") {
         "notification_helper_win.cc",
         "notification_helper_win.h",
       ]
-    }
-
-    deps += [
-      "//brave/vendor/bat-native-ads",
-      "//brave/components/brave_ads/resources",
-      "//brave/components/services/bat_ads/public/cpp",
-      "//components/history/core/browser",
-      "//components/history/core/common",
-      "//components/wifi",
-      "//net",
-      "//services/network/public/cpp",
-      "//sql",
-      "//ui/base",
-      "//ui/message_center/public/cpp",
-    ]
-
-    if (is_win) {
       deps += [
         "//ui/views",
         "//ui/gfx",
-      ]
-    }
-
-    if (is_android) {
-      deps += [
-        "//brave/browser/brave_ads/android:jni_headers",
-        "//brave/build/android:jni_headers",
-        "//chrome/android:jni_headers",
       ]
     }
   }
 }
 
 source_set("testutil") {
+  # Remove when https://github.com/brave/brave-browser/issues/10650 is resolved
+  check_includes = false
   testonly = true
 
   deps = [
@@ -129,16 +131,6 @@ source_set("testutil") {
     "//chrome/test:test_support",
     "//testing/gtest",
   ]
-
-  if (brave_rewards_enabled) {
-    deps += [
-      "//brave/vendor/bat-native-ledger:headers",
-    ]
-
-    configs += [
-      "//brave/vendor/bat-native-ledger:internal_config"
-    ]
-  }
 
   if (brave_ads_enabled) {
     deps += [

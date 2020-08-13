@@ -315,32 +315,17 @@ storiesOf('Rewards/Concepts/Desktop', module)
             {
               name: 'Add funds',
               action: doNothing,
-              icon: <WalletAddIcon />
+              icon: <WalletAddIcon />,
+              externalWallet: true
             },
             {
               name: 'Settings',
               action: doNothing,
-              icon: <BatColorIcon />
+              icon: <BatColorIcon />,
+              externalWallet: false
             }
           ]}
           showSecActions={false}
-          grants={object('Grants', [
-            {
-              amount: 2.5,
-              expiresAt: '1574451334789',
-              type: 1
-            },
-            {
-              amount: 5.0,
-              expiresAt: '1574451334789',
-              type: 1
-            },
-            {
-              amount: 7.5,
-              expiresAt: '1574451334789',
-              type: 1
-            }
-          ])}
         >
           <WalletPanelDisabled
             onTOSClick={doNothing}
@@ -451,33 +436,18 @@ storiesOf('Rewards/Concepts/Desktop', module)
             {
               name: 'Add funds',
               action: doNothing,
-              icon: <WalletAddIcon />
+              icon: <WalletAddIcon />,
+              externalWallet: true
             },
             {
               name: 'Settings',
               action: doNothing,
-              icon: <BatColorIcon />
+              icon: <BatColorIcon />,
+              externalWallet: false
             }
           ]}
           showCopy={boolean('Show Uphold', false)}
           showSecActions={false}
-          grants={object('Grants', [
-            {
-              amount: 2.5,
-              expiresAt: '1574451334789',
-              type: 1
-            },
-            {
-              amount: 5.0,
-              expiresAt: '1574451334789',
-              type: 1
-            },
-            {
-              amount: 7.5,
-              expiresAt: '1574451334789',
-              type: 1
-            }
-          ])}
           grant={store.state.grant}
           onGrantHide={onGrantHide}
           onNotificationClick={onFetchCaptcha}

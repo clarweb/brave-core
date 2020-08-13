@@ -55,6 +55,18 @@
     "message": "Letiltott webhelyközi nyomkövetők",
     "description": "Message for the scripts blocked row label"
   },
+  "aggressiveAdsTrackersBlocking": {
+    "message": "Követők és reklámok letiltva (agresszív)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with aggressive heuristics"
+  },
+  "standardAdsTrackersBlocking": {
+    "message": "Követők és reklámok letiltva (standard)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with standard heuristics"
+  },
+  "allowAdsTrackers": {
+    "message": "Összes követő és reklám engedélyezése",
+    "description": "Message for the option in the ads and trackers blocking select field to allow all ads and trackers"
+  },
   "connectionsUpgradedHTTPS": {
     "message": "Kapcsolat HTTPS-re bővítve",
     "description": "Message for the connections upgraded row label and for the main blocked resources text when there is more than one connection upgraded (plural) and no other ads/trackers blocked"
@@ -79,16 +91,16 @@
     "message": "Minden süti engedélyezett",
     "description": "Message for the option in the cookies select field to allow all cookies"
   },
-  "thirdPartyFingerprintingBlocked": {
-    "message": "Más webhely általi ujjlenyomatos azonosítás letiltva ",
+  "standardFingerprinting": {
+    "message": "Ujjlenyomat-felismerés letiltva (standard)",
     "description": "Message for the option in the fingerprinting select field to block all 3rd party recognition attempts"
   },
-  "allFingerprintingBlocked": {
-    "message": "Blokkolt ujjlenyomatos azonosítási kísérletek",
+  "strictFingerprinting": {
+    "message": "Ujjlenyomat-felismerés letiltva (szigorú, a webhelyek összeomolhatnak)",
     "description": "Message for the option in the fingerprinting select field to block all fingerprinting attempts"
   },
-  "allFingerprintingAllowed": {
-    "message": "Minden ujjlenyomatos azonosítási kísérlet engedélyezve",
+  "allowAllFingerprinting": {
+    "message": "Minden ujjlenyomat-beállítás engedélyezése",
     "description": "Message for the option in the fingerprinting select field to allow all fingerprinting attempts"
   },
   "deviceRecognitionAttempts": {

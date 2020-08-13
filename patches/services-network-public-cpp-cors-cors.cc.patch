@@ -1,11 +1,11 @@
 diff --git a/services/network/public/cpp/cors/cors.cc b/services/network/public/cpp/cors/cors.cc
-index 5e6e4e020c8477a2516ca18a719c158b2a8d5934..cb14d54b958bdc4af2eb8b1db61e8ffe7f6f7f6c 100644
+index 6e12d8f2970e175bed4e4eee96f7482b4a85c4e9..6933d7fd65232107015ef5747341417a97eab97b 100644
 --- a/services/network/public/cpp/cors/cors.cc
 +++ b/services/network/public/cpp/cors/cors.cc
-@@ -456,6 +456,7 @@ bool IsCorsSafelistedHeader(
-       "sec-ch-ua-model",
+@@ -457,6 +457,7 @@ bool IsCorsSafelistedHeader(
        "sec-ch-ua-mobile",
        "sec-ch-ua-full-version",
+       "sec-ch-ua-platform-version",
 +      "x-brave-partner", // Prevent Allow-Cross-Origin-Request-Header failures
    };
    if (std::find(std::begin(safe_names), std::end(safe_names), lower_name) ==

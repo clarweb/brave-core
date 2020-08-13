@@ -25,9 +25,7 @@ class API {
 
   void Initialize();
 
-  void OnTimer(const uint32_t timer_id);
-
-  void FetchParameters();
+  void FetchParameters(ledger::GetRewardsParametersCallback callback);
 
  private:
   bat_ledger::LedgerImpl* ledger_;  // NOT OWNED

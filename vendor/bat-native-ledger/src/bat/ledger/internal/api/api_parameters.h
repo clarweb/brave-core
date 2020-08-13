@@ -6,7 +6,12 @@
 #ifndef BRAVELEDGER_API_API_PARAMETERS_H_
 #define BRAVELEDGER_API_API_PARAMETERS_H_
 
+#include <memory>
+#include <vector>
+
+#include "base/timer/timer.h"
 #include "bat/ledger/ledger.h"
+#include "bat/ledger/internal/endpoint/api/api_server.h"
 
 namespace bat_ledger {
 class LedgerImpl;
@@ -21,17 +26,23 @@ class APIParameters {
 
   void Initialize();
 
-  void OnTimer(const uint32_t timer_id);
-
-  void Fetch();
+  void Fetch(ledger::GetRewardsParametersCallback callback);
 
  private:
-  void OnFetch(const ledger::UrlResponse& response);
+  void OnFetch(
+      const ledger::Result result,
+      const ledger::RewardsParameters& parameters);
 
-  void SetRefreshTimer(const int delay = 0);
+  void RunCallbacks();
+
+  void SetRefreshTimer(
+      base::TimeDelta delay,
+      base::TimeDelta base_delay = base::TimeDelta());
 
   bat_ledger::LedgerImpl* ledger_;  // NOT OWNED
-  uint32_t refresh_timer_id_;
+  base::OneShotTimer refresh_timer_;
+  std::vector<ledger::GetRewardsParametersCallback> callbacks_;
+  std::unique_ptr<ledger::endpoint::APIServer> api_server_;
 };
 
 }  // namespace braveledger_api

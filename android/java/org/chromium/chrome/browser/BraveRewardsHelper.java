@@ -23,15 +23,15 @@ import android.view.TouchDelegate;
 import android.view.View;
 
 import org.chromium.base.annotations.CalledByNative;
+import org.chromium.chrome.R;
 import org.chromium.chrome.browser.BraveActivity;
 import org.chromium.chrome.browser.ChromeTabbedActivity;
 import org.chromium.chrome.browser.profiles.Profile;
-import org.chromium.chrome.browser.ui.favicon.IconType;
-import org.chromium.chrome.browser.ui.favicon.LargeIconBridge;
 import org.chromium.chrome.browser.tab.Tab;
 import org.chromium.chrome.browser.tab.TabImpl;
-import org.chromium.chrome.browser.ui.favicon.RoundedIconGenerator;
-import org.chromium.chrome.R;
+import org.chromium.chrome.browser.ui.favicon.IconType;
+import org.chromium.chrome.browser.ui.favicon.LargeIconBridge;
+import org.chromium.components.browser_ui.widget.RoundedIconGenerator;
 import org.chromium.url.GURL;
 
 import java.math.BigDecimal;
@@ -55,15 +55,18 @@ public class BraveRewardsHelper implements LargeIconBridge.LargeIconCallback{
     public static final int THANKYOU_FADE_IN_DURATION = 1500; //ms
     public static final int THANKYOU_STAY_DURATION = 2000; //ms
     private static final float DP_PER_INCH_MDPI = 160f;
+    private Tab mTab;
 
 
     public interface LargeIconReadyCallback {
         void onLargeIconReady(Bitmap icon);
     }
 
-    public BraveRewardsHelper () {
-        if (mLargeIconBridge == null) {
-            mLargeIconBridge = new LargeIconBridge(Profile.fromWebContents(((TabImpl)currentActiveTab()).getWebContents()));
+    public BraveRewardsHelper(Tab tab) {
+        mTab = tab;
+        assert mTab != null;
+        if (mLargeIconBridge == null && mTab != null) {
+            mLargeIconBridge = new LargeIconBridge(Profile.fromWebContents(mTab.getWebContents()));
         }
     }
 
@@ -94,9 +97,8 @@ public class BraveRewardsHelper implements LargeIconBridge.LargeIconCallback{
 
         //favIconURL (or content URL) is still not available, try to read it again
         if (mFaviconUrl == null || mFaviconUrl.isEmpty() || mFaviconUrl.equals("clear")) {
-            Tab tab  = currentActiveTab();
-            if (tab != null) {
-                mFaviconUrl = tab.getUrlString();
+            if (mTab != null) {
+                mFaviconUrl = mTab.getUrlString();
             }
 
             mHandler.postDelayed(new Runnable() {
@@ -113,6 +115,10 @@ public class BraveRewardsHelper implements LargeIconBridge.LargeIconCallback{
         if (mLargeIconBridge!= null && mCallback != null && !mFaviconUrl.isEmpty()) {
             mLargeIconBridge.getLargeIconForUrl(new GURL(mFaviconUrl),FAVICON_DESIRED_SIZE, this);
         }
+    }
+
+    public Tab getTab() {
+        return mTab;
     }
 
     @Override
@@ -241,12 +247,12 @@ public class BraveRewardsHelper implements LargeIconBridge.LargeIconCallback{
     return Integer.toString(currentTime.get(Calendar.YEAR));
   }
 
-  public static Tab currentActiveTab() {
-    ChromeTabbedActivity activity = BraveRewardsHelper.getChromeTabbedActivity();
-    if (activity == null || activity.getTabModelSelector() == null) {
-      return null;
-    }
-    return activity.getActivityTab();
+  public static Tab currentActiveChromeTabbedActivityTab() {
+      ChromeTabbedActivity activity = BraveRewardsHelper.getChromeTabbedActivity();
+      if (activity == null || activity.getTabModelSelector() == null) {
+          return null;
+      }
+      return activity.getActivityTab();
   }
 
   /**

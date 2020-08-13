@@ -10,7 +10,7 @@
 
 class BraveActionsContainer;
 class BraveActionsContainerTest;
-class BraveRewardsBrowserTest;
+class RewardsBrowserTest;
 class SkPath;
 
 // The purposes of this subclass are to:
@@ -20,7 +20,7 @@ class BraveLocationBarView : public LocationBarView {
   using LocationBarView::LocationBarView;
   void Init() override;
   void Layout() override;
-  void Update(const content::WebContents* contents) override;
+  void Update(content::WebContents* contents) override;
   void OnChanged() override;
   BraveActionsContainer* GetBraveActionsContainer() { return brave_actions_; }
 
@@ -36,7 +36,7 @@ class BraveLocationBarView : public LocationBarView {
 
  private:
   friend class ::BraveActionsContainerTest;
-  friend class ::BraveRewardsBrowserTest;
+  friend class ::RewardsBrowserTest;
   BraveActionsContainer* brave_actions_ = nullptr;
 
   DISALLOW_COPY_AND_ASSIGN(BraveLocationBarView);

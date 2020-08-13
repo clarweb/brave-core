@@ -15,6 +15,7 @@
 #include "chrome/test/base/ui_test_utils.h"
 #include "components/country_codes/country_codes.h"
 #include "components/prefs/pref_service.h"
+#include "content/public/test/browser_test.h"
 #include "content/public/test/browser_test_utils.h"
 #include "net/dns/mock_host_resolver.h"
 #include "net/base/url_util.h"
@@ -456,15 +457,6 @@ class BinanceAPIBrowserTest : public InProcessBrowserTest {
   std::unique_ptr<net::EmbeddedTestServer> https_server_;
 };
 
-
-IN_PROC_BROWSER_TEST_F(BinanceAPIBrowserTest, GetCodeChallenge) {
-  std::string verifier =
-      "FA87A1758E149A8BCD3A6D43DEAFAA013BCE2F132639ADA66C5BF101";
-  ASSERT_EQ(
-    "1vw-WOmdXSW7OHQPgnuMsZjhaQKxi3LO5L7uX0YEtHs",
-    BinanceService::GetCodeChallenge(verifier));
-}
-
 IN_PROC_BROWSER_TEST_F(BinanceAPIBrowserTest, GetOAuthClientURL) {
   EXPECT_TRUE(NavigateToNewTabUntilLoadStop());
   auto* service = GetBinanceService();
@@ -488,6 +480,9 @@ IN_PROC_BROWSER_TEST_F(BinanceAPIBrowserTest, GetOAuthClientURL) {
   ASSERT_EQ(expected_url, client_url);
 }
 
+// Test disabled due to failure when run from a Powershell context
+// TODO(ryanml): Fix test when running on Windows Powershell and remove guard
+#if !defined(OS_WIN)
 IN_PROC_BROWSER_TEST_F(BinanceAPIBrowserTest, GetAccessToken) {
   ResetHTTPSServer(base::BindRepeating(&HandleRequest));
   EXPECT_TRUE(NavigateToNewTabUntilLoadStop());
@@ -499,6 +494,7 @@ IN_PROC_BROWSER_TEST_F(BinanceAPIBrowserTest, GetAccessToken) {
           base::Unretained(this), true)));
   WaitForGetAccessToken(true);
 }
+#endif
 
 IN_PROC_BROWSER_TEST_F(BinanceAPIBrowserTest, GetAccessTokenUnauthorized) {
   ResetHTTPSServer(base::BindRepeating(&HandleRequestUnauthorized));
@@ -699,6 +695,9 @@ IN_PROC_BROWSER_TEST_F(BinanceAPIBrowserTest, GetConvertAssetsServerError) {
   WaitForGetConvertAssets(std::map<std::string, std::vector<std::string> >());
 }
 
+// Test disabled due to failure when run from a Powershell context
+// TODO(ryanml): Fix test when running on Windows Powershell and remove guard
+#if !defined(OS_WIN)
 IN_PROC_BROWSER_TEST_F(BinanceAPIBrowserTest, RevokeToken) {
   ResetHTTPSServer(base::BindRepeating(&HandleRequest));
   EXPECT_TRUE(NavigateToNewTabUntilLoadStop());
@@ -715,6 +714,7 @@ IN_PROC_BROWSER_TEST_F(BinanceAPIBrowserTest, RevokeToken) {
           base::Unretained(this))));
   WaitForRevokeToken(true);
 }
+#endif
 
 IN_PROC_BROWSER_TEST_F(BinanceAPIBrowserTest, RevokeTokenUnauthorized) {
   ResetHTTPSServer(base::BindRepeating(&HandleRequestUnauthorized));

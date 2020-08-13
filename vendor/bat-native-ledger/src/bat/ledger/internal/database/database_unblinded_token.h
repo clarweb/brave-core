@@ -18,8 +18,6 @@ class DatabaseUnblindedToken: public DatabaseTable {
   explicit DatabaseUnblindedToken(bat_ledger::LedgerImpl* ledger);
   ~DatabaseUnblindedToken() override;
 
-  bool Migrate(ledger::DBTransaction* transaction, const int target) override;
-
   void InsertOrUpdateList(
       ledger::UnblindedTokenList list,
       ledger::ResultCallback callback);
@@ -34,44 +32,32 @@ class DatabaseUnblindedToken: public DatabaseTable {
       const std::string& redeem_id,
       ledger::ResultCallback callback);
 
+  void MarkRecordListAsReserved(
+      const std::vector<std::string>& ids,
+      const std::string& redeem_id,
+      ledger::ResultCallback callback);
+
+  void MarkRecordListAsSpendable(
+      const std::string& redeem_id,
+      ledger::ResultCallback callback);
+
+  void GetReservedRecordList(
+      const std::string& redeem_id,
+      ledger::GetUnblindedTokenListCallback callback);
+
   void GetSpendableRecordListByBatchTypes(
       const std::vector<ledger::CredsBatchType>& batch_types,
       ledger::GetUnblindedTokenListCallback callback);
 
  private:
-  bool CreateTableV10(ledger::DBTransaction* transaction);
-
-  bool CreateTableV15(ledger::DBTransaction* transaction);
-
-  bool CreateTableV18(ledger::DBTransaction* transaction);
-
-  bool CreateTableV26(ledger::DBTransaction* transaction);
-
-  bool CreateIndexV10(ledger::DBTransaction* transaction);
-
-  bool CreateIndexV15(ledger::DBTransaction* transaction);
-
-  bool CreateIndexV18(ledger::DBTransaction* transaction);
-
-  bool CreateIndexV20(ledger::DBTransaction* transaction);
-
-  bool CreateIndexV26(ledger::DBTransaction* transaction);
-
-  bool MigrateToV10(ledger::DBTransaction* transaction);
-
-  bool MigrateToV14(ledger::DBTransaction* transaction);
-
-  bool MigrateToV15(ledger::DBTransaction* transaction);
-
-  bool MigrateToV18(ledger::DBTransaction* transaction);
-
-  bool MigrateToV20(ledger::DBTransaction* transaction);
-
-  bool MigrateToV26(ledger::DBTransaction* transaction);
-
   void OnGetRecords(
       ledger::DBCommandResponsePtr response,
       ledger::GetUnblindedTokenListCallback callback);
+
+  void OnMarkRecordListAsReserved(
+      ledger::DBCommandResponsePtr response,
+      size_t expected_row_count,
+      ledger::ResultCallback callback);
 };
 
 }  // namespace braveledger_database

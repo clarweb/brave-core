@@ -20,7 +20,6 @@
 #include "brave/common/brave_paths.h"
 #include "brave/browser/brave_rewards/rewards_service_factory.h"
 #include "brave/components/brave_rewards/browser/rewards_service_impl.h"
-#include "brave/components/brave_rewards/browser/rewards_service_observer.h"
 #include "brave/components/brave_rewards/browser/rewards_notification_service_impl.h"  // NOLINT
 #include "brave/components/brave_rewards/browser/rewards_notification_service_observer.h"  // NOLINT
 #include "brave/components/brave_rewards/common/pref_names.h"
@@ -41,6 +40,7 @@
 #include "components/network_session_configurator/common/network_switches.h"
 #include "content/public/browser/notification_service.h"
 #include "content/public/browser/notification_types.h"
+#include "content/public/test/browser_test.h"
 #include "content/public/test/browser_test_utils.h"
 #include "net/dns/mock_host_resolver.h"
 #include "net/test/embedded_test_server/http_request.h"
@@ -102,20 +102,10 @@ std::unique_ptr<net::test_server::HttpResponse> HandleRequest(
   return std::move(http_response);
 }
 
-bool URLMatches(const std::string& url,
-                const std::string& path,
-                const std::string& prefix,
-                const ServerTypes& server) {
-  const std::string target_url =
-      braveledger_request_util::BuildUrl(path, prefix, server);
-  return (url.find(target_url) == 0);
-}
-
 }  // namespace
 
 class BraveAdsBrowserTest
     : public InProcessBrowserTest,
-      public brave_rewards::RewardsServiceObserver,
       public brave_rewards::RewardsNotificationServiceObserver,
       public base::SupportsWeakPtr<BraveAdsBrowserTest> {
  public:
@@ -159,10 +149,6 @@ class BraveAdsBrowserTest
     ads_service_ = static_cast<brave_ads::AdsServiceImpl*>(
         brave_ads::AdsServiceFactory::GetForProfile(browser_profile));
     ASSERT_NE(nullptr, ads_service_);
-    rewards_service_->AddObserver(this);
-    if (!rewards_service_->IsWalletInitialized()) {
-      WaitForWalletInitialization();
-    }
     rewards_service_->SetLedgerEnvForTesting();
   }
 
@@ -171,24 +157,6 @@ class BraveAdsBrowserTest
     // destructor)
 
     InProcessBrowserTest::TearDown();
-  }
-
-  void WaitForWalletInitialization() {
-    if (wallet_initialized_)
-      return;
-    wait_for_wallet_initialization_loop_.reset(new base::RunLoop);
-    wait_for_wallet_initialization_loop_->Run();
-  }
-
-  void OnWalletInitialized(
-      brave_rewards::RewardsService* rewards_service,
-      int32_t result) {
-    const auto converted_result = static_cast<ledger::Result>(result);
-    ASSERT_TRUE(converted_result == ledger::Result::WALLET_CREATED ||
-                converted_result == ledger::Result::LEDGER_OK);
-    wallet_initialized_ = true;
-    if (wait_for_wallet_initialization_loop_)
-      wait_for_wallet_initialization_loop_->Quit();
   }
 
   void GetTestDataDir(base::FilePath* test_data_dir) {
@@ -203,37 +171,23 @@ class BraveAdsBrowserTest
     base::FilePath path;
     GetTestDataDir(&path);
     ASSERT_TRUE(
-        base::ReadFileToString(path.AppendASCII("register_persona_resp.json"),
-                               &registrarVK_));
-    ASSERT_TRUE(
-        base::ReadFileToString(path.AppendASCII("verify_persona_resp.json"),
-                               &verification_));
+        base::ReadFileToString(path.AppendASCII("wallet_resp.json"),
+                               &wallet_));
     ASSERT_TRUE(
         base::ReadFileToString(path.AppendASCII("parameters_resp.json"),
                                &parameters_));
   }
 
-  void GetTestResponse(const std::string& url,
-                       int32_t method,
-                       int* response_status_code,
-                       std::string* response,
-                       std::map<std::string, std::string>* headers) {
-    std::vector<std::string> tmp = base::SplitString(
-        url,
-        "/",
-        base::TRIM_WHITESPACE,
-        base::SPLIT_WANT_ALL);
-    const std::string persona_url =
-        braveledger_request_util::BuildUrl(REGISTER_PERSONA, PREFIX_V2);
-    if (url.find(persona_url) == 0 && tmp.size() == 6) {
-      *response = registrarVK_;
-    } else if (URLMatches(url, REGISTER_PERSONA, PREFIX_V2,
-                          ServerTypes::LEDGER) &&
-               tmp.size() == 7) {
-      *response = verification_;
-    } else if (URLMatches(url, "/wallet/", PREFIX_V2,
-                          ServerTypes::BALANCE)) {
-      *response = parameters_;
+  void GetTestResponse(
+      const std::string& url,
+      int32_t method,
+      int* response_status_code,
+      std::string* response,
+      std::map<std::string, std::string>* headers) {
+    if (url.find("/v3/wallet/brave") != std::string::npos) {
+      *response = wallet_;
+      *response_status_code = net::HTTP_CREATED;
+      return;
     }
   }
 
@@ -543,11 +497,7 @@ class BraveAdsBrowserTest
   std::unique_ptr<base::RunLoop> brave_ads_have_arrived_notification_run_loop_;
   bool brave_ads_have_arrived_notification_was_already_shown_ = false;
 
-  std::unique_ptr<base::RunLoop> wait_for_wallet_initialization_loop_;
-  bool wallet_initialized_ = false;
-
-  std::string registrarVK_;
-  std::string verification_;
+  std::string wallet_;
   std::string parameters_;
 };
 
@@ -561,10 +511,10 @@ IN_PROC_BROWSER_TEST_F(BraveAdsBrowserTest, BraveAdsLocaleIsNotSupported) {
 
 IN_PROC_BROWSER_TEST_F(BraveAdsBrowserTest, BraveAdsLocaleIsNewlySupported) {
   GetPrefs()->SetInteger(
-      brave_ads::prefs::kSupportedRegionsLastSchemaVersion, 3);
+      brave_ads::prefs::kSupportedCountryCodesLastSchemaVersion, 3);
 
-  GetPrefs()->SetInteger(brave_ads::prefs::kSupportedRegionsSchemaVersion,
-      brave_ads::prefs::kSupportedRegionsSchemaVersionNumber);
+  GetPrefs()->SetInteger(brave_ads::prefs::kSupportedCountryCodesSchemaVersion,
+      brave_ads::prefs::kSupportedCountryCodesSchemaVersionNumber);
 
   EXPECT_TRUE(ads_service_->IsNewlySupportedLocale());
 }
@@ -573,23 +523,25 @@ IN_PROC_BROWSER_TEST_F(BraveAdsBrowserTest,
     BraveAdsLocaleIsNewlySupportedForLatestSchemaVersion) {
   // IMPORTANT: When adding new schema versions |newly_supported_locale_| must
   // be updated in |BraveAdsBrowserTest| to reflect a locale from the latest
-  // schema version in "bat-native-ads/src/bat/ads/internal/supported_regions.h"
+  // "bat-native-ads/src/bat/ads/internal/locale/supported_country_codes.h"
+  // schema
 
-  GetPrefs()->SetInteger(brave_ads::prefs::kSupportedRegionsLastSchemaVersion,
-      brave_ads::prefs::kSupportedRegionsSchemaVersionNumber);
+  GetPrefs()->SetInteger(
+      brave_ads::prefs::kSupportedCountryCodesLastSchemaVersion,
+          brave_ads::prefs::kSupportedCountryCodesSchemaVersionNumber);
 
-  GetPrefs()->SetInteger(brave_ads::prefs::kSupportedRegionsSchemaVersion,
-      brave_ads::prefs::kSupportedRegionsSchemaVersionNumber);
+  GetPrefs()->SetInteger(brave_ads::prefs::kSupportedCountryCodesSchemaVersion,
+      brave_ads::prefs::kSupportedCountryCodesSchemaVersionNumber);
 
   EXPECT_TRUE(ads_service_->IsNewlySupportedLocale());
 }
 
 IN_PROC_BROWSER_TEST_F(BraveAdsBrowserTest, BraveAdsLocaleIsNotNewlySupported) {
   GetPrefs()->SetInteger(
-      brave_ads::prefs::kSupportedRegionsLastSchemaVersion, 2);
+      brave_ads::prefs::kSupportedCountryCodesLastSchemaVersion, 2);
 
-  GetPrefs()->SetInteger(brave_ads::prefs::kSupportedRegionsSchemaVersion,
-      brave_ads::prefs::kSupportedRegionsSchemaVersionNumber);
+  GetPrefs()->SetInteger(brave_ads::prefs::kSupportedCountryCodesSchemaVersion,
+      brave_ads::prefs::kSupportedCountryCodesSchemaVersionNumber);
 
   EXPECT_FALSE(ads_service_->IsNewlySupportedLocale());
 }

@@ -1014,6 +1014,7 @@ void BraveRewardsGetExternalWalletFunction::OnExternalWalet(
     data->SetStringKey("withdrawUrl", wallet->withdraw_url);
     data->SetStringKey("userName", wallet->user_name);
     data->SetStringKey("accountUrl", wallet->account_url);
+    data->SetStringKey("loginUrl", wallet->login_url);
   }
 
   Respond(TwoArguments(
@@ -1084,14 +1085,14 @@ BraveRewardsGetAdsEstimatedEarningsFunction::
 ExtensionFunction::ResponseAction
 BraveRewardsGetAdsEstimatedEarningsFunction::Run() {
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  RewardsService* rewards_service =
-    RewardsServiceFactory::GetForProfile(profile);
+  AdsService* ads_service_ =
+      AdsServiceFactory::GetForProfile(profile);
 
-  if (!rewards_service) {
-    return RespondNow(Error("Rewards service is not initialized"));
+  if (!ads_service_) {
+    return RespondNow(Error("Ads service is not initialized"));
   }
 
-  rewards_service->GetTransactionHistory(base::Bind(
+  ads_service_->GetTransactionHistory(base::Bind(
         &BraveRewardsGetAdsEstimatedEarningsFunction::OnAdsEstimatedEarnings,
         this));
   return RespondLater();
@@ -1171,6 +1172,24 @@ BraveRewardsGetAnonWalletStatusFunction::Run() {
 void BraveRewardsGetAnonWalletStatusFunction::OnGetAnonWalletStatus(
     const uint32_t result) {
   Respond(OneArgument(std::make_unique<base::Value>(static_cast<int>(result))));
+}
+
+BraveRewardsIsInitializedFunction::
+~BraveRewardsIsInitializedFunction() = default;
+
+ExtensionFunction::ResponseAction
+BraveRewardsIsInitializedFunction::Run() {
+  Profile* profile = Profile::FromBrowserContext(browser_context());
+  RewardsService* rewards_service =
+    RewardsServiceFactory::GetForProfile(profile);
+
+  if (!rewards_service) {
+    return RespondNow(Error("Rewards service is not initialized"));
+  }
+
+  const bool initialized = rewards_service->IsInitialized();
+  return RespondNow(
+      OneArgument(std::make_unique<base::Value>(initialized)));
 }
 
 }  // namespace api

@@ -13,18 +13,16 @@
 namespace braveledger_request_util {
 
 enum class ServerTypes {
-  LEDGER,
-  BALANCE,
   kPublisher,
   kPromotion,
   kPayments,
-  kAPI
+  kPrivateCDN
 };
 
 std::string BuildUrl(
     const std::string& path,
-    const std::string& prefix = "",
-    const ServerTypes& server = ServerTypes::LEDGER);
+    const std::string& prefix,
+    const ServerTypes& server);
 
 std::map<std::string, std::string> GetSignHeaders(
     const std::string& url,

@@ -31,7 +31,7 @@ export const defaultState: Rewards.State = {
     modalRedirect: 'hide',
     paymentIdCheck: true,
     walletCorrupted: false,
-    walletRecoverySuccess: null,
+    walletRecoveryStatus: null,
     walletServerProblem: false,
     onBoardingDisplayed: false
   },
@@ -45,6 +45,9 @@ export const defaultState: Rewards.State = {
   adsData: {
     adsEnabled: false,
     adsPerHour: 0,
+    adsSubdivisionTargeting: '',
+    automaticallyDetectedAdsSubdivisionTargeting: '',
+    shouldAllowAdsSubdivisionTargeting: true,
     adsUIEnabled: false,
     adsIsSupported: false,
     adsEstimatedPendingRewards: 0,
@@ -75,7 +78,8 @@ export const defaultState: Rewards.State = {
     autoContributeChoice: 0,
     autoContributeChoices: [],
     rate: 0
-  }
+  },
+  initializing: true
 }
 
 const cleanData = (state: Rewards.State) => {
@@ -96,6 +100,7 @@ export const load = (): Rewards.State => {
   if (data) {
     try {
       state = JSON.parse(data)
+      state.initializing = true
     } catch (e) {
       console.error('Could not parse local storage data: ', e)
     }

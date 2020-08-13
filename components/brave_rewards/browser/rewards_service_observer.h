@@ -34,8 +34,7 @@ class RewardsServiceObserver : public base::CheckedObserver {
       const std::vector<Promotion>& list) {}
   virtual void OnRecoverWallet(
       RewardsService* rewards_service,
-      unsigned int result,
-      double balance) {}
+      const int32_t result) {}
   virtual void OnPromotionFinished(
       RewardsService* rewards_service,
       const uint32_t result,
@@ -51,7 +50,8 @@ class RewardsServiceObserver : public base::CheckedObserver {
       unsigned int result,
       const std::string& contribution_id,
       const double amount,
-      const int32_t type) {}
+      const int32_t type,
+      const int32_t processor) {}
   virtual void OnAdsEnabled(
       brave_rewards::RewardsService* rewards_service,
       bool ads_enabled) {}
@@ -82,6 +82,7 @@ class RewardsServiceObserver : public base::CheckedObserver {
   virtual void OnUnblindedTokensReady(
       brave_rewards::RewardsService* rewards_service) {}
   virtual void ReconcileStampReset() {}
+  virtual void OnCompleteReset(const bool success) {}
   // DO NOT ADD ANY MORE METHODS HERE UNLESS IT IS A BROADCAST NOTIFICATION
   // RewardsServiceObserver should not be used to return responses to the
   // caller. Method calls on RewardsService should use callbacks to return

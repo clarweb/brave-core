@@ -11,12 +11,14 @@
 #include <string>
 #include <vector>
 
+#include "base/callback_forward.h"
 #include "base/macros.h"
 #include "base/observer_list.h"
 #include "brave/components/brave_rewards/browser/auto_contribution_props.h"
 #include "brave/components/brave_rewards/browser/balance.h"
 #include "brave/components/brave_rewards/browser/balance_report.h"
 #include "brave/components/brave_rewards/browser/content_site.h"
+#include "brave/components/brave_rewards/browser/contribution_info.h"
 #include "brave/components/brave_rewards/browser/external_wallet.h"
 #include "brave/components/brave_rewards/browser/publisher_banner.h"
 #include "brave/components/brave_rewards/browser/pending_contribution.h"
@@ -32,11 +34,6 @@
 
 class PrefRegistrySimple;
 class Profile;
-
-namespace ads {
-struct IssuersInfo;
-struct AdNotificationInfo;
-}
 
 namespace content {
 class NavigationHandle;
@@ -67,8 +64,6 @@ using GetReconcileStampCallback = base::Callback<void(uint64_t)>;
 using IsWalletCreatedCallback = base::Callback<void(bool)>;
 using GetPendingContributionsTotalCallback = base::Callback<void(double)>;
 using GetRewardsMainEnabledCallback = base::Callback<void(bool)>;
-using GetTransactionHistoryCallback =
-    base::OnceCallback<void(double, uint64_t, uint64_t)>;
 using GetRewardsInternalsInfoCallback = base::OnceCallback<void(
     std::unique_ptr<brave_rewards::RewardsInternalsInfo>)>;
 using SaveRecurringTipCallback = base::OnceCallback<void(bool)>;
@@ -119,6 +114,9 @@ using GetMonthlyReportCallback = base::OnceCallback<void(
 using GetAllMonthlyReportIdsCallback =
     base::OnceCallback<void(const std::vector<std::string>&)>;
 
+using GetAllContributionsCallback = base::OnceCallback<void(
+    const std::vector<brave_rewards::ContributionInfo>&)>;
+
 using GetAllPromotionsCallback =
     base::OnceCallback<void(const std::vector<brave_rewards::Promotion>&)>;
 
@@ -129,10 +127,14 @@ using LoadDiagnosticLogCallback = base::OnceCallback<void(const std::string&)>;
 
 using ClearDiagnosticLogCallback = base::OnceCallback<void(const bool success)>;
 
+using SuccessCallback = base::OnceCallback<void(const bool success)>;
+
 class RewardsService : public KeyedService {
  public:
   RewardsService();
   ~RewardsService() override;
+
+  virtual bool IsInitialized() = 0;
 
   virtual void CreateWallet(CreateWalletCallback callback) = 0;
   virtual void GetRewardsParameters(GetRewardsParametersCallback callback) = 0;
@@ -197,8 +199,6 @@ class RewardsService : public KeyedService {
   virtual void GetAutoContributeEnabled(
       GetAutoContributeEnabledCallback callback) = 0;
   virtual void SetAutoContributeEnabled(bool enabled) = 0;
-  virtual void UpdateAdsRewards() const = 0;
-  virtual void SetTimer(uint64_t time_offset, uint32_t* timer_id) = 0;
   virtual void GetBalanceReport(
       const uint32_t month,
       const uint32_t year,
@@ -239,25 +239,12 @@ class RewardsService : public KeyedService {
     const GetPendingContributionsTotalCallback& callback) = 0;
   virtual void GetRewardsMainEnabled(
     const GetRewardsMainEnabledCallback& callback) const = 0;
-  // TODO(Terry Mancey): remove this hack when ads is moved to the same process
-  // as ledger
-  virtual void SetCatalogIssuers(
-      const std::string& json) = 0;
-  virtual void ConfirmAd(
-      const std::string& json,
-      const std::string& confirmation_type) = 0;
-  virtual void ConfirmAction(
-      const std::string& creative_instance_id,
-      const std::string& creative_set_id,
-      const std::string& confirmation_type) = 0;
   virtual void GetRewardsInternalsInfo(
       GetRewardsInternalsInfoCallback callback) = 0;
   virtual void AddPrivateObserver(
       RewardsServicePrivateObserver* observer) = 0;
   virtual void RemovePrivateObserver(
       RewardsServicePrivateObserver* observer) = 0;
-  virtual void GetTransactionHistory(
-      GetTransactionHistoryCallback callback) = 0;
   virtual void OnAdsEnabled(bool ads_enabled) = 0;
 
   virtual void RefreshPublisher(
@@ -269,8 +256,6 @@ class RewardsService : public KeyedService {
 
   virtual void RemovePendingContribution(const uint64_t id) = 0;
   virtual void RemoveAllPendingContributions() = 0;
-  virtual void ResetTheWholeState(
-      const base::Callback<void(bool)>& callback) = 0;
 
   void AddObserver(RewardsServiceObserver* observer);
   void RemoveObserver(RewardsServiceObserver* observer);
@@ -327,6 +312,9 @@ class RewardsService : public KeyedService {
   virtual void GetAllMonthlyReportIds(
       GetAllMonthlyReportIdsCallback callback) = 0;
 
+  virtual void GetAllContributions(
+      GetAllContributionsCallback callback) = 0;
+
   virtual void GetAllPromotions(
       GetAllPromotionsCallback callback) = 0;
 
@@ -342,6 +330,8 @@ class RewardsService : public KeyedService {
 
   virtual void ClearDiagnosticLog(
       ClearDiagnosticLogCallback callback) = 0;
+
+  virtual void CompleteReset(SuccessCallback callback) = 0;
 
  protected:
   base::ObserverList<RewardsServiceObserver> observers_;

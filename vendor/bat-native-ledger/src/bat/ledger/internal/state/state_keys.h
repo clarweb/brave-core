@@ -10,8 +10,8 @@
 
 namespace ledger {
   const char kStateEnabled[] = "enabled";
-  const char kStateServerPublisherListStamp[] = "server_publisher_list_stamp";
-  const char kStateUpholdAnonAddress[] = "uphold_anon_address";
+  const char kStateServerPublisherListStamp[] = "publisher_prefix_list_stamp";
+  const char kStateUpholdAnonAddress[] = "uphold_anon_address";  // DEPRECATED
   const char kStatePromotionLastFetchStamp[] = "promotion_last_fetch_stamp";
   const char kStatePromotionCorruptedMigrated[] =
       "promotion_corrupted_migrated2";
@@ -29,7 +29,6 @@ namespace ledger {
   const char kStateAutoContributeAmount[] = "ac.amount";
   const char kStateNextReconcileStamp[] = "ac.next_reconcile_stamp";
   const char kStateCreationStamp[] = "creation_stamp";
-  const char kStateAnonymousCardId[] = "wallet.anonymous_card_id";
   const char kStateRecoverySeed[] = "wallet.seed";
   const char kStatePaymentId[] = "wallet.payment_id";
   const char kStateInlineTipRedditEnabled[] = "inline_tip.reddit";
@@ -42,6 +41,7 @@ namespace ledger {
   const char kStateParametersMonthlyTipChoices[] =
       "parameters.tip.monthly_choices";
   const char kStateFetchOldBalance[] = "fetch_old_balance";
+const char kStateEmptyBalanceChecked[] ="empty_balance_checked";
 
 }  // namespace ledger
 

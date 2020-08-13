@@ -11,10 +11,11 @@
 #include <string>
 #include <utility>
 
-#include "bat/ads/ads.h"
+#include "base/memory/weak_ptr.h"
 #include "brave/components/services/bat_ads/public/interfaces/bat_ads.mojom.h"
 #include "mojo/public/cpp/bindings/interface_request.h"
-#include "base/memory/weak_ptr.h"
+#include "bat/ads/ads.h"
+#include "bat/ads/statement_info.h"
 
 namespace ads {
 class Ads;
@@ -41,13 +42,14 @@ class BatAdsImpl :
   void Shutdown(
       ShutdownCallback callback) override;
 
-  void SetConfirmationsIsReady(
-      const bool is_ready) override;
-
   void ChangeLocale(
       const std::string& locale) override;
 
+  void OnAdsSubdivisionTargetingCodeHasChanged() override;
+
   void OnPageLoaded(
+      const int32_t tab_id,
+      const std::string& original_url,
       const std::string& url,
       const std::string& html) override;
 
@@ -66,6 +68,7 @@ class BatAdsImpl :
       const int32_t tab_id,
       const std::string& url,
       const bool is_active,
+      const bool is_browser_active,
       const bool is_incognito) override;
   void OnTabClosed(
       const int32_t tab_id) override;
@@ -80,10 +83,20 @@ class BatAdsImpl :
   void RemoveAllHistory(
       RemoveAllHistoryCallback callback) override;
 
+  void OnWalletUpdated(
+      const std::string& payment_id,
+      const std::string& recovery_seed_base64) override;
+
+  void UpdateAdRewards(
+      const bool should_reconcile) override;
+
   void GetAdsHistory(
       const uint64_t from_timestamp,
       const uint64_t to_timestamp,
       GetAdsHistoryCallback callback) override;
+
+  void GetTransactionHistory(
+      GetTransactionHistoryCallback callback) override;
 
   void ToggleAdThumbUp(
       const std::string& creative_instance_id,
@@ -113,6 +126,9 @@ class BatAdsImpl :
       const std::string& creative_set_id,
       const bool flagged,
       ToggleFlagAdCallback callback) override;
+
+  void OnUserModelUpdated(
+      const std::string& id) override;
 
  private:
   // Workaround to pass base::OnceCallback into std::bind
@@ -148,6 +164,10 @@ class BatAdsImpl :
   static void OnRemoveAllHistory(
       CallbackHolder<RemoveAllHistoryCallback>* holder,
       const int32_t result);
+
+  static void OnGetTransactionHistory(
+    CallbackHolder<GetTransactionHistoryCallback>* holder,
+    const ads::StatementInfo& statement);
 
   std::unique_ptr<BatAdsClientMojoBridge> bat_ads_client_mojo_proxy_;
   std::unique_ptr<ads::Ads> ads_;

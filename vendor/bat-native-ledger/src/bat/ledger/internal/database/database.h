@@ -18,6 +18,10 @@ namespace bat_ledger {
 class LedgerImpl;
 }
 
+namespace braveledger_publisher {
+class PrefixListReader;
+}
+
 namespace braveledger_database {
 
 class DatabaseInitialize;
@@ -32,6 +36,7 @@ class DatabasePendingContribution;
 class DatabaseProcessedPublisher;
 class DatabasePromotion;
 class DatabasePublisherInfo;
+class DatabasePublisherPrefixList;
 class DatabaseRecurringTip;
 class DatabaseServerPublisherInfo;
 class DatabaseSKUOrder;
@@ -41,7 +46,7 @@ class DatabaseUnblindedToken;
 class Database {
  public:
   explicit Database(bat_ledger::LedgerImpl* ledger);
-  ~Database();
+  virtual ~Database();
 
   void Initialize(
       const bool execute_create_script,
@@ -137,6 +142,8 @@ class Database {
 
   void GetAllContributions(ledger::ContributionInfoListCallback callback);
 
+  void FinishAllInProgressContributions(ledger::ResultCallback callback);
+
   /**
    * CONTRIBUTION QUEUE
    */
@@ -167,7 +174,7 @@ class Database {
       ledger::CredsBatchPtr info,
       ledger::ResultCallback callback);
 
-  void GetAllCredsBatches(ledger::GetAllCredsBatchCallback callback);
+  void GetAllCredsBatches(ledger::GetCredsBatchListCallback callback);
 
   void UpdateCredsBatchStatus(
       const std::string& trigger_id,
@@ -180,6 +187,10 @@ class Database {
       const ledger::CredsBatchType trigger_type,
       const ledger::CredsBatchStatus status,
       ledger::ResultCallback callback);
+
+  void GetCredsBatchesByTriggers(
+      const std::vector<std::string>& trigger_ids,
+      ledger::GetCredsBatchListCallback callback);
 
   /**
    * MEDIA PUBLISHER INFO
@@ -235,7 +246,7 @@ class Database {
   /**
    * PROMOTION
    */
-  void SavePromotion(
+  virtual void SavePromotion(
       ledger::PromotionPtr info,
       ledger::ResultCallback callback);
 
@@ -243,11 +254,7 @@ class Database {
       const std::string& id,
       ledger::GetPromotionCallback callback);
 
-  void GetAllPromotions(ledger::GetAllPromotionsCallback callback);
-
-  void DeletePromotionList(
-      const std::vector<std::string>& ids,
-      ledger::ResultCallback callback);
+  virtual void GetAllPromotions(ledger::GetAllPromotionsCallback callback);
 
   void SavePromotionClaimId(
       const std::string& promotion_id,
@@ -315,14 +322,20 @@ class Database {
   /**
    * SERVER PUBLISHER INFO
    */
-  void ClearServerPublisherList(ledger::ResultCallback callback);
+  void SearchPublisherPrefixList(
+      const std::string& publisher_key,
+      ledger::SearchPublisherPrefixListCallback callback);
 
-  void InsertServerPublisherList(
-      const std::vector<ledger::ServerPublisherPartial>& list,
+  void ResetPublisherPrefixList(
+      std::unique_ptr<braveledger_publisher::PrefixListReader> reader,
       ledger::ResultCallback callback);
 
-  void InsertPublisherBannerList(
-      const std::vector<ledger::PublisherBanner>& list,
+  void InsertServerPublisherInfo(
+      const ledger::ServerPublisherInfo& server_info,
+      ledger::ResultCallback callback);
+
+  void DeleteExpiredServerPublisherInfo(
+      const int64_t max_age_seconds,
       ledger::ResultCallback callback);
 
   void GetServerPublisherInfo(
@@ -375,14 +388,27 @@ class Database {
       ledger::UnblindedTokenList list,
       ledger::ResultCallback callback);
 
-  void MarkUblindedTokensAsSpent(
+  void MarkUnblindedTokensAsSpent(
       const std::vector<std::string>& ids,
       ledger::RewardsType redeem_type,
       const std::string& redeem_id,
       ledger::ResultCallback callback);
 
+  void MarkUnblindedTokensAsReserved(
+      const std::vector<std::string>& ids,
+      const std::string& redeem_id,
+      ledger::ResultCallback callback);
+
+  void MarkUnblindedTokensAsSpendable(
+      const std::string& redeem_id,
+      ledger::ResultCallback callback);
+
   void GetSpendableUnblindedTokensByTriggerIds(
       const std::vector<std::string>& trigger_ids,
+      ledger::GetUnblindedTokenListCallback callback);
+
+  void GetReservedUnblindedTokens(
+      const std::string& redeem_id,
       ledger::GetUnblindedTokenListCallback callback);
 
   void GetSpendableUnblindedTokensByBatchTypes(
@@ -402,6 +428,7 @@ class Database {
   std::unique_ptr<DatabaseMediaPublisherInfo> media_publisher_info_;
   std::unique_ptr<DatabaseMultiTables> multi_tables_;
   std::unique_ptr<DatabasePublisherInfo> publisher_info_;
+  std::unique_ptr<DatabasePublisherPrefixList> publisher_prefix_list_;
   std::unique_ptr<DatabaseRecurringTip> recurring_tip_;
   std::unique_ptr<DatabaseServerPublisherInfo> server_publisher_info_;
   std::unique_ptr<DatabaseSKUOrder> sku_order_;

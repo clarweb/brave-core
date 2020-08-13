@@ -14,12 +14,14 @@ const isDarkTheme = (p: any) => {
 }
 
 export const SettingsMenu = styled<Props, 'div'>('div')`
-  width: 680px;
+  width: 720px;
+  min-width: 720px;
   ${p => p.textDirection && (p.textDirection === 'rtl') ? `left: 12px` : `right: 12px`}
   background-color: ${p => p.theme.color.contextMenuBackground};
   color:  ${p => p.theme.color.contextMenuForeground};
   border-radius: 8px;
   padding: 24px;
+  padding-bottom: 0px;
   box-shadow: 0px 4px 24px 0px rgba(0, 0, 0, 0.24);
   font-family: ${p => p.theme.fontFamily.body};
 `
@@ -27,7 +29,7 @@ export const SettingsMenu = styled<Props, 'div'>('div')`
 export const SettingsContent = styled<{}, 'div'>('div')`
   display: grid;
   grid-template-columns: auto 1fr;
-  grid-gap: 40px;
+  grid-gap: 20px;
 
   @media screen and (max-width: 1150px) {
     grid-gap: 0px;
@@ -112,6 +114,7 @@ export const SettingsSidebarButtonText = styled<{ isActive: boolean }, 'span'>('
   position: relative;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-transform: capitalize;
 
   transition: opacity var(--sidebar-button-transition-timing) ease-in-out,
               color var(--sidebar-button-transition-timing) ease-in-out;
@@ -179,10 +182,21 @@ export const SettingsSidebarButton = styled<SettingsSidebarButtonProps, 'button'
       color: ${p => p.theme.color.brandBrave};
     }
   }
+
+  &:active {
+    outline: none;
+  }
+
+  &:focus {
+    outline-color: ${p => p.theme.color.brandBrave};
+    outline-width: 1px;
+  }
 `
 
 export const SettingsFeatureBody = styled<{}, 'section'>('section')`
-  padding: 10px 16px 0;
+  padding: 10px 0;
+  height: 360px;
+  overflow-y: scroll;
 `
 
 export const SettingsTitle = styled<{}, 'div'>('div')`
@@ -268,8 +282,84 @@ export const SettingsWrapper = styled<SettingsWrapperProps, 'div'>('div')`
   margin-left: ${p => p.textDirection === 'rtl' && '8px'};
   border-right: ${p => p.textDirection === 'ltr' && '1px solid rgba(255, 255, 255, 0.6)'};
   border-left: ${p => p.textDirection === 'rtl' && '1px solid rgba(255, 255, 255, 0.6)'};
+  background: rgba(33, 37, 41, 0.32);
 
   &:hover {
     color: #ffffff;
   }
+`
+
+export const SettingsWidget = styled<{}, 'div'>('div')`
+  float: left;
+  width: 48%;
+  margin-top: 20px;
+`
+
+export const StyledWidgetSettings = styled<{}, 'div'>('div')`
+  font-family: ${p => p.theme.fontFamily.heading};
+
+  ${SettingsWidget}:nth-child(even) {
+    margin-right: 17px;
+  }
+`
+
+export const FeaturedSettingsWidget = styled<{}, 'div'>('div')`
+  width: 100%;
+`
+
+export const StyledBannerImage = styled<{}, 'img'>('img')`
+  width: 100%;
+  margin-bottom: 10px;
+`
+
+export const StyledSettingsInfo = styled<{}, 'div'>('div')`
+  float: left;
+  max-width: 250px;
+`
+
+export const StyledSettingsTitle = styled<{}, 'div'>('div')`
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 5px;
+`
+
+export const StyledSettingsCopy = styled<{}, 'div'>('div')`
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 17px;
+`
+
+interface WidgetToggleProps {
+  isAdd: boolean
+  float: boolean
+}
+
+export const StyledWidgetToggle = styled<WidgetToggleProps, 'button'>('button')`
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 10px 25px;
+  border-radius: 100px;
+  float: ${p => p.float ? 'right' : 'none'};
+  margin-right: ${p => p.float ? 10 : 0}px;
+  border: none;
+  margin-top: 8px;
+  cursor: pointer;
+  background: ${p => p.isAdd ? '#FB542B' : '#212529'};
+`
+
+export const StyledButtonIcon = styled<{}, 'div'>('div')`
+  display: inline-block;
+  vertical-align: sub;
+  margin-right: 5px;
+  height: 20px;
+  width: 20px;
+`
+
+export const StyledButtonLabel = styled<{}, 'span'>('span')`
+  max-width: 100px;
+  text-overflow: ellipsis;
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
 `

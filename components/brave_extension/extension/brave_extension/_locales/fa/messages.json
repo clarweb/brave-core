@@ -55,6 +55,18 @@
     "message": "ردیاب‌های بین سایتی مسدود شدند",
     "description": "Message for the scripts blocked row label"
   },
+  "aggressiveAdsTrackersBlocking": {
+    "message": "ردیاب‌ها و آگهی‌ها مسدود شده‌اند (تهاجمی)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with aggressive heuristics"
+  },
+  "standardAdsTrackersBlocking": {
+    "message": "ردیاب‌ها و آگهی‌ها مسدود شده‌اند (استاندارد)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with standard heuristics"
+  },
+  "allowAdsTrackers": {
+    "message": "مجاز بودن همه ردیاب‌ها و آگهی‌ها",
+    "description": "Message for the option in the ads and trackers blocking select field to allow all ads and trackers"
+  },
   "connectionsUpgradedHTTPS": {
     "message": "اتصال‌ها به HTTPS ارتقا داده شدند",
     "description": "Message for the connections upgraded row label and for the main blocked resources text when there is more than one connection upgraded (plural) and no other ads/trackers blocked"
@@ -79,16 +91,16 @@
     "message": "همه کوکی‌ها مجاز هستند",
     "description": "Message for the option in the cookies select field to allow all cookies"
   },
-  "thirdPartyFingerprintingBlocked": {
-    "message": "تشخیص اثر انگشت بین سایتی مسدود شد",
+  "standardFingerprinting": {
+    "message": "تشخیص اثر انگشت مسدود شد (استاندارد)",
     "description": "Message for the option in the fingerprinting select field to block all 3rd party recognition attempts"
   },
-  "allFingerprintingBlocked": {
-    "message": "تلاش‌های تشخیص اثر انگشت مسدود شدند",
+  "strictFingerprinting": {
+    "message": "تشخیص اثر انگشت مسدود شد (شدید، ممکن است منجر به خرابی سایت‌ها شود)",
     "description": "Message for the option in the fingerprinting select field to block all fingerprinting attempts"
   },
-  "allFingerprintingAllowed": {
-    "message": "همه تلاش‌های تشخیص اثر انگشت مجاز شدند",
+  "allowAllFingerprinting": {
+    "message": "مجاز بودن انواع انگشت‌نگاری",
     "description": "Message for the option in the fingerprinting select field to allow all fingerprinting attempts"
   },
   "deviceRecognitionAttempts": {

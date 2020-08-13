@@ -27,7 +27,9 @@
 #include "components/permissions/test/mock_permission_prompt_factory.h"
 #include "components/prefs/pref_service.h"
 #include "content/public/browser/render_frame_host.h"
+#include "content/public/test/browser_test.h"
 #include "content/public/test/browser_test_utils.h"
+#include "media/base/media_switches.h"
 #include "net/dns/mock_host_resolver.h"
 
 const char kVideoPlaying[] = "Video playing";
@@ -36,7 +38,7 @@ const char kVideoPlayingDetect[] =
     "textContent);";
 const char kEmbeddedTestServerDirectory[] = "autoplay";
 
-class AutoplayPermissionContextBrowserTest : public MediaBrowserTest {
+class AutoplayPermissionContextBrowserTest : public InProcessBrowserTest {
  public:
   void SetUpOnMainThread() override {
     InProcessBrowserTest::SetUpOnMainThread();
@@ -149,9 +151,10 @@ IN_PROC_BROWSER_TEST_F(AutoplayPermissionContextBrowserTest, AskAutoplay) {
   std::string result;
   AskAutoplay();
   permissions::PermissionRequestManager* manager =
-    permissions::PermissionRequestManager::FromWebContents(contents());
+      permissions::PermissionRequestManager::FromWebContents(contents());
 
   NavigateToURLUntilLoadStop(autoplay_method_url());
+  // should prompt
   EXPECT_TRUE(manager->IsRequestInProgress());
   EXPECT_TRUE(
       ExecuteScriptAndExtractString(contents(), kVideoPlayingDetect, &result));
@@ -168,46 +171,48 @@ IN_PROC_BROWSER_TEST_F(AutoplayPermissionContextBrowserTest,
       permissions::PermissionRequestManager::FromWebContents(contents());
 
   NavigateToURLUntilLoadStop(autoplay_method_muted_url());
+  // should prompt
   EXPECT_TRUE(manager->IsRequestInProgress());
   EXPECT_TRUE(
       ExecuteScriptAndExtractString(contents(), kVideoPlayingDetect, &result));
   EXPECT_NE(result, kVideoPlaying);
 }
 
-// If content setting = ALLOW, all videos that upstream would autoplay should
-// autoplay. (Per new upstream rules, they may play muted by default. This test
-// does not verify that.)
 IN_PROC_BROWSER_TEST_F(AutoplayPermissionContextBrowserTest, AllowAutoplay) {
   std::string result;
   AllowAutoplay();
   permissions::PermissionRequestManager* manager =
-    permissions::PermissionRequestManager::FromWebContents(contents());
+      permissions::PermissionRequestManager::FromWebContents(contents());
   auto popup_prompt_factory =
       std::make_unique<permissions::MockPermissionPromptFactory>(manager);
 
   EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
 
   NavigateToURLUntilLoadStop(autoplay_method_url());
+  // should not prompt
   EXPECT_FALSE(popup_prompt_factory->is_visible());
   EXPECT_FALSE(popup_prompt_factory->RequestTypeSeen(
       permissions::PermissionRequestType::PERMISSION_AUTOPLAY));
   EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
-  WaitForPlaying(autoplay_method_url());
   EXPECT_TRUE(
       ExecuteScriptAndExtractString(contents(), kVideoPlayingDetect, &result));
-  EXPECT_EQ(result, kVideoPlaying);
+  // should fail to play because a user gesture is required and we're not
+  // simulating one when calling the play() method
+  EXPECT_NE(result, kVideoPlaying);
 
   result.clear();
 
   NavigateToURLUntilLoadStop(autoplay_attr_url());
+  // should not prompt
   EXPECT_FALSE(popup_prompt_factory->is_visible());
   EXPECT_FALSE(popup_prompt_factory->RequestTypeSeen(
       permissions::PermissionRequestType::PERMISSION_AUTOPLAY));
   EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
-  WaitForPlaying(autoplay_attr_url());
   EXPECT_TRUE(
       ExecuteScriptAndExtractString(contents(), kVideoPlayingDetect, &result));
-  EXPECT_EQ(result, kVideoPlaying);
+  // should fail to play because a user gesture is required, so autoplay
+  // attribute will be ignored
+  EXPECT_NE(result, kVideoPlaying);
 }
 
 // If content setting = BLOCK, ignore play() method call and do not show
@@ -217,19 +222,21 @@ IN_PROC_BROWSER_TEST_F(AutoplayPermissionContextBrowserTest,
   std::string result;
   BlockAutoplay();
   permissions::PermissionRequestManager* manager =
-    permissions::PermissionRequestManager::FromWebContents(contents());
+      permissions::PermissionRequestManager::FromWebContents(contents());
   auto popup_prompt_factory =
       std::make_unique<permissions::MockPermissionPromptFactory>(manager);
 
   EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
 
   NavigateToURLUntilLoadStop(autoplay_method_url());
+  // should not prompt
   EXPECT_FALSE(popup_prompt_factory->is_visible());
   EXPECT_FALSE(popup_prompt_factory->RequestTypeSeen(
       permissions::PermissionRequestType::PERMISSION_AUTOPLAY));
   EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
   EXPECT_TRUE(
       ExecuteScriptAndExtractString(contents(), kVideoPlayingDetect, &result));
+  // should not play
   EXPECT_NE(result, kVideoPlaying);
 }
 
@@ -240,17 +247,19 @@ IN_PROC_BROWSER_TEST_F(AutoplayPermissionContextBrowserTest,
   std::string result;
   BlockAutoplay();
   permissions::PermissionRequestManager* manager =
-    permissions::PermissionRequestManager::FromWebContents(contents());
+      permissions::PermissionRequestManager::FromWebContents(contents());
   auto popup_prompt_factory =
       std::make_unique<permissions::MockPermissionPromptFactory>(manager);
 
   NavigateToURLUntilLoadStop(autoplay_attr_url());
+  // should not prompt
   EXPECT_FALSE(popup_prompt_factory->is_visible());
   EXPECT_FALSE(popup_prompt_factory->RequestTypeSeen(
       permissions::PermissionRequestType::PERMISSION_AUTOPLAY));
   EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
   EXPECT_TRUE(
       ExecuteScriptAndExtractString(contents(), kVideoPlayingDetect, &result));
+  // should not play
   EXPECT_NE(result, kVideoPlaying);
 }
 
@@ -261,19 +270,21 @@ IN_PROC_BROWSER_TEST_F(AutoplayPermissionContextBrowserTest,
   std::string result;
   BlockAutoplay();
   permissions::PermissionRequestManager* manager =
-    permissions::PermissionRequestManager::FromWebContents(contents());
+      permissions::PermissionRequestManager::FromWebContents(contents());
   auto popup_prompt_factory =
       std::make_unique<permissions::MockPermissionPromptFactory>(manager);
 
   EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
 
   NavigateToURLUntilLoadStop(autoplay_method_url());
+  // should not prompt
   EXPECT_FALSE(popup_prompt_factory->is_visible());
   EXPECT_FALSE(popup_prompt_factory->RequestTypeSeen(
       permissions::PermissionRequestType::PERMISSION_AUTOPLAY));
   EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
   EXPECT_TRUE(
       ExecuteScriptAndExtractString(contents(), kVideoPlayingDetect, &result));
+  // should not play
   EXPECT_NE(result, kVideoPlaying);
 }
 
@@ -291,17 +302,71 @@ IN_PROC_BROWSER_TEST_F(AutoplayPermissionContextBrowserTest,
   EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
 
   NavigateToURLUntilLoadStop(autoplay_attr_url());
+  // should not prompt
   EXPECT_FALSE(popup_prompt_factory->is_visible());
   EXPECT_FALSE(popup_prompt_factory->RequestTypeSeen(
       permissions::PermissionRequestType::PERMISSION_AUTOPLAY));
   EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
   EXPECT_TRUE(
       ExecuteScriptAndExtractString(contents(), kVideoPlayingDetect, &result));
+  // should not play
   EXPECT_NE(result, kVideoPlaying);
 }
 
+class AutoplayNoUserGestureRequiredBrowserTest
+    : public AutoplayPermissionContextBrowserTest {
+ public:
+  void SetUpCommandLine(base::CommandLine* command_line) override {
+    InProcessBrowserTest::SetUpCommandLine(command_line);
+    command_line->AppendSwitchASCII(
+        switches::kAutoplayPolicy,
+        switches::autoplay::kNoUserGestureRequiredPolicy);
+  }
+};
+
+// If content setting = ALLOW, all videos that upstream would autoplay should
+// autoplay. (Per new upstream rules, they may play muted by default. This test
+// does not verify that.)
+IN_PROC_BROWSER_TEST_F(AutoplayNoUserGestureRequiredBrowserTest,
+                       AllowAutoplay) {
+  std::string result;
+  AllowAutoplay();
+  permissions::PermissionRequestManager* manager =
+      permissions::PermissionRequestManager::FromWebContents(contents());
+  auto popup_prompt_factory =
+      std::make_unique<permissions::MockPermissionPromptFactory>(manager);
+
+  EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
+
+  NavigateToURLUntilLoadStop(autoplay_method_url());
+  // should not prompt
+  EXPECT_FALSE(popup_prompt_factory->is_visible());
+  EXPECT_FALSE(popup_prompt_factory->RequestTypeSeen(
+      permissions::PermissionRequestType::PERMISSION_AUTOPLAY));
+  EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
+  WaitForPlaying(autoplay_method_url());
+  EXPECT_TRUE(
+      ExecuteScriptAndExtractString(contents(), kVideoPlayingDetect, &result));
+  // should play
+  EXPECT_EQ(result, kVideoPlaying);
+
+  result.clear();
+
+  NavigateToURLUntilLoadStop(autoplay_attr_url());
+  // should not prompt
+  EXPECT_FALSE(popup_prompt_factory->is_visible());
+  EXPECT_FALSE(popup_prompt_factory->RequestTypeSeen(
+      permissions::PermissionRequestType::PERMISSION_AUTOPLAY));
+  EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
+  WaitForPlaying(autoplay_attr_url());
+  EXPECT_TRUE(
+      ExecuteScriptAndExtractString(contents(), kVideoPlayingDetect, &result));
+  // should play
+  EXPECT_EQ(result, kVideoPlaying);
+}
+
 // Default allow autoplay on file urls
-IN_PROC_BROWSER_TEST_F(AutoplayPermissionContextBrowserTest, FileAutoplay) {
+IN_PROC_BROWSER_TEST_F(AutoplayNoUserGestureRequiredBrowserTest, FileAutoplay) {
   std::string result;
   permissions::PermissionRequestManager* manager =
       permissions::PermissionRequestManager::FromWebContents(contents());
@@ -311,22 +376,26 @@ IN_PROC_BROWSER_TEST_F(AutoplayPermissionContextBrowserTest, FileAutoplay) {
   EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
 
   NavigateToURLUntilLoadStop(file_autoplay_method_url());
+  // should not prompt
   EXPECT_FALSE(popup_prompt_factory->is_visible());
   EXPECT_FALSE(popup_prompt_factory->RequestTypeSeen(
       permissions::PermissionRequestType::PERMISSION_AUTOPLAY));
   EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
   EXPECT_TRUE(
       ExecuteScriptAndExtractString(contents(), kVideoPlayingDetect, &result));
+  // should play
   EXPECT_EQ(result, kVideoPlaying);
 
   result.clear();
 
   NavigateToURLUntilLoadStop(file_autoplay_attr_url());
+  // should not prompt
   EXPECT_FALSE(popup_prompt_factory->is_visible());
   EXPECT_FALSE(popup_prompt_factory->RequestTypeSeen(
       permissions::PermissionRequestType::PERMISSION_AUTOPLAY));
   EXPECT_EQ(0, popup_prompt_factory->TotalRequestCount());
   EXPECT_TRUE(
       ExecuteScriptAndExtractString(contents(), kVideoPlayingDetect, &result));
+  // should play
   EXPECT_EQ(result, kVideoPlaying);
 }

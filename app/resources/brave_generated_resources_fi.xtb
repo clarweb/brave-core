@@ -9,9 +9,8 @@
 <translation id="2445484935443597917">Luo uusi profiili</translation>
 <translation id="2666990579225592931">Avaa vierasikkuna</translation>
 <translation id="120759863357279975"><ph name="EXTENSION_NAME"/> (extension ID "<ph name="EXTENSION_ID"/>") ei ole sallittu Bravessa.</translation>
-<translation id="7450557937477381864">Sulje Chrome</translation>
-<translation id="7008934821596358692">Sulje kaikki Chrome-ikkunat lopettaaksesi tuonnin.</translation>
 <translation id="6786747875388722282">Laajennukset</translation>
+<translation id="984275831282074731">Maksutavat</translation>
 <translation id="3699882589215410581">Asenna ja suorita Widevine</translation>
 <translation id="8926389886865778422">Älä kysy uudestaan</translation>
 <translation id="4726634924419692905">Kysy, jos sivusto tahtoo asentaa Widevinen tietokoneellesi.</translation>
@@ -22,7 +21,6 @@
 <translation id="8410111618231938546">Google Widevine on osa digitaalisen käyttöoikeuksien hallinnan (DRM) koodia, jota me Brave Softwarella emme omista tai voi tarkkailla. Google Widevine -koodi ladataan Googlen palvelimilta, ei meidän palvelimiltamme. Se ladataan vain, kun sallit tämän vaihtoehdon. Emme suosittele DRM:n käyttöä, mutta kunnioitamme käyttäjiemme valintaa ja tiedostamme, että jotkut Braven käyttäjät saattavat haluta käyttää palveluita, jotka vaativat sitä.
 
 Asentamalla tämän laajennuksen hyväksyt Google Widevinen käyttöehdot. Hyväksyt, että Brave ei ole vastuussa mistään vahingoista tai menetyksistä, jotka liittyvät Google Widevinen käyttöön.</translation>
-<translation id="453977518730680921">Toista media automaattisesti</translation>
 <translation id="410351446219883937">Toista automaattisesti</translation>
 <translation id="2240268017737062801">Kysy, kun sivusto haluaa toistaa mediaa automaattisesti</translation>
 <translation id="3371702087847741961">Kysy, kun sivusto haluaa toistaa mediaa automaattisesti (suositeltu)</translation>
@@ -39,11 +37,14 @@ Asentamalla tämän laajennuksen hyväksyt Google Widevinen käyttöehdot. Hyvä
 <translation id="7635711399568194460">Piilottaa Brave Rewards -painikkeen sijaintipalkissa, kun Brave Rewards ei ole sallittu</translation>
 <translation id="1520361618554057102">Näytä aina kirjanmerkit Uusi välilehti -sivulla</translation>
 <translation id="5802665280774361839">Näytä automaattinen täydennys osoiterivillä</translation>
+<translation id="597020512043916976">Näytä suosituimmat sivustot automaattitäydennyksen ehdotuksissa</translation>
+<translation id="264150068416846820">Näytä Braven ehdotetut sivustot automaattitäydennyksen ehdotuksissa</translation>
 <translation id="7781069478569868053">Uusi välilehtisivu</translation>
 <translation id="2467749191278759605">Mukauta Braven hallintapaneelisi</translation>
 <translation id="1717331825806276156">Taustakuvat</translation>
 <translation id="1820041496463124489">Sponsoroidut kuvat</translation>
 <translation id="8173998484743827990">Brave-tilastot</translation>
+<translation id="5551238871320268996">Brave Together</translation>
 <translation id="6966052266404721769">Binance</translation>
 <translation id="4643117005422448078">Kärkisivustot</translation>
 <translation id="1776831331757823105">Kello</translation>
@@ -72,9 +73,9 @@ Asentamalla tämän laajennuksen hyväksyt Google Widevinen käyttöehdot. Hyvä
 <translation id="7390783310074170337">Oletusnäkymä</translation>
 <translation id="130615081792797568">Yksinkertainen näkymä</translation>
 <translation id="2360360976480535628">Edistynyt näkymä</translation>
-<translation id="5709627087332022422">Estä cross-site-seuraimet</translation>
-<translation id="6447842834002726250">Evästeet</translation>
-<translation id="6522412052085018663">Sormenjälkitunnistaminen</translation>
+<translation id="2133317862976486547">Seurainten &amp; ads estäminen</translation>
+<translation id="4385707520896576447">Evästeiden estäminen</translation>
+<translation id="4978786495456601191">Sormenjälkiesto</translation>
 <translation id="3570081523466826008">Nosta yhteystasoksi HTTPS</translation>
 <translation id="4824468494729001999">Estä komentosarjat</translation>
 <translation id="519861640102428255">Katso ja kokeile</translation>
@@ -83,12 +84,12 @@ Asentamalla tämän laajennuksen hyväksyt Google Widevinen käyttöehdot. Hyvä
 <translation id="863171915776379000">Salli Facebookin sisäänkirjautumiset ja upotetut julkaisut</translation>
 <translation id="5165042248369837294">Salli Twitterin upotetut tviitit</translation>
 <translation id="958971637207126733">Salli LinkedIn-upotuksen sisältävät julkaisut</translation>
-<translation id="4699812599455071925">Estä vain cross-site-evästeet</translation>
-<translation id="5657156137487675418">Salli kaikki evästeet</translation>
-<translation id="6883611015375728278">Estä kaikki evästeet</translation>
-<translation id="5963670684159057574">Estä sivustojen välinen sormenjälkitunnistaminen</translation>
-<translation id="769702552748212954">Salli kaikki sormenjälkitunnistaminen</translation>
-<translation id="4540198958192073185">Estä kaikki tunnisteet</translation>
+<translation id="4078738236287221428">Aggressiivinen</translation>
+<translation id="7740996059027112821">Vakio</translation>
+<translation id="4176463684765177261">Pois käytöstä</translation>
+<translation id="5770288601196774623">Vain sivustojenvälinen</translation>
+<translation id="3587482841069643663">Kaikki</translation>
+<translation id="5533533363827555308">Ankara, voi rikkoa sivustoja</translation>
 <translation id="8942080017911802454">WebRTC IP käsittelykäytäntö</translation>
 <translation id="6165508094623778733">Lisätietoa</translation>
 <translation id="8798099450830957504">Oletus</translation>
@@ -96,8 +97,47 @@ Asentamalla tämän laajennuksen hyväksyt Google Widevinen käyttöehdot. Hyvä
 <translation id="5825943197137337319">Vain julkinen oletuskäyttöliittymä</translation>
 <translation id="1689062823386843231">Estä yhteydetön UDP</translation>
 <translation id="8502234992433094996">Käytä Googlen palveluja push-viestintään</translation>
-<translation id="3888068426966679906">Virheiden etäkorjaus</translation>
-<translation id="6645631466045614531">Avaa synkronointi seuraavaa kautta:</translation>
+<translation id="5565355416171743213">Aloita synkronoinnin käyttö</translation>
+<translation id="4332558599726753990">Synkronoinnin asennus</translation>
+<translation id="2187778349654214731">Aloittaminen vaatii Braven asentamisen synkronoitaville laitteille. Yhdistä ne sen jälkeen turvallisesti synkronointikoodilla.</translation>
+<translation id="7530575064080939974">Hallinnoi synkronoituja laitteitasi</translation>
+<translation id="7575156386943878014">Synkronoi hallinnoija</translation>
+<translation id="1755198127524719638">Synkronointiasetukset</translation>
+<translation id="7558480201297099157">Hallinnoi laitteiden välille synkronoitavaa tietoja. Nämä asetukset pätevät vain tähän laitteeseen.</translation>
+<translation id="7731928563672901833">Laiteluettelo</translation>
+<translation id="28332161031213248">Alla oleva laiteluettelo kattaa kaikki synkronointiketjusi laitteet. Jokaista laitetta voidaan hallinnoida minkä tahansa muun laitteen kautta.</translation>
+<translation id="1313162974556054106">Laitteen nimi</translation>
+<translation id="923757506389336140"><ph name="DEVICE_NAME"/> (Tämä laite)</translation>
+<translation id="3686835020221422649">Viimeksi aktiivisena</translation>
+<translation id="2569646144216067185">Sanalaskuri: <ph name="WORD_COUNT"/></translation>
+<translation id="7885157704277298658">Kopioitu</translation>
+<translation id="8802630444265810662">Ruutukoodi, jonka lukemalla synkronointikoodisi lähetetään</translation>
+<translation id="6221331245829088299">Kohtasimme häiriön ruutukoodin korvaamisen yhteydessä. Päivitä sivu ja yritä uudelleen.</translation>
+<translation id="298546024891487702">Ensi alkuun sinun on asennettava Brave synkronoitaville laitteille. Voit ketjuttaa ne käynnistämällä synkronointiketjun, jonka avulla voit yhdistää kaikki laitteesi toisiinsa turvallisesti.</translation>
+<translation id="6200528822592747640">Käynnistä uusi synkronointiketju</translation>
+<translation id="5184726904895809379">Minulla on synkronointikoodi</translation>
+<translation id="8780295742023331191">Näytä synkronointikoodi</translation>
+<translation id="9017050385815017931">Puhelin/tabletti</translation>
+<translation id="1736420071277903564">Tietokone</translation>
+<translation id="3407602902101449803">Synkronointiketjun ruutukoodi</translation>
+<translation id="8369686073965491869">Siirry mobiililaitteesi Asetukset-osioon, paikanna Brave-synkronointi ja napauta painiketta</translation>
+<translation id="6527776448555649991">“Skannaa synkronointikoodi”.</translation>
+<translation id="1400862780574843709">Skannaa alla oleva ruutukoodi kamerasi avulla.</translation>
+<translation id="5086223971958279691">Synkronointiketjun koodi</translation>
+<translation id="2899261497479389619">Etsi kohdetietokoneesi asetuksista löytyvä Brave-synkronointi ja napauta painiketta</translation>
+<translation id="4827439149833241990">“Minulla on synkronointikoodi”.</translation>
+<translation id="24067401253841795">Syötä alla olevat synkronointiketjun koodisanat. Käsittele tätä koodia salasanan tavoin. Toisen henkilön saadessa koodin haltuunsa he voivat lukea ja muokata synkronoitua dataasi.</translation>
+<translation id="3034163433136515805">Näytä ruutukoodi</translation>
+<translation id="5373825572723282843">Syötä synkronointikoodi.</translation>
+<translation id="5734745018569675530">Kirjoita sinulle annettu synkronoinnin ketjukoodi alla olevaan lomakkeeseen.</translation>
+<translation id="1061533051865606843">Lisää uusi laite</translation>
+<translation id="5093410893656857925">Valitse laitteen tyyppi</translation>
+<translation id="4581190919849683048">Minkä tyyppiseen laitteeseen tahtoisit synkronoida?</translation>
+<translation id="4112587618563511470">Virheellinen synkronointikoodi. Tarkista koodi ja yritä uudelleen.</translation>
+<translation id="2339730291919608488">Jätä synkronointiketju</translation>
+<translation id="115699408012835975">Jos palautat synkronoinnin alkutilaan, niin sinun on annettava muiden laitteiden synkronointikoodit voidaksesi synkronoida kyseisen laitteen.</translation>
+<translation id="3396347744975515056">Brave Sync on päivitetty ja vaatii määrityksen</translation>
+<translation id="7473245612074035141">Aloita määrittäminen</translation>
 <translation id="6696935187608454456">Avustusvihjeet</translation>
 <translation id="2775956301559569472">Näytä Wayback Machine -kehote 404-sivuilla</translation>
 <translation id="1807246157184219062">Kevyt</translation>
@@ -110,6 +150,7 @@ Asentamalla tämän laajennuksen hyväksyt Google Widevinen käyttöehdot. Hyvä
 <translation id="7701040980221191251">Ei mitään</translation>
 <translation id="1085027414516521238">MetaMask</translation>
 <translation id="3905324891414560921">Web3-palveluntarjoaja Dappseille</translation>
+<translation id="5913089932885076110">Lataa Crypto Wallets käynnistyksen yhteydessä</translation>
 <translation id="6554397389149987360">Käytä Hangouts-komponenttia ruudunjaon sekä muiden ominaisuuksien käytön mahdollistamiseen selaimessa.</translation>
 <translation id="1765684547504191670">Käyttää mediareititin-komponenttia ottamaan Chromecastin käyttöön selaimessa.</translation>
 <translation id="9156965752763025780">Muutokset tulevat voimaan, kun käynnistät Bravein seuraavan kerran.</translation>
@@ -171,10 +212,13 @@ Asentamalla tämän laajennuksen hyväksyt Google Widevinen käyttöehdot. Hyvä
 <translation id="6469509880167172749">Lähetä Bravelle automaattisesti täysin yksityisenä pysyvää tuoteanalytiikkaa</translation>
 <translation id="7090566321964540749">Tämä anonyymi tieto sallii Braven arvioida tiettyjen ominaisuuksien kokonaiskäyttöä.</translation>
 <translation id="9111960429693394744">Haluatko käyttää Braven Kryptokukkaroita vai MetaMaskia Dappseille?</translation>
+<translation id="8721775358057000783">Tahtoisitko aloittaa web3:n Crypto Wallets -tuen tällä sivulla?</translation>
 <translation id="7583735190612229830">Asenna kryptokukkaroita ollaksesi vuorovaikutuksessa tämän sovelluksen ja muiden sen kaltaisten kanssa.</translation>
-<translation id="8337117349965899723">Käytä kryptokukkaroita</translation>
+<translation id="4823406846571523661">Ota Crypto Wallets käyttöön</translation>
 <translation id="5756155765711979898">Käytä MetaMaskia</translation>
 <translation id="6754134632841262799">ASENNUS</translation>
+<translation id="8199661191594897555">Käynnistä Crypto Wallets ja lataa uudelleen</translation>
+<translation id="8428213095426709021">Asetukset</translation>
 <translation id="4552520379838695057">Pahoittelut, mutta kyseinen sivu puuttuu.</translation>
 <translation id="2609895996619941644">Haluatko tarkastaa, onko tallennettu versio saatavilla Wayback Machine -palvelussa?</translation>
 <translation id="8053093028263274061">Pahoittelut, mutta tallennettua versiota ei ole saatavilla.</translation>
@@ -185,8 +229,10 @@ Asentamalla tämän laajennuksen hyväksyt Google Widevinen käyttöehdot. Hyvä
 <translation id="2336228925368920074">Lisää kaikki välilehdet kirjanmerkkeihin...</translation>
 <translation id="796831669370432378">Lisää kirjainmerkki napauttamalla kirjainmerkkipainiketta, joka on osoitepalkin vieressä</translation>
 <translation id="4989337484121655457">Tarvitaan levyn täydet käyttöoikeudet</translation>
-<translation id="8025559074845816210">Brave tarvitsee levyn täydet käyttöoikeudet voidakseen tuoda kirjanmerkkisi Safarista.</translation>
+<translation id="5501596373144334003">Brave tarvitsee levyn täydet käyttöoikeudet voidakseen siirtää kirjanmerkkisi ja käyttöhistoriasi Safarista.</translation>
 <translation id="8515328844674404333">Opi antamaan levyn täydet käyttöoikeudet järjestelmäasetuksistasi.</translation>
 <translation id="6414878884710400018">Avaa järjestelmäasetukset</translation>
 <translation id="5570470519803062774">Sivuston ja suojien asetukset</translation>
+<translation id="8487693399751278191">Tuo kirjanmerkit saman tien...</translation>
+<translation id="2557899542277210112">Aseta kirjanmerkkisi tähän kirjamerkkipalkissa pikakäyttöä varten.</translation>
 </translationbundle>

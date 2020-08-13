@@ -11,12 +11,16 @@ const defaultState: RewardsInternals.State = {
   info: {
     isKeyInfoSeedValid: false,
     walletPaymentId: '',
-    currentReconciles: [],
     bootStamp: 0
   },
+  contributions: [],
   promotions: [],
   log: '',
-  fullLog: ''
+  fullLog: '',
+  externalWallet: {
+    address: '',
+    status: 0
+  }
 }
 
 export const load = (): RewardsInternals.State => {

@@ -6,8 +6,7 @@
 #include <vector>
 
 #import "ledger.mojom.objc.h"
-#import "RewardsLogStream.h"
-#define BLOG(__verbose_level) RewardsLogStream(__FILE__, __LINE__, __verbose_level).stream()
+#import "RewardsLogging.h"
 
 @interface BATCommonOperations ()
 @property (nonatomic, copy) NSString *storagePath;
@@ -56,33 +55,6 @@
   return std::string([NSUUID UUID].UUIDString.UTF8String);
 }
 
-- (uint32_t)createTimerWithOffset:(uint64_t)offset timerFired:(void (^)(uint32_t))timerFired
-{
-  self.currentTimerID++;
-  const auto timerID = self.currentTimerID;
-
-  auto const __weak weakSelf = self;
-    
-  dispatch_async(dispatch_get_main_queue(), ^{
-      self.timers[[NSNumber numberWithUnsignedInt:timerID]] =
-      [NSTimer scheduledTimerWithTimeInterval:offset repeats:false block:^(NSTimer * _Nonnull timer) {
-          if (!weakSelf) { return; }
-          timerFired(timerID);
-      }];
-  });
-    
-  
-  return timerID;
-}
-
-- (void)removeTimerWithID:(uint32_t)timerID
-{
-  const auto key = [NSNumber numberWithUnsignedInt:timerID];
-  const auto timer = self.timers[key];
-  [timer invalidate];
-  [self.timers removeObjectForKey:key];
-}
-
 - (void)loadURLRequest:(const std::string &)url headers:(const std::vector<std::string> &)headers content:(const std::string &)content content_type:(const std::string &)content_type method:(const std::string &)method callback:(BATNetworkCompletionBlock)callback
 {
   const auto session = NSURLSession.sharedSession;
@@ -122,10 +94,13 @@
     const auto strongSelf = weakSelf;
 
     const auto response = (NSHTTPURLResponse *)urlResponse;
-    std::string json;
-    if (data) {
-      // Might be no reason to convert to an NSString back to a UTF8 pointer...
-      json = std::string([[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding].UTF8String);
+    std::string body;
+    if (data && data.length > 0) {
+      body = std::string(static_cast<const char*>(data.bytes), data.length);
+    }
+    std::string errorDescription;
+    if (error) {
+      errorDescription = error.localizedDescription.UTF8String;
     }
     // For some reason I couldn't just do `std::map<std::string, std::string> responseHeaders;` due to std::map's
     // non-const key insertion
@@ -141,7 +116,7 @@
     dispatch_async(dispatch_get_main_queue(), ^{
       if (!weakSelf2) { return; }
       [weakSelf2.runningTasks removeObject:task];
-      callback((int)response.statusCode, json, copiedHeaders);
+      callback(errorDescription, (int)response.statusCode, body, copiedHeaders);
     });
     delete responseHeaders;
   }];
@@ -165,7 +140,7 @@
   const auto path = [self dataPathForFilename:filename];
   const auto result = [nscontents writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:&error];
   if (error) {
-    BLOG(0) << "Failed to save data for " << name << ": " << error.debugDescription.UTF8String << std::endl;
+    BLOG(0, @"Failed to save data for %@: %@", filename, error.debugDescription);
   }
   return result;
 }
@@ -175,10 +150,10 @@
   const auto filename = [NSString stringWithUTF8String:name.c_str()];
   NSError *error = nil;
   const auto path = [self dataPathForFilename:filename];
-  BLOG(1) << "Loading contents from file: " << path.UTF8String << std::endl;
+  BLOG(2, @"Loading contents from file: %@", path);
   const auto contents = [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
   if (error) {
-    BLOG(0) << "Failed to load data for " << name << ": " << error.debugDescription.UTF8String << std::endl;
+    BLOG(0, @"Failed to load data for %@: %@", filename, error.debugDescription);
     return "";
   }
   return std::string(contents.UTF8String);
@@ -191,7 +166,7 @@
   const auto path = [self dataPathForFilename:filename];
   const auto result = [NSFileManager.defaultManager removeItemAtPath:path error:&error];
   if (error) {
-    BLOG(0) << "Failed to remove data for filename: " << name << std::endl;
+    BLOG(0, @"Failed to remove data for filename: %@", filename);
     return false;
   }
   return result;

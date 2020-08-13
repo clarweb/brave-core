@@ -4,10 +4,9 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "bat/ads/ad_content.h"
-#include "bat/ads/confirmation_type.h"
 
-#include "bat/ads/internal/json_helper.h"
 #include "bat/ads/internal/logging.h"
+#include "bat/ads/internal/json_helper.h"
 
 namespace ads {
 
@@ -22,6 +21,7 @@ bool AdContent::operator==(
     const AdContent& rhs) const {
   return creative_instance_id == rhs.creative_instance_id &&
       creative_set_id == rhs.creative_set_id &&
+      campaign_id == rhs.campaign_id &&
       brand == rhs.brand &&
       brand_info == rhs.brand_info &&
       brand_logo == rhs.brand_logo &&
@@ -45,21 +45,21 @@ std::string AdContent::ToJson() const {
 }
 
 Result AdContent::FromJson(
-    const std::string& json,
-    std::string* error_description) {
+    const std::string& json) {
   rapidjson::Document document;
   document.Parse(json.c_str());
 
   if (document.HasParseError()) {
-    if (error_description != nullptr) {
-      *error_description = helper::JSON::GetLastError(&document);
-    }
-
+    BLOG(1, helper::JSON::GetLastError(&document));
     return FAILED;
   }
 
   if (document.HasMember("uuid")) {
     creative_instance_id = document["uuid"].GetString();
+  }
+
+  if (document.HasMember("campaign_id")) {
+    campaign_id = document["campaign_id"].GetString();
   }
 
   if (document.HasMember("creative_set_id")) {
@@ -114,6 +114,9 @@ void SaveToJson(JsonWriter* writer, const AdContent& content) {
 
   writer->String("creative_set_id");
   writer->String(content.creative_set_id.c_str());
+
+  writer->String("campaign_id");
+  writer->String(content.campaign_id.c_str());
 
   writer->String("brand");
   writer->String(content.brand.c_str());

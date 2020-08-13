@@ -29,6 +29,9 @@ import org.chromium.base.ApiCompatibilityUtils;
 import org.chromium.base.ApplicationStatus;
 import org.chromium.chrome.R;
 import org.chromium.chrome.browser.notifications.channels.BraveChannelDefinitions;
+import org.chromium.components.browser_ui.notifications.ChromeNotification;
+import org.chromium.components.browser_ui.notifications.ChromeNotificationBuilder;
+import org.chromium.components.browser_ui.notifications.NotificationMetadata;
 
 /**
  * Builds a notification according to BraveAds spec.
@@ -156,6 +159,7 @@ public class BraveAdsNotificationBuilder extends NotificationBuilderBase {
         builder.setOnlyAlertOnce(!mRenotify);
         builder.setContent(compactView);
         builder.setAutoCancel(true);
+        builder.setLocalOnly(true); // Disables showing on other devices, e.g. Android Wear
 
         // Some things are duplicated in the builder to ensure the notification shows correctly on
         // Wear devices and custom lock screens.

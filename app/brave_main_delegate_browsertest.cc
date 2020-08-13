@@ -12,15 +12,25 @@
 #include "chrome/test/base/in_process_browser_test.h"
 #include "components/autofill/core/common/autofill_features.h"
 #include "components/autofill/core/common/autofill_payments_features.h"
+#include "components/embedder_support/switches.h"
+#include "components/language/core/common/language_experiments.h"
+#include "components/omnibox/common/omnibox_features.h"
 #include "components/password_manager/core/common/password_manager_features.h"
+#include "components/safe_browsing/core/features.h"
 #include "content/public/browser/render_view_host.h"
 #include "content/public/common/content_features.h"
 #include "content/public/common/web_preferences.h"
+#include "content/public/test/browser_test.h"
 #include "gpu/config/gpu_finch_features.h"
+#include "services/device/public/cpp/device_features.h"
 #include "services/network/public/cpp/features.h"
 #include "third_party/blink/public/common/features.h"
 
 using BraveMainDelegateBrowserTest = InProcessBrowserTest;
+
+const char kBraveOriginTrialsPublicKey[] =
+    "bYUKPJoPnCxeNvu72j4EmPuK7tr1PAC7SHh8ld9Mw3E=,"
+    "fMS4mpO6buLQ/QMd+zJmxzty/VQ6B1EUZqoCU04zoRU=";
 
 IN_PROC_BROWSER_TEST_F(BraveMainDelegateBrowserTest,
                        DomainReliabilityServiceDisabled) {
@@ -40,6 +50,14 @@ IN_PROC_BROWSER_TEST_F(BraveMainDelegateBrowserTest, DisableHyperlinkAuditing) {
   EXPECT_FALSE(prefs.hyperlink_auditing_enabled);
 }
 
+IN_PROC_BROWSER_TEST_F(BraveMainDelegateBrowserTest, OriginTrialsTest) {
+  EXPECT_TRUE(base::CommandLine::ForCurrentProcess()->HasSwitch(
+      embedder_support::kOriginTrialPublicKey));
+  EXPECT_EQ(kBraveOriginTrialsPublicKey,
+            base::CommandLine::ForCurrentProcess()->GetSwitchValueASCII(
+                embedder_support::kOriginTrialPublicKey));
+}
+
 IN_PROC_BROWSER_TEST_F(BraveMainDelegateBrowserTest, DisabledFeatures) {
   const base::Feature* disabled_features[] = {
       &autofill::features::kAutofillEnableAccountWalletStorage,
@@ -47,10 +65,11 @@ IN_PROC_BROWSER_TEST_F(BraveMainDelegateBrowserTest, DisabledFeatures) {
       &blink::features::kTextFragmentAnchor,
       &features::kAllowPopupsDuringPageUnload,
       &features::kNotificationTriggers,
+      &features::kPrivacySettingsRedesign,
       &features::kSmsReceiver,
       &features::kVideoPlaybackQuality,
-      &features::kLookalikeUrlNavigationSuggestionsUI,
       &features::kTabHoverCards,
+      &safe_browsing::kEnhancedProtection,
   };
 
   for (const auto* feature : disabled_features)
@@ -61,6 +80,11 @@ IN_PROC_BROWSER_TEST_F(BraveMainDelegateBrowserTest, EnabledFeatures) {
   const base::Feature* enabled_features[] = {
     &blink::features::kPrefetchPrivacyChanges,
     &password_manager::features::kPasswordImport,
+    &features::kReducedReferrerGranularity,
+#if defined(OS_WIN)
+    &features::kWinrtGeolocationImplementation,
+#endif
+    &omnibox::kOmniboxContextMenuShowFullUrls,
   };
 
   for (const auto* feature : enabled_features)

@@ -55,6 +55,18 @@
     "message": "クロスサイトトラッキングをブロック",
     "description": "Message for the scripts blocked row label"
   },
+  "aggressiveAdsTrackersBlocking": {
+    "message": "トラッカーと広告をブロックしました（強力モード）",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with aggressive heuristics"
+  },
+  "standardAdsTrackersBlocking": {
+    "message": "トラッカーと広告がブロックされました（スタンダード）",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with standard heuristics"
+  },
+  "allowAdsTrackers": {
+    "message": "全てのトラッカーと広告を許可",
+    "description": "Message for the option in the ads and trackers blocking select field to allow all ads and trackers"
+  },
   "connectionsUpgradedHTTPS": {
     "message": "接続がHTTPSにアップグレードされました",
     "description": "Message for the connections upgraded row label and for the main blocked resources text when there is more than one connection upgraded (plural) and no other ads/trackers blocked"
@@ -79,16 +91,16 @@
     "message": "すべてのクッキーを許可",
     "description": "Message for the option in the cookies select field to allow all cookies"
   },
-  "thirdPartyFingerprintingBlocked": {
-    "message": "ブロックされたクロスサイトフィンガープリント",
+  "standardFingerprinting": {
+    "message": "フィンガープリントをブロック済み（標準）",
     "description": "Message for the option in the fingerprinting select field to block all 3rd party recognition attempts"
   },
-  "allFingerprintingBlocked": {
-    "message": "ブロックされたフィンガープリント試行",
+  "strictFingerprinting": {
+    "message": "フィンガープリントがブロックされました（厳格、サイトの表示が崩れる可能性）",
     "description": "Message for the option in the fingerprinting select field to block all fingerprinting attempts"
   },
-  "allFingerprintingAllowed": {
-    "message": "許可されたすべてのフィンガープリント試行",
+  "allowAllFingerprinting": {
+    "message": "全てのフィンガープリンティングを許可する",
     "description": "Message for the option in the fingerprinting select field to allow all fingerprinting attempts"
   },
   "deviceRecognitionAttempts": {

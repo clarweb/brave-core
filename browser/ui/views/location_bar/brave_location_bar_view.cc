@@ -64,7 +64,7 @@ void BraveLocationBarView::Layout() {
   LocationBarView::Layout(brave_actions_ ? brave_actions_ : nullptr);
 }
 
-void BraveLocationBarView::Update(const content::WebContents* contents) {
+void BraveLocationBarView::Update(content::WebContents* contents) {
   // base Init calls update before our Init is run, so our children
   // may not be initialized yet
   if (brave_actions_) {
@@ -77,7 +77,7 @@ void BraveLocationBarView::OnChanged() {
   if (brave_actions_) {
     // Do not show actions whilst omnibar is open or url is being edited
     const bool should_hide =
-        IsLocationBarUserInputInProgress() && !omnibox_view_->GetText().empty();
+        ShouldHidePageActionIcons() && !omnibox_view_->GetText().empty();
     brave_actions_->SetShouldHide(should_hide);
   }
 

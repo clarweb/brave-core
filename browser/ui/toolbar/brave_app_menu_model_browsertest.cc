@@ -23,9 +23,13 @@
 #include "chrome/browser/ui/views/frame/browser_view.h"
 #include "chrome/browser/ui/views/toolbar/toolbar_view.h"
 #include "chrome/test/base/in_process_browser_test.h"
-#include "components/sync/driver/sync_driver_switches.h"
 #include "content/public/browser/notification_service.h"
+#include "content/public/test/browser_test.h"
 #include "content/public/test/test_utils.h"
+
+#if BUILDFLAG(ENABLE_BRAVE_SYNC)
+#include "components/sync/driver/sync_driver_switches.h"
+#endif
 
 using BraveAppMenuBrowserTest = InProcessBrowserTest;
 
@@ -187,9 +191,6 @@ IN_PROC_BROWSER_TEST_F(BraveAppMenuBrowserTest, MenuOrderTest) {
     IDC_SHOW_BRAVE_WALLET,
 #endif
     IDC_MANAGE_EXTENSIONS,
-#if BUILDFLAG(ENABLE_BRAVE_SYNC)
-    IDC_SHOW_BRAVE_SYNC,
-#endif
     IDC_ADD_NEW_PROFILE,
     IDC_OPEN_GUEST_PROFILE,
   };

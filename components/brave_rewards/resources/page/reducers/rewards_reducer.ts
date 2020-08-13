@@ -9,7 +9,29 @@ import { types } from '../constants/rewards_types'
 import { defaultState } from '../storage'
 
 const rewardsReducer: Reducer<Rewards.State | undefined> = (state: Rewards.State, action) => {
+  if (!state) {
+    return
+  }
+
   switch (action.type) {
+    case types.IS_INITIALIZED: {
+      chrome.send('brave_rewards.isInitialized')
+      break
+    }
+    case types.TOGGLE_ENABLE_MAIN: {
+      if (state.initializing && state.enabledMain) {
+        break
+      }
+
+      state = { ...state }
+      const key = 'enabledMain'
+      const enable = action.payload.enable
+      state.initializing = true
+
+      state[key] = enable
+      chrome.send('brave_rewards.saveSetting', [key, enable.toString()])
+      break
+    }
     case types.GET_AUTO_CONTRIBUTE_PROPERTIES: {
       chrome.send('brave_rewards.getAutoContributeProperties')
       break
@@ -38,24 +60,31 @@ const rewardsReducer: Reducer<Rewards.State | undefined> = (state: Rewards.State
 
       break
     }
-    case types.ON_SETTING_SAVE:
+    case types.ON_SETTING_SAVE: {
       state = { ...state }
       const key = action.payload.key
       const value = action.payload.value
-      if (key) {
-        state[key] = value
+      const persist = action.payload.persist
+      if (!key) {
+        break
+      }
+
+      if (persist) {
         chrome.send('brave_rewards.saveSetting', [key, value.toString()])
       }
+
+      state[key] = value
       break
+    }
     case types.UPDATE_ADS_REWARDS: {
       state = { ...state }
-      chrome.send('brave_rewards.updateAdsRewards')
+      chrome.send('brave_rewards.updateAdRewards')
       break
     }
     case types.ON_MODAL_BACKUP_CLOSE: {
       state = { ...state }
       let ui = state.ui
-      ui.walletRecoverySuccess = null
+      ui.walletRecoveryStatus = null
       ui.modalBackup = false
       state = {
         ...state,
@@ -74,7 +103,7 @@ const rewardsReducer: Reducer<Rewards.State | undefined> = (state: Rewards.State
     }
     case types.ON_CLEAR_ALERT: {
       let ui = state.ui
-      if (!ui[action.payload.property]) {
+      if (ui[action.payload.property] === undefined) {
         break
       }
 
@@ -116,6 +145,9 @@ const rewardsReducer: Reducer<Rewards.State | undefined> = (state: Rewards.State
 
       state.adsData.adsEnabled = action.payload.adsData.adsEnabled
       state.adsData.adsPerHour = action.payload.adsData.adsPerHour
+      state.adsData.adsSubdivisionTargeting = action.payload.adsData.adsSubdivisionTargeting
+      state.adsData.automaticallyDetectedAdsSubdivisionTargeting = action.payload.adsData.automaticallyDetectedAdsSubdivisionTargeting
+      state.adsData.shouldAllowAdsSubdivisionTargeting = action.payload.adsData.shouldAllowAdsSubdivisionTargeting
       state.adsData.adsUIEnabled = action.payload.adsData.adsUIEnabled
       state.adsData.adsIsSupported = action.payload.adsData.adsIsSupported
       break
@@ -207,8 +239,22 @@ const rewardsReducer: Reducer<Rewards.State | undefined> = (state: Rewards.State
       break
     }
     case types.ON_REWARDS_ENABLED: {
+      const enabled: boolean = action.payload.enabled
       state = { ...state }
-      state.enabledMain = action.payload.enabled
+      if (state.enabledMain && !enabled) {
+        state = defaultState
+        state.enabledMain = false
+        state.walletCreated = true
+        state.firstLoad = false
+        break
+      }
+
+      if (!enabled) {
+        state.balance = defaultState.balance
+        state.promotions = []
+      }
+
+      state.enabledMain = enabled
       break
     }
     case types.GET_TRANSACTION_HISTORY:
@@ -306,6 +352,12 @@ const rewardsReducer: Reducer<Rewards.State | undefined> = (state: Rewards.State
         break
       }
 
+      // NOT_FOUND
+      if (data.result === 9) {
+        ui.modalRedirect = 'batLimit'
+        break
+      }
+
       if (data.result !== 0) {
         ui.modalRedirect = 'error'
         break
@@ -388,6 +440,23 @@ const rewardsReducer: Reducer<Rewards.State | undefined> = (state: Rewards.State
       state = {
         ...state,
         currentCountryCode: countryCode
+      }
+      break
+    }
+    case types.ON_INITIALIZED: {
+      state = {
+        ...state,
+        initializing: false
+      }
+      break
+    }
+    case types.COMPLETE_RESET: {
+      chrome.send('brave_rewards.completeReset')
+      break
+    }
+    case types.ON_COMPLETE_RESET: {
+      if (action.payload.success) {
+        return undefined
       }
       break
     }

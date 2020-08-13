@@ -22,14 +22,12 @@ struct ADS_EXPORT AdContent {
 
   bool operator==(
       const AdContent& rhs) const;
-
   bool operator!=(
       const AdContent& rhs) const;
 
   std::string ToJson() const;
   Result FromJson(
-      const std::string& json,
-      std::string* error_description = nullptr);
+      const std::string& json);
 
   enum class LikeAction {
     kNone = 0,
@@ -39,6 +37,7 @@ struct ADS_EXPORT AdContent {
 
   std::string creative_instance_id;
   std::string creative_set_id;
+  std::string campaign_id;
   std::string brand;
   std::string brand_info;
   std::string brand_logo;

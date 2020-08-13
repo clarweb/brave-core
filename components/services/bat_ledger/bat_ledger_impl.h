@@ -20,13 +20,18 @@
 
 namespace bat_ledger {
 
-class BatLedgerClientMojoProxy;
+class BatLedgerClientMojoBridge;
 
-class BatLedgerImpl : public mojom::BatLedger,
+class BatLedgerImpl :
+    public mojom::BatLedger,
     public base::SupportsWeakPtr<BatLedgerImpl> {
  public:
-  explicit BatLedgerImpl(mojom::BatLedgerClientAssociatedPtrInfo client_info);
+  explicit BatLedgerImpl(
+      mojo::PendingAssociatedRemote<mojom::BatLedgerClient> client_info);
   ~BatLedgerImpl() override;
+
+  BatLedgerImpl(const BatLedgerImpl&) = delete;
+  BatLedgerImpl& operator=(const BatLedgerImpl&) = delete;
 
   // bat_ledger::mojom::BatLedger
   void Initialize(
@@ -91,9 +96,6 @@ class BatLedgerImpl : public mojom::BatLedger,
   void SetPublisherAllowVideos(bool allow) override;
   void SetAutoContributionAmount(double amount) override;
   void SetAutoContributeEnabled(bool enabled) override;
-  void UpdateAdsRewards() override;
-
-  void OnTimer(uint32_t timer_id) override;
 
   void GetBalanceReport(ledger::ActivityMonth month, int32_t year,
       GetBalanceReportCallback callback) override;
@@ -124,8 +126,6 @@ class BatLedgerImpl : public mojom::BatLedger,
   void HasSufficientBalanceToReconcile(
       HasSufficientBalanceToReconcileCallback callback) override;
 
-  void GetTransactionHistory(
-      GetTransactionHistoryCallback callback) override;
   void GetRewardsInternalsInfo(
       GetRewardsInternalsInfoCallback callback) override;
   void RefreshPublisher(
@@ -222,18 +222,9 @@ class BatLedgerImpl : public mojom::BatLedger,
 
   void GetAllPromotions(GetAllPromotionsCallback callback) override;
 
+  void Shutdown(ShutdownCallback callback) override;
+
  private:
-  void SetCatalogIssuers(
-      const std::string& info) override;
-
-  void ConfirmAd(
-      const std::string& json,
-      const std::string& confirmation_type) override;
-  void ConfirmAction(
-      const std::string& creative_instance_id,
-      const std::string& creative_set_id,
-      const std::string& confirmation_type) override;
-
   // workaround to pass base::OnceCallback into std::bind
   template <typename Callback>
     class CallbackHolder {
@@ -276,8 +267,7 @@ class BatLedgerImpl : public mojom::BatLedger,
 
   static void OnRecoverWallet(
       CallbackHolder<RecoverWalletCallback>* holder,
-      ledger::Result result,
-      double balance);
+      ledger::Result result);
 
   static void OnGetRewardsParameters(
       CallbackHolder<GetRewardsParametersCallback>* holder,
@@ -302,10 +292,6 @@ class BatLedgerImpl : public mojom::BatLedger,
   static void OnOneTimeTip(
       CallbackHolder<OneTimeTipCallback>* holder,
       const ledger::Result result);
-
-  static void OnGetTransactionHistory(
-      CallbackHolder<GetTransactionHistoryCallback>* holder,
-      std::unique_ptr<ledger::TransactionsInfo> history);
 
   static void OnGetRewardsInternalsInfo(
       CallbackHolder<GetRewardsInternalsInfoCallback>* holder,
@@ -416,10 +402,12 @@ class BatLedgerImpl : public mojom::BatLedger,
       CallbackHolder<GetAllPromotionsCallback>* holder,
       ledger::PromotionMap items);
 
-  std::unique_ptr<BatLedgerClientMojoProxy> bat_ledger_client_mojo_proxy_;
-  std::unique_ptr<ledger::Ledger> ledger_;
+  static void OnShutdown(
+      CallbackHolder<ShutdownCallback>* holder,
+      const ledger::Result result);
 
-  DISALLOW_COPY_AND_ASSIGN(BatLedgerImpl);
+  std::unique_ptr<BatLedgerClientMojoBridge> bat_ledger_client_mojo_bridge_;
+  std::unique_ptr<ledger::Ledger> ledger_;
 };
 
 }  // namespace bat_ledger

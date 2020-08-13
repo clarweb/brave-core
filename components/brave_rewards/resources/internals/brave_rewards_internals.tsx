@@ -43,6 +43,10 @@ window.cr.define('brave_rewards_internals', function () {
     getActions().onBalance(balance)
   }
 
+  function contributions (contributions: RewardsInternals.ContributionInfo[]) {
+    getActions().onContributions(contributions)
+  }
+
   function promotions (promotions: RewardsInternals.Promotion[]) {
     getActions().onPromotions(promotions)
   }
@@ -53,6 +57,10 @@ window.cr.define('brave_rewards_internals', function () {
 
   function fullLog (log: string) {
     getActions().onGetFullLog(log)
+  }
+
+  function externalWallet (properties: {result: number, wallet: RewardsInternals.ExternalWallet}) {
+    getActions().onExternalWallet(properties.result, properties.wallet)
   }
 
   function initialize () {
@@ -72,9 +80,11 @@ window.cr.define('brave_rewards_internals', function () {
     onGetRewardsEnabled,
     onGetRewardsInternalsInfo,
     balance,
+    contributions,
     promotions,
     partialLog,
-    fullLog
+    fullLog,
+    externalWallet
   }
 })
 

@@ -37,6 +37,13 @@ const rewardsInternalsReducer: Reducer<RewardsInternals.State | undefined> = (st
       state = { ...state }
       state.balance = action.payload.balance
       break
+    case types.GET_CONTRIBUTIONS:
+      chrome.send('brave_rewards_internals.getContributions')
+      break
+    case types.ON_CONTRIBUTIONS:
+      state = { ...state }
+      state.contributions = action.payload.contributions
+      break
     case types.GET_PROMOTIONS:
       chrome.send('brave_rewards_internals.getPromotions')
       break
@@ -63,6 +70,13 @@ const rewardsInternalsReducer: Reducer<RewardsInternals.State | undefined> = (st
       break
     case types.DOWNLOAD_COMPLETED:
       state.fullLog = ''
+      break
+    case types.GET_EXTERNAL_WALLET:
+      chrome.send('brave_rewards_internals.getExternalWallet', [action.payload.type])
+      break
+    case types.ON_EXTERNAL_WALLET:
+      state = { ...state }
+      state.externalWallet = action.payload.wallet
       break
     default:
       break

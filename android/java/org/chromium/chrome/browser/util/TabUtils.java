@@ -12,6 +12,7 @@ import android.content.Context;
 import android.view.ContextThemeWrapper;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.PopupMenu;
 
 import org.chromium.base.ApplicationStatus;
@@ -50,13 +51,6 @@ public class TabUtils {
         popup.show(); // showing popup menu
     }
 
-    public static void openHomepage() {
-        ChromeActivity chromeActivity = getChromeActivity();
-        if (chromeActivity != null && chromeActivity.getToolbarManager() != null) {
-            chromeActivity.getToolbarManager().openHomepage();
-        }
-    }
-
     public static void openNewTab() {
         ChromeActivity chromeActivity = getChromeActivity();
         boolean isIncognito =
@@ -76,5 +70,21 @@ public class TabUtils {
             return (ChromeActivity) ref;
         }
         return null;
+    }
+
+    public static void enableRewardsButton() {
+        ChromeActivity chromeActivity = getChromeActivity();
+        if (chromeActivity == null || chromeActivity.getToolbarManager() == null) {
+            return;
+        }
+        View toolbarView = chromeActivity.findViewById(R.id.toolbar);
+        if (toolbarView == null) {
+            return;
+        }
+        FrameLayout rewardsLayout = toolbarView.findViewById(R.id.brave_rewards_button_layout);
+        if (rewardsLayout == null) {
+            return;
+        }
+        rewardsLayout.setVisibility(View.VISIBLE);
     }
 }

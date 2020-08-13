@@ -4,6 +4,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <map>
+#include <memory>
 #include <utility>
 
 #include "base/strings/stringprintf.h"
@@ -137,405 +138,6 @@ DatabaseActivityInfo::DatabaseActivityInfo(
 
 DatabaseActivityInfo::~DatabaseActivityInfo() = default;
 
-bool DatabaseActivityInfo::CreateTableV1(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "publisher_id LONGVARCHAR NOT NULL,"
-        "duration INTEGER DEFAULT 0 NOT NULL,"
-        "score DOUBLE DEFAULT 0 NOT NULL,"
-        "percent INTEGER DEFAULT 0 NOT NULL,"
-        "weight DOUBLE DEFAULT 0 NOT NULL,"
-        "category INTEGER NOT NULL,"
-        "month INTEGER NOT NULL,"
-        "year INTEGER NOT NULL,"
-        "CONSTRAINT fk_%s_publisher_id"
-        "    FOREIGN KEY (publisher_id)"
-        "    REFERENCES publisher_info (publisher_id)"
-        "    ON DELETE CASCADE"
-      ")",
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseActivityInfo::CreateTableV2(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "publisher_id LONGVARCHAR NOT NULL,"
-        "duration INTEGER DEFAULT 0 NOT NULL,"
-        "score DOUBLE DEFAULT 0 NOT NULL,"
-        "percent INTEGER DEFAULT 0 NOT NULL,"
-        "weight DOUBLE DEFAULT 0 NOT NULL,"
-        "category INTEGER NOT NULL,"
-        "month INTEGER NOT NULL,"
-        "year INTEGER NOT NULL,"
-        "reconcile_stamp INTEGER DEFAULT 0 NOT NULL,"
-        "CONSTRAINT fk_%s_publisher_id"
-        "    FOREIGN KEY (publisher_id)"
-        "    REFERENCES publisher_info (publisher_id)"
-        "    ON DELETE CASCADE"
-      ")",
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseActivityInfo::CreateTableV4(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "publisher_id LONGVARCHAR NOT NULL,"
-        "duration INTEGER DEFAULT 0 NOT NULL,"
-        "visits INTEGER DEFAULT 0 NOT NULL,"
-        "score DOUBLE DEFAULT 0 NOT NULL,"
-        "percent INTEGER DEFAULT 0 NOT NULL,"
-        "weight DOUBLE DEFAULT 0 NOT NULL,"
-        "month INTEGER NOT NULL,"
-        "year INTEGER NOT NULL,"
-        "reconcile_stamp INTEGER DEFAULT 0 NOT NULL,"
-        "CONSTRAINT activity_unique "
-        "UNIQUE (publisher_id, month, year, reconcile_stamp) "
-        "CONSTRAINT fk_%s_publisher_id"
-        "    FOREIGN KEY (publisher_id)"
-        "    REFERENCES publisher_info (publisher_id)"
-        "    ON DELETE CASCADE"
-      ")",
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseActivityInfo::CreateTableV6(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "publisher_id LONGVARCHAR NOT NULL,"
-        "duration INTEGER DEFAULT 0 NOT NULL,"
-        "visits INTEGER DEFAULT 0 NOT NULL,"
-        "score DOUBLE DEFAULT 0 NOT NULL,"
-        "percent INTEGER DEFAULT 0 NOT NULL,"
-        "weight DOUBLE DEFAULT 0 NOT NULL,"
-        "reconcile_stamp INTEGER DEFAULT 0 NOT NULL,"
-        "CONSTRAINT activity_unique "
-        "UNIQUE (publisher_id, reconcile_stamp) "
-        "CONSTRAINT fk_%s_publisher_id"
-        "    FOREIGN KEY (publisher_id)"
-        "    REFERENCES publisher_info (publisher_id)"
-        "    ON DELETE CASCADE"
-      ")",
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseActivityInfo::CreateTableV15(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "publisher_id LONGVARCHAR NOT NULL,"
-        "duration INTEGER DEFAULT 0 NOT NULL,"
-        "visits INTEGER DEFAULT 0 NOT NULL,"
-        "score DOUBLE DEFAULT 0 NOT NULL,"
-        "percent INTEGER DEFAULT 0 NOT NULL,"
-        "weight DOUBLE DEFAULT 0 NOT NULL,"
-        "reconcile_stamp INTEGER DEFAULT 0 NOT NULL,"
-        "CONSTRAINT activity_unique "
-        "UNIQUE (publisher_id, reconcile_stamp)"
-      ")",
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseActivityInfo::CreateIndexV2(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_id");
-}
-
-bool DatabaseActivityInfo::CreateIndexV4(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_id");
-}
-
-bool DatabaseActivityInfo::CreateIndexV6(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_id");
-}
-
-bool DatabaseActivityInfo::CreateIndexV15(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_id");
-}
-
-bool DatabaseActivityInfo::Migrate(
-    ledger::DBTransaction* transaction,
-    const int target) {
-  DCHECK(transaction);
-
-  switch (target) {
-    case 1: {
-      return MigrateToV1(transaction);
-    }
-    case 2: {
-      return MigrateToV2(transaction);
-    }
-    case 4: {
-      return MigrateToV4(transaction);
-    }
-    case 5: {
-      return MigrateToV5(transaction);
-    }
-    case 6: {
-      return MigrateToV6(transaction);
-    }
-    case 15: {
-      return MigrateToV15(transaction);
-    }
-    default: {
-      return true;
-    }
-  }
-}
-
-bool DatabaseActivityInfo::MigrateToV1(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  if (!DropTable(transaction, kTableName)) {
-    BLOG(0, "Table couldn't be dropped");
-    return false;
-  }
-
-  if (!CreateTableV1(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  return true;
-}
-
-bool DatabaseActivityInfo::MigrateToV2(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "ALTER TABLE %s ADD reconcile_stamp INTEGER DEFAULT 0 NOT NULL;",
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseActivityInfo::MigrateToV4(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string temp_table_name = base::StringPrintf(
-      "%s_temp",
-      kTableName);
-
-  if (!RenameDBTable(transaction, kTableName, temp_table_name)) {
-    return false;
-  }
-
-  std::string query = "DROP INDEX IF EXISTS activity_info_publisher_id_index;";
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  if (!CreateTableV4(transaction)) {
-    return false;
-  }
-
-  if (!CreateIndexV4(transaction)) {
-    return false;
-  }
-
-  const std::map<std::string, std::string> columns = {
-    { "publisher_id", "publisher_id" },
-    { "duration", "duration" },
-    { "score", "score" },
-    { "percent", "percent" },
-    { "weight", "weight" },
-    { "month", "month" },
-    { "year", "year" },
-    { "reconcile_stamp", "reconcile_stamp" }
-  };
-
-  if (!MigrateDBTable(
-      transaction,
-      temp_table_name,
-      kTableName,
-      columns,
-      true)) {
-    return false;
-  }
-
-  query = base::StringPrintf("UPDATE %s SET visits=5;", kTableName);
-  command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseActivityInfo::MigrateToV5(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "UPDATE %s SET visits = 1 WHERE visits = 0",
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseActivityInfo::MigrateToV6(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string temp_table_name = base::StringPrintf(
-      "%s_temp",
-      kTableName);
-
-  if (!RenameDBTable(transaction, kTableName, temp_table_name)) {
-    return false;
-  }
-
-  const std::string query =
-      "DROP INDEX IF EXISTS activity_info_publisher_id_index;";
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  if (!CreateTableV6(transaction)) {
-    return false;
-  }
-
-  if (!CreateIndexV6(transaction)) {
-    return false;
-  }
-
-  const std::map<std::string, std::string> columns = {
-    { "publisher_id", "publisher_id" },
-    { "sum(duration) as duration", "duration" },
-    { "sum(visits) as visits", "visits" },
-    { "sum(score) as score", "score" },
-    { "sum(percent) as percent", "percent" },
-    { "sum(weight) as weight", "weight" },
-    { "reconcile_stamp", "reconcile_stamp" }
-  };
-
-  const std::string group_by = "GROUP BY publisher_id, reconcile_stamp";
-
-  if (!MigrateDBTable(
-      transaction,
-      temp_table_name,
-      kTableName,
-      columns,
-      true,
-      group_by)) {
-    return false;
-  }
-
-  return true;
-}
-
-bool DatabaseActivityInfo::MigrateToV15(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string temp_table_name = base::StringPrintf(
-      "%s_temp",
-      kTableName);
-
-  if (!RenameDBTable(transaction, kTableName, temp_table_name)) {
-    return false;
-  }
-
-  const std::string query =
-      "DROP INDEX IF EXISTS activity_info_publisher_id_index;";
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  if (!CreateTableV15(transaction)) {
-    return false;
-  }
-
-  if (!CreateIndexV15(transaction)) {
-    return false;
-  }
-
-  const std::map<std::string, std::string> columns = {
-    { "publisher_id", "publisher_id" },
-    { "duration", "duration" },
-    { "visits", "visits" },
-    { "score", "score" },
-    { "percent", "percent" },
-    { "weight", "weight" },
-    { "reconcile_stamp", "reconcile_stamp" }
-  };
-
-  if (!MigrateDBTable(
-      transaction,
-      temp_table_name,
-      kTableName,
-      columns,
-      true)) {
-    return false;
-  }
-
-  return true;
-}
-
 void DatabaseActivityInfo::NormalizeList(
     ledger::PublisherInfoList list,
     ledger::ResultCallback callback) {
@@ -565,11 +167,23 @@ void DatabaseActivityInfo::NormalizeList(
 
   transaction->commands.push_back(std::move(command));
 
-  auto transaction_callback = std::bind(&OnResultCallback,
-      _1,
-      callback);
+  auto shared_list = std::make_shared<ledger::PublisherInfoList>(
+      std::move(list));
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      [this, shared_list, callback](ledger::DBCommandResponsePtr response) {
+        if (!response || response->status !=
+              ledger::DBCommandResponse::Status::RESPONSE_OK) {
+          callback(ledger::Result::LEDGER_ERROR);
+          return;
+        }
+
+        ledger_->ledger_client()->PublisherListNormalized(
+            std::move(*shared_list));
+
+        callback(ledger::Result::LEDGER_OK);
+      });
 }
 
 void DatabaseActivityInfo::InsertOrUpdate(
@@ -606,7 +220,9 @@ void DatabaseActivityInfo::InsertOrUpdate(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseActivityInfo::GetRecordsList(
@@ -623,7 +239,7 @@ void DatabaseActivityInfo::GetRecordsList(
 
   std::string query = base::StringPrintf(
     "SELECT ai.publisher_id, ai.duration, ai.score, "
-    "ai.percent, ai.weight, spi.status, pi.excluded, "
+    "ai.percent, ai.weight, spi.status, spi.updated_at, pi.excluded, "
     "pi.name, pi.url, pi.provider, "
     "pi.favIcon, ai.reconcile_stamp, ai.visits "
     "FROM %s AS ai "
@@ -649,6 +265,7 @@ void DatabaseActivityInfo::GetRecordsList(
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
       ledger::DBCommand::RecordBindingType::DOUBLE_TYPE,
       ledger::DBCommand::RecordBindingType::INT_TYPE,
+      ledger::DBCommand::RecordBindingType::INT64_TYPE,
       ledger::DBCommand::RecordBindingType::INT_TYPE,
       ledger::DBCommand::RecordBindingType::STRING_TYPE,
       ledger::DBCommand::RecordBindingType::STRING_TYPE,
@@ -665,7 +282,9 @@ void DatabaseActivityInfo::GetRecordsList(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseActivityInfo::OnGetRecordsList(
@@ -689,14 +308,15 @@ void DatabaseActivityInfo::OnGetRecordsList(
     info->weight = GetDoubleColumn(record_pointer, 4);
     info->status = static_cast<ledger::mojom::PublisherStatus>(
         GetIntColumn(record_pointer, 5));
+    info->status_updated_at = GetInt64Column(record_pointer, 6);
     info->excluded = static_cast<ledger::PublisherExclude>(
-        GetIntColumn(record_pointer, 6));
-    info->name = GetStringColumn(record_pointer, 7);
-    info->url = GetStringColumn(record_pointer, 8);
-    info->provider = GetStringColumn(record_pointer, 9);
-    info->favicon_url = GetStringColumn(record_pointer, 10);
-    info->reconcile_stamp = GetInt64Column(record_pointer, 11);
-    info->visits = GetIntColumn(record_pointer, 12);
+        GetIntColumn(record_pointer, 7));
+    info->name = GetStringColumn(record_pointer, 8);
+    info->url = GetStringColumn(record_pointer, 9);
+    info->provider = GetStringColumn(record_pointer, 10);
+    info->favicon_url = GetStringColumn(record_pointer, 11);
+    info->reconcile_stamp = GetInt64Column(record_pointer, 12);
+    info->visits = GetIntColumn(record_pointer, 13);
 
     list.push_back(std::move(info));
   }
@@ -723,7 +343,7 @@ void DatabaseActivityInfo::DeleteRecord(
   command->command = query;
 
   BindString(command.get(), 0, publisher_key);
-  BindInt64(command.get(), 1, ledger_->GetReconcileStamp());
+  BindInt64(command.get(), 1, ledger_->state()->GetReconcileStamp());
 
   transaction->commands.push_back(std::move(command));
 
@@ -731,7 +351,9 @@ void DatabaseActivityInfo::DeleteRecord(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 }  // namespace braveledger_database

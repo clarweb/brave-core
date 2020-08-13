@@ -22,8 +22,6 @@ using PublisherInfoCallback =
 // TODO(nejczdovc) we should be providing result back as well
 using PublisherInfoListCallback =
     std::function<void(PublisherInfoList)>;
-using GetNicewareListCallback =
-    std::function<void(const Result, const std::string&)>;
 using FetchIconCallback = std::function<void(bool, const std::string&)>;
 using LoadURLCallback = std::function<void(const ledger::UrlResponse&)>;
 using OnLoadCallback = std::function<void(const Result,
@@ -56,7 +54,7 @@ using GetCreateScriptCallback =
     std::function<void(const std::string&, const int)>;
 
 using GetCredsBatchCallback = std::function<void(CredsBatchPtr)>;
-using GetAllCredsBatchCallback = std::function<void(CredsBatchList)>;
+using GetCredsBatchListCallback = std::function<void(CredsBatchList)>;
 using GetPromotionListCallback = std::function<void(PromotionList)>;
 
 using SKUOrderCallback =
@@ -74,28 +72,21 @@ class LEDGER_EXPORT LedgerClient {
 
   virtual void OnReconcileComplete(
       const Result result,
-      const std::string& contribution_id,
-      const double amount,
-      const ledger::RewardsType type) = 0;
+      ContributionInfoPtr contribution) = 0;
 
   virtual void LoadLedgerState(OnLoadCallback callback) = 0;
 
   virtual void LoadPublisherState(OnLoadCallback callback) = 0;
 
-  virtual void LoadNicewareList(ledger::GetNicewareListCallback callback) = 0;
+  virtual void OnPanelPublisherInfo(
+      ledger::Result result,
+      ledger::PublisherInfoPtr publisher_info,
+      uint64_t windowId) = 0;
 
-  virtual void OnPanelPublisherInfo(Result result,
-                                   ledger::PublisherInfoPtr publisher_info,
-                                   uint64_t windowId) = 0;
-
-  virtual void FetchFavIcon(const std::string& url,
-                            const std::string& favicon_key,
-                            FetchIconCallback callback) = 0;
-
-  // uint64_t time_offset (input): timer offset in seconds.
-  // uint32_t timer_id (output) : 0 in case of failure
-  virtual void SetTimer(uint64_t time_offset, uint32_t* timer_id) = 0;
-  virtual void KillTimer(const uint32_t timer_id) = 0;
+  virtual void FetchFavIcon(
+      const std::string& url,
+      const std::string& favicon_key,
+      FetchIconCallback callback) = 0;
 
   virtual std::string URIEncode(const std::string& value) = 0;
 
@@ -107,7 +98,6 @@ class LEDGER_EXPORT LedgerClient {
       const ledger::UrlMethod method,
       ledger::LoadURLCallback callback) = 0;
 
-  // Logs debug information
   virtual void Log(
       const char* file,
       const int line,
@@ -116,51 +106,57 @@ class LEDGER_EXPORT LedgerClient {
 
   virtual void PublisherListNormalized(ledger::PublisherInfoList list) = 0;
 
-  virtual void SaveState(const std::string& name,
-                         const std::string& value,
-                         ledger::ResultCallback callback) = 0;
-  virtual void LoadState(const std::string& name,
-                         ledger::OnLoadCallback callback) = 0;
-  virtual void ResetState(const std::string& name,
-                          ledger::ResultCallback callback) = 0;
-
   virtual void SetBooleanState(const std::string& name, bool value) = 0;
+
   virtual bool GetBooleanState(const std::string& name) const = 0;
+
   virtual void SetIntegerState(const std::string& name, int value) = 0;
+
   virtual int GetIntegerState(const std::string& name) const = 0;
+
   virtual void SetDoubleState(const std::string& name, double value) = 0;
+
   virtual double GetDoubleState(const std::string& name) const = 0;
-  virtual void SetStringState(const std::string& name,
-                              const std::string& value) = 0;
+
+  virtual void SetStringState(
+      const std::string& name,
+      const std::string& value) = 0;
+
   virtual std::string GetStringState(const std::string& name) const = 0;
+
   virtual void SetInt64State(const std::string& name, int64_t value) = 0;
+
   virtual int64_t GetInt64State(const std::string& name) const = 0;
+
   virtual void SetUint64State(const std::string& name, uint64_t value) = 0;
+
   virtual uint64_t GetUint64State(const std::string& name) const = 0;
+
   virtual void ClearState(const std::string& name) = 0;
 
-  // Use option getter to get client specific static value
   virtual bool GetBooleanOption(const std::string& name) const = 0;
+
   virtual int GetIntegerOption(const std::string& name) const = 0;
+
   virtual double GetDoubleOption(const std::string& name) const = 0;
+
   virtual std::string GetStringOption(const std::string& name) const = 0;
+
   virtual int64_t GetInt64Option(const std::string& name) const = 0;
+
   virtual uint64_t GetUint64Option(const std::string& name) const = 0;
-
-  virtual void SetConfirmationsIsReady(const bool is_ready) = 0;
-
-  virtual void ConfirmationsTransactionHistoryDidChange() = 0;
 
   virtual void OnContributeUnverifiedPublishers(
       Result result,
       const std::string& publisher_key,
       const std::string& publisher_name) = 0;
 
-  virtual void GetExternalWallets(
-      GetExternalWalletsCallback callback) = 0;
+  virtual std::map<std::string, ledger::ExternalWalletPtr>
+  GetExternalWallets() = 0;
 
-  virtual void SaveExternalWallet(const std::string& wallet_type,
-                                  ledger::ExternalWalletPtr wallet) = 0;
+  virtual void SaveExternalWallet(
+      const std::string& wallet_type,
+      ledger::ExternalWalletPtr wallet) = 0;
 
   virtual void ShowNotification(
       const std::string& type,
@@ -175,8 +171,8 @@ class LEDGER_EXPORT LedgerClient {
       const std::string& wallet_type) = 0;
 
   virtual void RemoveTransferFee(
-    const std::string& wallet_type,
-    const std::string& id) = 0;
+      const std::string& wallet_type,
+      const std::string& id) = 0;
 
   virtual ledger::ClientInfoPtr GetClientInfo() = 0;
 
@@ -191,6 +187,10 @@ class LEDGER_EXPORT LedgerClient {
   virtual void GetCreateScript(ledger::GetCreateScriptCallback callback) = 0;
 
   virtual void PendingContributionSaved(const ledger::Result result) = 0;
+
+  virtual void ClearAllNotifications() = 0;
+
+  virtual void WalletDisconnected(const std::string& wallet_type) = 0;
 };
 
 }  // namespace ledger

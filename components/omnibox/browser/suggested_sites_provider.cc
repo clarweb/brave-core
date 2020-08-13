@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "base/strings/string_util.h"
 #include "base/strings/utf_string_conversions.h"
 #include "brave/common/pref_names.h"
 #include "components/omnibox/browser/autocomplete_input.h"
@@ -56,16 +57,6 @@ void SuggestedSitesProvider::Start(const AutocompleteInput& input,
           StylesForSingleMatch(input_text,
               base::UTF16ToASCII(match.display_));
       AddMatch(match, styles);
-      if (match.allow_default_ &&
-          match.match_string_.length() == input_text.length()) {
-        // It's guaranteed that matches_ has at least 1 item
-        // here because of the previous AddMatch call.
-        size_t last_index = matches_.size() - 1;
-        matches_[last_index].SetAllowedToBeDefault(input);
-        // As from autocomplete_provider.h:
-        // Search Primary Provider (what you typed) | 1300
-        matches_[last_index].relevance = 1301;
-      }
     }
   };
 

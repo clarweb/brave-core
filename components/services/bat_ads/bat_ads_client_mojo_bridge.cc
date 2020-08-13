@@ -11,28 +11,11 @@
 
 #include "mojo/public/cpp/bindings/interface_request.h"
 #include "mojo/public/cpp/bindings/sync_call_restrictions.h"
-#include "base/containers/flat_map.h"
 #include "base/logging.h"
 
 namespace bat_ads {
 
 namespace {
-
-int32_t ToMojomURLRequestMethod(
-    const ads::URLRequestMethod method) {
-  return (int32_t)method;
-}
-
-std::map<std::string, std::string> ToStdMap(
-    const base::flat_map<std::string, std::string>& map) {
-  std::map<std::string, std::string> std_map;
-
-  for (const auto& it : map) {
-    std_map[it.first] = it.second;
-  }
-
-  return std_map;
-}
 
 ads::Result ToAdsResult(
     const int32_t result) {
@@ -99,6 +82,69 @@ uint64_t BatAdsClientMojoBridge::GetAdsPerDay() const {
   return ads_per_day;
 }
 
+bool BatAdsClientMojoBridge::ShouldAllowAdsSubdivisionTargeting() const {
+  if (!connected()) {
+    return false;
+  }
+
+  bool should_allow;
+  bat_ads_client_->ShouldAllowAdsSubdivisionTargeting(&should_allow);
+  return should_allow;
+}
+
+void BatAdsClientMojoBridge::SetAllowAdsSubdivisionTargeting(
+    const bool should_allow) {
+  if (!connected()) {
+    return;
+  }
+
+  bat_ads_client_->SetAllowAdsSubdivisionTargeting(should_allow);
+}
+
+std::string BatAdsClientMojoBridge::GetAdsSubdivisionTargetingCode() const {
+  std::string subdivision_targeting_code;
+
+  if (!connected()) {
+    return subdivision_targeting_code;
+  }
+
+  bat_ads_client_->GetAdsSubdivisionTargetingCode(&subdivision_targeting_code);
+  return subdivision_targeting_code;
+}
+
+void BatAdsClientMojoBridge::SetAdsSubdivisionTargetingCode(
+    const std::string& subdivision_targeting_code) {
+  if (!connected()) {
+    return;
+  }
+
+  bat_ads_client_->SetAdsSubdivisionTargetingCode(subdivision_targeting_code);
+}
+
+std::string BatAdsClientMojoBridge::
+GetAutomaticallyDetectedAdsSubdivisionTargetingCode() const {
+  std::string subdivision_targeting_code;
+
+  if (!connected()) {
+    return subdivision_targeting_code;
+  }
+
+  bat_ads_client_->GetAutomaticallyDetectedAdsSubdivisionTargetingCode(
+      &subdivision_targeting_code);
+  return subdivision_targeting_code;
+}
+
+void BatAdsClientMojoBridge::
+SetAutomaticallyDetectedAdsSubdivisionTargetingCode(
+    const std::string& subdivision_targeting_code) {
+  if (!connected()) {
+    return;
+  }
+
+  bat_ads_client_->SetAutomaticallyDetectedAdsSubdivisionTargetingCode(
+      subdivision_targeting_code);
+}
+
 void BatAdsClientMojoBridge::SetIdleThreshold(
     const int threshold) {
   if (!connected()) {
@@ -116,47 +162,6 @@ bool BatAdsClientMojoBridge::IsNetworkConnectionAvailable() const {
   bool is_available;
   bat_ads_client_->IsNetworkConnectionAvailable(&is_available);
   return is_available;
-}
-
-void BatAdsClientMojoBridge::GetClientInfo(
-    ads::ClientInfo* info) const {
-  if (!connected()) {
-    return;
-  }
-
-  std::string client_info;
-  bat_ads_client_->GetClientInfo(info->ToJson(), &client_info);
-  info->FromJson(client_info);
-}
-
-std::vector<std::string> BatAdsClientMojoBridge::GetUserModelLanguages() const {
-  std::vector<std::string> languages;
-
-  if (!connected()) {
-    return languages;
-  }
-
-  bat_ads_client_->GetUserModelLanguages(&languages);
-  return languages;
-}
-
-void OnLoadUserModelForLanguage(
-    const ads::LoadCallback& callback,
-    const int32_t result,
-    const std::string& value) {
-  callback(ToAdsResult(result), value);
-}
-
-void BatAdsClientMojoBridge::LoadUserModelForLanguage(
-    const std::string& language,
-    ads::LoadCallback callback) const {
-  if (!connected()) {
-    callback(ads::Result::FAILED, "");
-    return;
-  }
-
-  bat_ads_client_->LoadUserModelForLanguage(language,
-      base::BindOnce(&OnLoadUserModelForLanguage, std::move(callback)));
 }
 
 bool BatAdsClientMojoBridge::IsForeground() const {
@@ -197,60 +202,37 @@ void BatAdsClientMojoBridge::CloseNotification(
   bat_ads_client_->CloseNotification(uuid);
 }
 
-void BatAdsClientMojoBridge::SetCatalogIssuers(
-    std::unique_ptr<ads::IssuersInfo> info) {
-  if (!connected()) {
+void OnUrlRequest(
+    const ads::UrlRequestCallback& callback,
+    const ads::UrlResponsePtr url_response_ptr) {
+  ads::UrlResponse url_response;
+
+  if (!url_response_ptr) {
+    url_response.status_code = 418;  // I'm a teapot
+    callback(url_response);
     return;
   }
 
-  bat_ads_client_->SetCatalogIssuers(info->ToJson());
+  url_response.url = url_response_ptr->url;
+  url_response.status_code = url_response_ptr->status_code;
+  url_response.body = url_response_ptr->body;
+  url_response.headers = url_response_ptr->headers;
+  callback(url_response);
 }
 
-void BatAdsClientMojoBridge::ConfirmAd(
-    const ads::AdInfo& info,
-    const ads::ConfirmationType confirmation_type) {
+void BatAdsClientMojoBridge::UrlRequest(
+    ads::UrlRequestPtr url_request,
+    ads::UrlRequestCallback callback) {
   if (!connected()) {
+    ads::UrlResponse response;
+    response.url = url_request->url;
+    response.status_code = 418;  // I'm a teapot
+    callback(response);
     return;
   }
 
-  bat_ads_client_->ConfirmAd(info.ToJson(), confirmation_type);
-}
-
-void BatAdsClientMojoBridge::ConfirmAction(
-    const std::string& creative_instance_id,
-    const std::string& creative_set_id,
-    const ads::ConfirmationType confirmation_type) {
-  if (!connected()) {
-    return;
-  }
-
-  bat_ads_client_->ConfirmAction(creative_instance_id, creative_set_id,
-      confirmation_type);
-}
-
-void OnURLRequest(
-    const ads::URLRequestCallback& callback,
-    const int32_t response_status_code,
-    const std::string& content,
-    const base::flat_map<std::string, std::string>& headers) {
-  callback(response_status_code, content, ToStdMap(headers));
-}
-
-void BatAdsClientMojoBridge::URLRequest(
-    const std::string& url,
-    const std::vector<std::string>& headers,
-    const std::string& content,
-    const std::string& content_type,
-    const ads::URLRequestMethod method,
-    ads::URLRequestCallback callback) {
-  if (!connected()) {
-    callback(418, "", {});
-    return;
-  }
-
-  bat_ads_client_->URLRequest(url, headers, content, content_type,
-      ToMojomURLRequestMethod(method), base::BindOnce(&OnURLRequest,
-          std::move(callback)));
+  bat_ads_client_->UrlRequest(std::move(url_request),
+      base::BindOnce(&OnUrlRequest, std::move(callback)));
 }
 
 void OnSave(
@@ -272,6 +254,25 @@ void BatAdsClientMojoBridge::Save(
       std::move(callback)));
 }
 
+void OnLoadUserModelForId(
+    const ads::LoadCallback& callback,
+    const int32_t result,
+    const std::string& value) {
+  callback(ToAdsResult(result), value);
+}
+
+void BatAdsClientMojoBridge::LoadUserModelForId(
+    const std::string& id,
+    ads::LoadCallback callback) {
+  if (!connected()) {
+    callback(ads::Result::FAILED, "");
+    return;
+  }
+
+  bat_ads_client_->LoadUserModelForId(id,
+      base::BindOnce(&OnLoadUserModelForId, std::move(callback)));
+}
+
 void OnLoad(
     const ads::LoadCallback& callback,
     const int32_t result,
@@ -290,113 +291,37 @@ void BatAdsClientMojoBridge::Load(
   bat_ads_client_->Load(name, base::BindOnce(&OnLoad, std::move(callback)));
 }
 
-void OnReset(
-    const ads::ResultCallback& callback,
-    const int32_t result) {
-  callback(ToAdsResult(result));
+std::string BatAdsClientMojoBridge::LoadResourceForId(
+    const std::string& id) {
+  std::string value;
+
+  if (!connected()) {
+    return value;
+  }
+
+  bat_ads_client_->LoadResourceForId(id, &value);
+  return value;
 }
 
-void BatAdsClientMojoBridge::Reset(
-    const std::string& name,
-    ads::ResultCallback callback) {
+void OnRunDBTransaction(
+    const ads::RunDBTransactionCallback& callback,
+    ads::DBCommandResponsePtr response) {
+  callback(std::move(response));
+}
+
+void BatAdsClientMojoBridge::RunDBTransaction(
+    ads::DBTransactionPtr transaction,
+    ads::RunDBTransactionCallback callback) {
+  bat_ads_client_->RunDBTransaction(std::move(transaction),
+      base::BindOnce(&OnRunDBTransaction, std::move(callback)));
+}
+
+void BatAdsClientMojoBridge::OnAdRewardsChanged() {
   if (!connected()) {
-    callback(ads::Result::FAILED);
     return;
   }
 
-  bat_ads_client_->Reset(name, base::BindOnce(&OnReset, std::move(callback)));
-}
-
-std::string BatAdsClientMojoBridge::LoadJsonSchema(
-    const std::string& name) {
-  std::string json;
-
-  if (!connected()) {
-    return json;
-  }
-
-  bat_ads_client_->LoadJsonSchema(name, &json);
-  return json;
-}
-
-void OnSaveBundleState(
-    const ads::ResultCallback& callback,
-    const int32_t result) {
-  callback(ToAdsResult(result));
-}
-
-void BatAdsClientMojoBridge::SaveBundleState(
-    std::unique_ptr<ads::BundleState> bundle_state,
-    ads::ResultCallback callback) {
-  if (!connected()) {
-    callback(ads::Result::FAILED);
-    return;
-  }
-
-  bat_ads_client_->SaveBundleState(bundle_state->ToJson(),
-      base::BindOnce(&OnSaveBundleState, std::move(callback)));
-}
-
-void OnGetCreativeAdNotifications(
-    const ads::GetCreativeAdNotificationsCallback& callback,
-    const int32_t result,
-    const std::vector<std::string>& categories,
-    const std::vector<std::string>& json_list) {
-  ads::CreativeAdNotificationList ads;
-
-  for (const auto& json : json_list) {
-    ads::CreativeAdNotificationInfo ad;
-    if (ad.FromJson(json) != ads::Result::SUCCESS) {
-      callback(ads::Result::FAILED, categories, {});
-      return;
-    }
-
-    ads.push_back(ad);
-  }
-
-  callback(ToAdsResult(result), categories, ads);
-}
-
-void BatAdsClientMojoBridge::GetCreativeAdNotifications(
-    const std::vector<std::string>& categories,
-    ads::GetCreativeAdNotificationsCallback callback) {
-  if (!connected()) {
-    callback(ads::Result::FAILED, categories, {});
-    return;
-  }
-
-  bat_ads_client_->GetCreativeAdNotifications(categories,
-      base::BindOnce(&OnGetCreativeAdNotifications, std::move(callback)));
-}
-
-void OnGetAdConversions(
-    const ads::GetAdConversionsCallback& callback,
-    const int32_t result,
-    const std::vector<std::string>& json_list) {
-  ads::AdConversionList ad_conversions;
-
-  for (const auto& json : json_list) {
-    ads::AdConversionInfo ad_conversion;
-    if (ad_conversion.FromJson(json) != ads::Result::SUCCESS) {
-      callback(ads::Result::FAILED, {});
-      return;
-    }
-
-    ad_conversions.push_back(ad_conversion);
-  }
-
-  callback(ToAdsResult(result), ad_conversions);
-}
-
-void BatAdsClientMojoBridge::GetAdConversions(
-    ads::GetAdConversionsCallback callback) {
-  if (!connected()) {
-    callback(ads::Result::FAILED, {});
-    return;
-  }
-
-  bat_ads_client_->GetAdConversions(
-      base::BindOnce(&OnGetAdConversions, std::move(callback)));
+  bat_ads_client_->OnAdRewardsChanged();
 }
 
 void BatAdsClientMojoBridge::Log(

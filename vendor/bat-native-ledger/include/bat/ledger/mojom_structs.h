@@ -122,9 +122,6 @@ using PublisherStatus = mojom::PublisherStatus;
 
 using PublisherExclude = mojom::PublisherExclude;
 
-using ReconcileInfo = mojom::ReconcileInfo;
-using ReconcileInfoPtr = mojom::ReconcileInfoPtr;
-
 using RecurringTip = mojom::RecurringTip;
 using RecurringTipPtr = mojom::RecurringTipPtr;
 
@@ -142,11 +139,6 @@ using RewardsType = mojom::RewardsType;
 
 using ServerPublisherInfo = mojom::ServerPublisherInfo;
 using ServerPublisherInfoPtr = mojom::ServerPublisherInfoPtr;
-
-using ServerPublisherPartial = mojom::ServerPublisherPartial;
-using ServerPublisherPartialPtr = mojom::ServerPublisherPartialPtr;
-using ServerPublisherPartialList =
-    std::vector<mojom::ServerPublisherPartialPtr>;
 
 using SKUOrder = mojom::SKUOrder;
 using SKUOrderPtr = mojom::SKUOrderPtr;

@@ -62,6 +62,40 @@ export class Panel extends React.Component<Props, State> {
       })
     }
 
+    if (!this.props.rewardsPanelData.initializing) {
+      this.startRewards()
+    }
+  }
+
+  componentDidUpdate (prevProps: Props, prevState: State) {
+    const publisher: RewardsExtension.Publisher | undefined = this.getPublisher()
+    const newKey = publisher && publisher.publisher_key
+
+    if (!prevState.publisherKey && newKey) {
+      this.setState({
+        showSummary: false,
+        publisherKey: newKey
+      })
+    } else if (prevState.publisherKey && !newKey) {
+      this.setState({
+        showSummary: true,
+        publisherKey: null
+      })
+    }
+
+    if (!prevProps.rewardsPanelData.enabledMain &&
+        this.props.rewardsPanelData.enabledMain &&
+        !this.props.rewardsPanelData.initializing) {
+      this.actions.fetchPromotions()
+    }
+
+    if (prevProps.rewardsPanelData.initializing &&
+        !this.props.rewardsPanelData.initializing) {
+      this.startRewards()
+    }
+  }
+
+  startRewards () {
     chrome.braveRewards.getACEnabled((enabled: boolean) => {
       this.props.actions.onEnabledAC(enabled)
     })
@@ -84,27 +118,6 @@ export class Panel extends React.Component<Props, State> {
     chrome.braveRewards.getRewardsParameters((parameters: RewardsExtension.RewardsParameters) => {
       this.props.actions.onRewardsParameters(parameters)
     })
-  }
-
-  componentDidUpdate (prevProps: Props, prevState: State) {
-    const publisher: RewardsExtension.Publisher | undefined = this.getPublisher()
-    const newKey = publisher && publisher.publisher_key
-
-    if (!prevState.publisherKey && newKey) {
-      this.setState({
-        showSummary: false,
-        publisherKey: newKey
-      })
-    } else if (prevState.publisherKey && !newKey) {
-      this.setState({
-        showSummary: true,
-        publisherKey: null
-      })
-    }
-
-    if (!prevProps.rewardsPanelData.enabledMain && this.props.rewardsPanelData.enabledMain) {
-      this.actions.fetchPromotions()
-    }
   }
 
   componentWillUnmount () {
@@ -169,7 +182,7 @@ export class Panel extends React.Component<Props, State> {
 
   onBackupWallet = (id: string) => {
     chrome.tabs.create({
-      url: 'chrome://rewards#backup-restore'
+      url: 'chrome://rewards#manage-wallet'
     })
     this.actions.deleteNotification(id)
   }
@@ -252,7 +265,7 @@ export class Panel extends React.Component<Props, State> {
   }
 
   onAddFunds = (notificationId?: string) => {
-    const { externalWallet } = this.props.rewardsPanelData
+    const { externalWallet, balance } = this.props.rewardsPanelData
 
     if (notificationId) {
       this.actions.deleteNotification(notificationId)
@@ -269,10 +282,7 @@ export class Panel extends React.Component<Props, State> {
       return
     }
 
-    if (externalWallet.verifyUrl) {
-      utils.handleUpholdLink(externalWallet.verifyUrl, externalWallet)
-      return
-    }
+    utils.handleUpholdLink(balance, externalWallet)
   }
 
   showTipSiteDetail = (monthly: boolean) => {
@@ -651,14 +661,16 @@ export class Panel extends React.Component<Props, State> {
       actions.push({
         name: getMessage('addFunds'),
         action: this.onAddFunds,
-        icon: <WalletAddIcon />
+        icon: <WalletAddIcon />,
+        externalWallet: true
       })
     }
 
     return actions.concat([{
       name:  getMessage('rewardsSettings'),
       action: this.openRewardsPage,
-      icon: <BatColorIcon />
+      icon: <BatColorIcon />,
+      externalWallet: false
     }])
   }
 
@@ -681,7 +693,7 @@ export class Panel extends React.Component<Props, State> {
   }
 
   render () {
-    const { pendingContributionTotal, enabledAC, externalWallet, balance, promotions, parameters } = this.props.rewardsPanelData
+    const { pendingContributionTotal, enabledAC, externalWallet, balance, parameters } = this.props.rewardsPanelData
     const publisher: RewardsExtension.Publisher | undefined = this.getPublisher()
     const total = balance.total || 0
     const converted = utils.convertBalance(total, parameters.rate)
@@ -719,7 +731,7 @@ export class Panel extends React.Component<Props, State> {
     let onVerifyClick = undefined
     if (!this.props.onlyAnonWallet) {
       walletStatus = utils.getWalletStatus(externalWallet)
-      onVerifyClick = utils.onVerifyClick.bind(this, this.actions)
+      onVerifyClick = utils.handleUpholdLink.bind(this, balance, externalWallet)
     }
 
     return (
@@ -737,13 +749,13 @@ export class Panel extends React.Component<Props, State> {
         onNotificationClick={notificationClick}
         onSolution={this.onSolution}
         onFinish={this.onFinish}
-        grants={utils.generatePromotions(promotions)}
         walletState={walletStatus}
         onVerifyClick={onVerifyClick}
         onDisconnectClick={this.onDisconnectClick}
         goToUphold={this.goToUphold}
         greetings={utils.getGreetings(externalWallet)}
         onlyAnonWallet={this.props.onlyAnonWallet}
+        showLoginMessage={balance.total < 25}
         {...notification}
       >
         <WalletSummarySlider

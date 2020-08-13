@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <utility>
 
-#include "bat/ledger/internal/bat_helper.h"
+#include "bat/ledger/internal/legacy/bat_helper.h"
 #include "bat/ledger/internal/legacy/bat_state.h"
 #include "bat/ledger/internal/common/time_util.h"
 #include "bat/ledger/internal/ledger_impl.h"
@@ -30,7 +30,7 @@ void LegacyBatState::Load(ledger::ResultCallback callback) {
       _1,
       _2,
       callback);
-  ledger_->LoadLedgerState(load_callback);
+  ledger_->ledger_client()->LoadLedgerState(load_callback);
 }
 
 void LegacyBatState::OnLoad(

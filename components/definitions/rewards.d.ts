@@ -44,6 +44,7 @@ declare namespace Rewards {
     enabledContribute: boolean
     enabledMain: boolean
     externalWallet?: ExternalWallet
+    initializing: boolean
     inlineTip: {
       twitter: boolean
       reddit: boolean
@@ -67,12 +68,12 @@ declare namespace Rewards {
     ui: {
       emptyWallet: boolean
       modalBackup: boolean
-      modalRedirect: 'show' | 'hide' | 'error' | 'notAllowed'
+      modalRedirect: 'show' | 'hide' | 'error' | 'notAllowed' | 'batLimit'
       paymentIdCheck: boolean
       promosDismissed?: {
         [key: string]: boolean
       }
-      walletRecoverySuccess: boolean | null
+      walletRecoveryStatus: number | null
       walletServerProblem: boolean
       walletCorrupted: boolean
       onBoardingDisplayed?: boolean
@@ -225,6 +226,9 @@ declare namespace Rewards {
   export interface AdsData {
     adsEnabled: boolean
     adsPerHour: number
+    adsSubdivisionTargeting: string
+    automaticallyDetectedAdsSubdivisionTargeting: string
+    shouldAllowAdsSubdivisionTargeting: boolean
     adsUIEnabled: boolean
     adsIsSupported: boolean
     adsEstimatedPendingRewards: number
@@ -284,6 +288,7 @@ declare namespace Rewards {
     withdrawUrl: string
     userName?: string
     accountUrl: string
+    loginUrl: string
   }
 
   export interface ProcessRewardsPageUrl {

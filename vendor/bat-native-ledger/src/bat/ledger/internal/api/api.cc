@@ -20,12 +20,8 @@ void API::Initialize() {
   parameters_->Initialize();
 }
 
-void API::OnTimer(const uint32_t timer_id) {
-  parameters_->OnTimer(timer_id);
-}
-
-void API::FetchParameters() {
-  parameters_->Fetch();
+void API::FetchParameters(ledger::GetRewardsParametersCallback callback) {
+  parameters_->Fetch(callback);
 }
 
 }  // namespace braveledger_api

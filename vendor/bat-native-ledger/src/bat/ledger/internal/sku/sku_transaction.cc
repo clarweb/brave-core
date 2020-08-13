@@ -11,9 +11,9 @@
 #include "bat/ledger/global_constants.h"
 #include "bat/ledger/internal/ledger_impl.h"
 #include "bat/ledger/internal/request/request_sku.h"
+#include "bat/ledger/internal/response/response_sku.h"
 #include "bat/ledger/internal/sku/sku_transaction.h"
 #include "bat/ledger/internal/sku/sku_util.h"
-#include "net/http/http_status_code.h"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -76,7 +76,7 @@ void SKUTransaction::Create(
       wallet,
       callback);
 
-  ledger_->SaveSKUTransaction(transaction->Clone(), save_callback);
+  ledger_->database()->SaveSKUTransaction(transaction->Clone(), save_callback);
 }
 
 void SKUTransaction::OnTransactionSaved(
@@ -98,7 +98,7 @@ void SKUTransaction::OnTransactionSaved(
       transaction,
       callback);
 
-  ledger_->TransferFunds(
+  ledger_->contribution()->TransferFunds(
       transaction,
       destination,
       ledger::ExternalWallet::New(wallet),
@@ -131,7 +131,7 @@ void SKUTransaction::OnTransfer(
       callback);
 
   // We save SKUTransactionStatus::COMPLETED status in this call
-  ledger_->SaveSKUExternalTransaction(
+  ledger_->database()->SaveSKUExternalTransaction(
       transaction.transaction_id,
       external_transaction_id,
       save_callback);
@@ -153,7 +153,7 @@ void SKUTransaction::OnSaveSKUExternalTransaction(
       transaction,
       callback);
 
-  ledger_->UpdateSKUOrderStatus(
+  ledger_->database()->UpdateSKUOrderStatus(
       transaction.order_id,
       ledger::SKUOrderStatus::PAID,
       save_callback);
@@ -212,9 +212,10 @@ void SKUTransaction::OnSendExternalTransaction(
     ledger::ResultCallback callback) {
   BLOG(6, ledger::UrlResponseToString(__func__, response));
 
-  if (response.status_code != net::HTTP_CREATED) {
+  const ledger::Result result =
+      braveledger_response_util::CheckSendExternalTransaction(response);
+  if (result != ledger::Result::LEDGER_OK) {
     BLOG(0, "External transaction not sent");
-
     callback(ledger::Result::RETRY);
     return;
   }

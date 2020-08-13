@@ -9,12 +9,16 @@ import org.objectweb.asm.ClassVisitor;
 
 public class BraveClassAdapter {
     public static ClassVisitor createAdapter(ClassVisitor chain) {
-        chain = new BraveBookmarkModelClassAdapter(chain);
         chain = new BraveMainPreferenceBaseClassAdapter(chain);
         chain = new BraveAndroidSyncSettingsClassAdapter(chain);
         chain = new BraveLaunchIntentDispatcherClassAdapter(chain);
-        chain = new BraveExternalNavigationHandlerClassAdapter(chain);
         chain = new BraveHomepageManagerClassAdapter(chain);
+        chain = new BraveManageSyncSettingsClassAdapter(chain);
+        chain = new BraveNewTabPageLayoutClassAdapter(chain);
+        chain = new BraveFeedSurfaceCoordinatorClassAdapter(chain);
+        chain = new BraveNewTabPageClassAdapter(chain);
+        chain = new BraveEditUrlSuggestionProcessorClassAdapter(chain);
+        chain = new BraveSearchEngineAdapterClassAdapter(chain);
         return chain;
     }
 }

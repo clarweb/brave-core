@@ -49,7 +49,7 @@ void Reddit::OnMediaActivityError(
   new_visit_data.path = "/";
   new_visit_data.name = REDDIT_MEDIA_TYPE;
 
-  ledger_->GetPublisherActivityFromUrl(
+  ledger_->publisher()->GetPublisherActivityFromUrl(
       window_id, ledger::VisitData::New(new_visit_data), std::string());
 }
 
@@ -64,7 +64,7 @@ void Reddit::UserPath(
   }
 
   const std::string media_key = (std::string)REDDIT_MEDIA_TYPE + "_" + user;
-  ledger_->GetMediaPublisherInfo(
+  ledger_->database()->GetMediaPublisherInfo(
       media_key,
       std::bind(&Reddit::OnUserActivity,
           this,
@@ -163,14 +163,14 @@ void Reddit::GetPublisherPanelInfo(
     uint64_t window_id,
     const ledger::VisitData& visit_data,
     const std::string& publisher_key) {
-  auto filter = ledger_->CreateActivityFilter(
+  auto filter = ledger_->publisher()->CreateActivityFilter(
     publisher_key,
     ledger::ExcludeFilter::FILTER_ALL,
     false,
-    ledger_->GetReconcileStamp(),
+    ledger_->state()->GetReconcileStamp(),
     true,
     false);
-  ledger_->GetPanelPublisherInfo(std::move(filter),
+  ledger_->database()->GetPanelPublisherInfo(std::move(filter),
     std::bind(&Reddit::OnPublisherPanelInfo,
               this,
               window_id,
@@ -195,7 +195,10 @@ void Reddit::OnPublisherPanelInfo(
 
     FetchDataFromUrl(visit_data.url, url_callback);
   } else {
-    ledger_->OnPanelPublisherInfo(result, std::move(info), window_id);
+    ledger_->ledger_client()->OnPanelPublisherInfo(
+        result,
+        std::move(info),
+        window_id);
   }
 }
 
@@ -286,7 +289,7 @@ void Reddit::OnMediaPublisherInfo(
     callback(ledger::Result::LEDGER_ERROR, nullptr);
     return;
   }
-  GURL url(REDDIT_USER_URL + ledger_->URIEncode(user_name));
+  GURL url(REDDIT_USER_URL + ledger_->ledger_client()->URIEncode(user_name));
   if (!url.is_valid()) {
     callback(ledger::Result::TIP_ERROR, nullptr);
     return;
@@ -312,7 +315,7 @@ void Reddit::SavePublisherInfo(
   const std::string user_id = GetUserId(data);
   const std::string publisher_key = GetPublisherKey(user_id);
   const std::string media_key = GetMediaKey(user_name, REDDIT_MEDIA_TYPE);
-if (publisher_key.empty()) {
+  if (publisher_key.empty()) {
     callback(ledger::Result::LEDGER_ERROR, nullptr);
     BLOG(0, "Publisher key is missing for: " << media_key);
     return;
@@ -327,18 +330,18 @@ if (publisher_key.empty()) {
   visit_data->favicon_url = favicon_url;
   visit_data->name = user_name;
 
-
-  ledger_->SaveMediaVisit(publisher_key,
-                          *visit_data,
-                          0,
-                          window_id,
-                          callback);
+  ledger_->publisher()->SaveVisit(
+      publisher_key,
+      *visit_data,
+      0,
+      window_id,
+      callback);
 
   if (!media_key.empty()) {
-    ledger_->SaveMediaPublisherInfo(
+    ledger_->database()->SaveMediaPublisherInfo(
         media_key,
         publisher_key,
-        [](const ledger::Result _){});
+        [](const ledger::Result) {});
   }
 }
 
@@ -354,7 +357,7 @@ void Reddit::SaveMediaInfo(
   const std::string media_key =
       braveledger_media::GetMediaKey(user_name->second, REDDIT_MEDIA_TYPE);
 
-  ledger_->GetMediaPublisherInfo(
+  ledger_->database()->GetMediaPublisherInfo(
       media_key,
       std::bind(&Reddit::OnMediaPublisherInfo,
                 this,

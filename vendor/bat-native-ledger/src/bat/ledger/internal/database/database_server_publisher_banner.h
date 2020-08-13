@@ -22,29 +22,19 @@ class DatabaseServerPublisherBanner: public DatabaseTable {
   explicit DatabaseServerPublisherBanner(bat_ledger::LedgerImpl* ledger);
   ~DatabaseServerPublisherBanner() override;
 
-  bool Migrate(ledger::DBTransaction* transaction, const int target) override;
+  void InsertOrUpdate(
+      ledger::DBTransaction* transaction,
+      const ledger::ServerPublisherInfo& server_info);
 
-  void InsertOrUpdateList(
-      const std::vector<ledger::PublisherBanner>& list,
-      ledger::ResultCallback callback);
+  void DeleteRecords(
+      ledger::DBTransaction* transaction,
+      const std::string& publisher_key_list);
 
   void GetRecord(
       const std::string& publisher_key,
       ledger::PublisherBannerCallback callback);
 
  private:
-  bool CreateTableV7(ledger::DBTransaction* transaction);
-
-  bool CreateTableV15(ledger::DBTransaction* transaction);
-
-  bool CreateIndexV7(ledger::DBTransaction* transaction);
-
-  bool CreateIndexV15(ledger::DBTransaction* transaction);
-
-  bool MigrateToV7(ledger::DBTransaction* transaction);
-
-  bool MigrateToV15(ledger::DBTransaction* transaction);
-
   void OnGetRecord(
       ledger::DBCommandResponsePtr response,
       const std::string& publisher_key,

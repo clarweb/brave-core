@@ -92,12 +92,20 @@ void RewardsNotificationServiceImpl::DeleteNotification(
   OnNotificationDeleted(rewards_notification);
 }
 
-void RewardsNotificationServiceImpl::DeleteAllNotifications() {
+void RewardsNotificationServiceImpl::DeleteAllNotifications(
+    const bool delete_displayed) {
+  bool displayed = delete_displayed;
+
+  #if defined(OS_ANDROID)
+    displayed = true;
+  #endif
+
+  if (displayed) {
+    rewards_notifications_displayed_.clear();
+  }
+
   rewards_notifications_.clear();
-#if defined(OS_ANDROID)
-  rewards_notifications_displayed_.clear();
   StoreRewardsNotifications();
-#endif
   OnAllNotificationsDeleted();
 }
 
@@ -367,7 +375,8 @@ void RewardsNotificationServiceImpl::OnReconcileComplete(
     unsigned int result,
     const std::string& contribution_id,
     const double amount,
-    const int32_t type) {
+    const int32_t type,
+    const int32_t processor) {
   auto converted_result = static_cast<ledger::Result>(result);
   auto converted_type = static_cast<ledger::RewardsType>(type);
 

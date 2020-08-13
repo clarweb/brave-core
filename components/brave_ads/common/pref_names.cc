@@ -26,6 +26,18 @@ const char kHasAdsP3AState[] = "brave.brave_ads.has_p3a_state";
 // Stores the maximum amount of ads per hour
 const char kAdsPerHour[] = "brave.brave_ads.ads_per_hour";
 
+// Stores whether Brave ads should allow subdivision ad targeting
+const char kShouldAllowAdsSubdivisionTargeting[] =
+    "brave.brave_ads.should_allow_ads_subdivision_targeting";
+
+// Stores the selected ads subdivision targeting code
+const char kAdsSubdivisionTargetingCode[] =
+    "brave.brave_ads.ads_subdivision_targeting_code";
+
+// Stores the automatically detected ads subdivision targeting code
+const char kAutomaticallyDetectedAdsSubdivisionTargetingCode[] =
+    "brave.brave_ads.automatically_detected_ads_subdivision_targeting_code";
+
 // Stores the maximum amount of ads per day
 const char kAdsPerDay[] = "brave.brave_ads.ads_per_day";
 
@@ -44,18 +56,21 @@ const char kOnboardingTimestamp[] =
 const char kShouldShowMyFirstAdNotification[] =
     "brave.brave_ads.should_show_my_first_ad_notification";
 
-// Stores the supported regions current schema version number
-const char kSupportedRegionsLastSchemaVersion[] =
+// Stores the supported country codes current schema version number
+const char kSupportedCountryCodesLastSchemaVersion[] =
     "brave.brave_ads.supported_regions_last_schema_version_number";
-const char kSupportedRegionsSchemaVersion[] =
+const char kSupportedCountryCodesSchemaVersion[] =
     "brave.brave_ads.supported_regions_schema_version_number";
 
-const int kSupportedRegionsSchemaVersionNumber = 9;
+const int kSupportedCountryCodesSchemaVersionNumber = 9;
 
 // Stores the preferences version number
 const char kVersion[] = "brave.brave_ads.prefs.version";
 
 const int kCurrentVersionNumber = 7;
+
+const char kAdViewConfirmationCountPrefName[] =
+    "brave.weekly_storage.p2a_ad_view_confirmation_count";
 
 }  // namespace prefs
 

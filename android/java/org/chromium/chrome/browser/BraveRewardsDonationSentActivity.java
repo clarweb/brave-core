@@ -50,10 +50,10 @@ public class BraveRewardsDonationSentActivity extends Activity implements BraveR
         mBraveRewardsNativeWorker.AddObserver(this);
 
         String publisherFavIconURL = mBraveRewardsNativeWorker.GetPublisherFavIconURL(currentTabId_);
-        Tab currentActiveTab = BraveRewardsHelper.currentActiveTab();
+        Tab currentActiveTab = BraveRewardsHelper.currentActiveChromeTabbedActivityTab();
         String url = currentActiveTab.getUrlString();
         String favicon_url = (publisherFavIconURL.isEmpty()) ? url : publisherFavIconURL;
-        mIconFetcher = new org.chromium.chrome.browser.BraveRewardsHelper();
+        mIconFetcher = new org.chromium.chrome.browser.BraveRewardsHelper(currentActiveTab);
         mIconFetcher.retrieveLargeIcon(favicon_url, this);
         SetData();
         SetAnimation();
@@ -138,7 +138,7 @@ public class BraveRewardsDonationSentActivity extends Activity implements BraveR
         mMonthly_tip_ = IntentUtils.safeGetBooleanExtra (intent, BraveRewardsSiteBannerActivity.TIP_MONTHLY_EXTRA, false);
 
         //set the data
-        String strAmount = String.format(getDefault(), "%.1f "+(BraveRewardsHelper.isAnonWallet() ? getResources().getString(R.string.brave_ui_bap_text) : getResources().getString(R.string.brave_ui_bat_text)), (float)mAmount_);
+        String strAmount = String.format(getDefault(), "%.3f "+(BraveRewardsHelper.isAnonWallet() ? getResources().getString(R.string.brave_ui_bap_text) : getResources().getString(R.string.brave_ui_bat_text)), (float)mAmount_);
         ((TextView)findViewById(R.id.txt_pub_name)).setText(mPublisher_name_);
 
         if (true == mMonthly_tip_) {
@@ -240,7 +240,4 @@ public class BraveRewardsDonationSentActivity extends Activity implements BraveR
 
     @Override
     public void OnRewardsMainEnabled(boolean enabled) {}
-
-    @Override
-    public void OnFetchPromotions() {}
 }

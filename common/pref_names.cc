@@ -32,17 +32,12 @@ const char kBraveThemeType[] = "brave.theme.type";  // deprecated
 const char kUseOverriddenBraveThemeType[] =
     "brave.theme.use_overridden_brave_theme_type";  // deprecated
 const char kLocationBarIsWide[] = "brave.location_bar_is_wide";
-const char kReferralPromoCode[] = "brave.referral.promo_code";
 const char kReferralDownloadID[] = "brave.referral.download_id";
 const char kReferralTimestamp[] = "brave.referral.timestamp";
 const char kReferralAttemptTimestamp[] =
     "brave.referral.referral_attempt_timestamp";
 const char kReferralAttemptCount[] = "brave.referral.referral_attempt_count";
 const char kReferralHeaders[] = "brave.referral.headers";
-const char kReferralCheckedForPromoCodeFile[] =
-    "brave.referral.checked_for_promo_code_file";
-const char kReferralInitialization[] =
-    "brave.referral.initialization";
 const char kReferralAndroidFirstRunTimestamp[] =
     "brave.referral_android_first_run_timestamp";
 const char kHTTPSEVerywhereControlType[] = "brave.https_everywhere_default";
@@ -64,7 +59,9 @@ const char kNewTabPageShowTopSites[] = "brave.new_tab_page.show_top_sites";
 const char kNewTabPageShowStats[] = "brave.new_tab_page.show_stats";
 const char kNewTabPageShowRewards[] = "brave.new_tab_page.show_rewards";
 const char kNewTabPageShowBinance[] = "brave.new_tab_page.show_binance";
+const char kNewTabPageShowGemini[] = "brave.new_tab_page.show_gemini";
 const char kNewTabPageShowTogether[] = "brave.new_tab_page.show_together";
+const char kNewTabPageShowAddCard[] = "brave.new_tab_page.show_addcard";
 const char kBraveEnabledMediaRouter[] = "brave.enable_media_router";
 const char kBraveWalletAES256GCMSivNonce[] =
     "brave.wallet.aes_256_gcm_siv_nonce";
@@ -78,7 +75,6 @@ const char kBinanceAccessToken[] = "brave.binance.access_token";
 const char kBinanceRefreshToken[] = "brave.binance.refresh_token";
 const char kAlwaysShowBookmarkBarOnNTP[] =
     "brave.always_show_bookmark_bar_on_ntp";
-const char kRemoteDebuggingEnabled[] = "brave.remote_debugging_enabled";
 const char kAutocompleteEnabled[] = "brave.autocomplete_enabled";
 const char kTopSiteSuggestionsEnabled[] = "brave.top_site_suggestions_enabled";
 const char kBraveSuggestedSiteSuggestionsEnabled[] =
@@ -90,6 +86,7 @@ const char kBraveShieldsSettingsVersion[] = "brave.shields_settings_version";
 const char kBraveGCMChannelStatus[] = "brave.gcm.channel_status";
 #endif
 const char kImportDialogExtensions[] = "import_dialog_extensions";
+const char kImportDialogPayments[] = "import_dialog_payments";
 
 #if defined(OS_ANDROID)
 const char kDesktopModeEnabled[] = "brave.desktop_mode_enabled";
@@ -98,4 +95,5 @@ const char kPlayYTVideoInBrowserEnabled[] =
 const char kBackgroundVideoPlaybackEnabled[] =
     "brave.background_video_playback";
 const char kSafetynetCheckFailed[] = "safetynetcheck.failed";
+const char kSafetynetStatus[] = "safetynet.status";
 #endif

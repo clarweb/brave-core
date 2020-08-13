@@ -17,6 +17,7 @@
 #include "components/omnibox/browser/omnibox_edit_model.h"
 #include "components/omnibox/browser/omnibox_popup_model.h"
 #include "components/prefs/pref_service.h"
+#include "content/public/test/browser_test.h"
 
 class OmniboxAutocompleteTest : public InProcessBrowserTest {
  public:
@@ -66,6 +67,6 @@ IN_PROC_BROWSER_TEST_F(OmniboxAutocompleteTest, TopSiteSuggestionsEnabledTest) {
 
 IN_PROC_BROWSER_TEST_F(OmniboxAutocompleteTest,
     BraveSuggestedSiteSuggestionsEnabledTest) {
-  EXPECT_TRUE(browser()->profile()->GetPrefs()->GetBoolean(
+  EXPECT_FALSE(browser()->profile()->GetPrefs()->GetBoolean(
       kBraveSuggestedSiteSuggestionsEnabled));
 }

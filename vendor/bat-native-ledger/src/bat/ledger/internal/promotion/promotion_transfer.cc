@@ -8,7 +8,6 @@
 #include "bat/ledger/internal/ledger_impl.h"
 #include "bat/ledger/internal/promotion/promotion_transfer.h"
 #include "bat/ledger/internal/promotion/promotion_util.h"
-#include "bat/ledger/internal/state/state_keys.h"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -27,55 +26,17 @@ PromotionTransfer::PromotionTransfer(bat_ledger::LedgerImpl* ledger) :
 
 PromotionTransfer::~PromotionTransfer() = default;
 
-void PromotionTransfer::Start(
-    ledger::ExternalWalletPtr wallet,
-    ledger::ResultCallback callback) {
-  // we only need to call old anon api once
-  if (ledger_->GetBooleanState(ledger::kStateAnonTransferChecked)) {
-    GetEligiblePromotion(callback);
-    return;
-  }
-
-  if (!wallet) {
-    BLOG(0, "Wallet is empty");
-    callback(ledger::Result::LEDGER_ERROR);
-    return;
-  }
-
-  auto transfer_callback = std::bind(&PromotionTransfer::OnAnonExternalWallet,
-      this,
-      _1,
-      callback);
-
-  ledger_->TransferAnonToExternalWallet(
-      std::move(wallet),
-      transfer_callback,
-      true);
-}
-
-void PromotionTransfer::OnAnonExternalWallet(
-    const ledger::Result result,
-    ledger::ResultCallback callback) {
-  if (result != ledger::Result::LEDGER_OK) {
-    BLOG(0, "Initial transfer failed");
-    callback(ledger::Result::LEDGER_ERROR);
-    return;
-  }
-
-  ledger_->SetBooleanState(ledger::kStateAnonTransferChecked, true);
-  GetEligiblePromotion(callback);
-}
-
-void PromotionTransfer::GetEligiblePromotion(ledger::ResultCallback callback) {
+void PromotionTransfer::Start(ledger::ResultCallback callback) {
   auto tokens_callback = std::bind(&PromotionTransfer::GetEligibleTokens,
       this,
       _1,
       callback);
 
-  ledger_->GetPromotionListByType(
+  ledger_->database()->GetPromotionListByType(
       GetEligiblePromotions(),
       tokens_callback);
 }
+
 void PromotionTransfer::GetEligibleTokens(
     ledger::PromotionList promotions,
     ledger::ResultCallback callback) {
@@ -93,7 +54,7 @@ void PromotionTransfer::GetEligibleTokens(
     ids.push_back(promotion->id);
   }
 
-  ledger_->GetSpendableUnblindedTokensByTriggerIds(
+  ledger_->database()->GetSpendableUnblindedTokensByTriggerIds(
       ids,
       tokens_callback);
 }

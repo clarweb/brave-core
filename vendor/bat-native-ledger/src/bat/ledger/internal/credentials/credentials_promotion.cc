@@ -7,7 +7,6 @@
 
 #include <utility>
 
-#include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
 #include "base/strings/string_number_conversions.h"
 #include "bat/ledger/internal/credentials/credentials_promotion.h"
@@ -15,35 +14,11 @@
 #include "bat/ledger/internal/ledger_impl.h"
 #include "bat/ledger/internal/request/request_promotion.h"
 #include "bat/ledger/internal/request/request_util.h"
-#include "bat/ledger/internal/state/state_util.h"
-#include "net/http/http_status_code.h"
+#include "bat/ledger/internal/response/response_promotion.h"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;
-
-namespace {
-
-std::string ParseClaimCredsResponse(const std::string& response) {
-  base::Optional<base::Value> value = base::JSONReader::Read(response);
-  if (!value || !value->is_dict()) {
-    return "";
-  }
-
-  base::DictionaryValue* dictionary = nullptr;
-  if (!value->GetAsDictionary(&dictionary)) {
-    return "";
-  }
-
-  auto* id = dictionary->FindStringKey("claimId");
-  if (!id) {
-    return "";
-  }
-
-  return *id;
-}
-
-}  // namespace
 
 namespace braveledger_credentials {
 
@@ -64,7 +39,10 @@ void CredentialsPromotion::Start(
           trigger,
           callback);
 
-  ledger_->GetCredsBatchByTrigger(trigger.id, trigger.type, get_callback);
+  ledger_->database()->GetCredsBatchByTrigger(
+      trigger.id,
+      trigger.type,
+      get_callback);
 }
 
 void CredentialsPromotion::OnStart(
@@ -87,7 +65,10 @@ void CredentialsPromotion::OnStart(
           _1,
           trigger,
           callback);
-      ledger_->GetCredsBatchByTrigger(trigger.id, trigger.type, get_callback);
+      ledger_->database()->GetCredsBatchByTrigger(
+          trigger.id,
+          trigger.type,
+          get_callback);
       break;
     }
     case ledger::CredsBatchStatus::CLAIMED: {
@@ -96,7 +77,7 @@ void CredentialsPromotion::OnStart(
           _1,
           trigger,
           callback);
-      ledger_->GetPromotion(trigger.id, get_callback);
+      ledger_->database()->GetPromotion(trigger.id, get_callback);
       break;
     }
     case ledger::CredsBatchStatus::SIGNED: {
@@ -105,7 +86,10 @@ void CredentialsPromotion::OnStart(
           _1,
           trigger,
           callback);
-      ledger_->GetCredsBatchByTrigger(trigger.id, trigger.type, get_callback);
+      ledger_->database()->GetCredsBatchByTrigger(
+          trigger.id,
+          trigger.type,
+          get_callback);
       break;
     }
     case ledger::CredsBatchStatus::FINISHED: {
@@ -145,7 +129,10 @@ void CredentialsPromotion::OnBlind(
       _1,
       trigger,
       callback);
-  ledger_->GetCredsBatchByTrigger(trigger.id, trigger.type, get_callback);
+  ledger_->database()->GetCredsBatchByTrigger(
+      trigger.id,
+      trigger.type,
+      get_callback);
 }
 
 void CredentialsPromotion::Claim(
@@ -168,7 +155,7 @@ void CredentialsPromotion::Claim(
             _1,
             callback);
 
-    ledger_->UpdateCredsBatchStatus(
+    ledger_->database()->UpdateCredsBatchStatus(
         trigger.id,
         trigger.type,
         ledger::CredsBatchStatus::NONE,
@@ -176,7 +163,7 @@ void CredentialsPromotion::Claim(
     return;
   }
 
-  const std::string payment_id = ledger_->GetPaymentId();
+  const std::string payment_id = ledger_->state()->GetPaymentId();
   base::Value body(base::Value::Type::DICTIONARY);
   body.SetStringKey("paymentId", payment_id);
   body.SetKey("blindedCreds", base::Value(std::move(*blinded_creds)));
@@ -188,7 +175,7 @@ void CredentialsPromotion::Claim(
       "post /v1/promotions/" + trigger.id,
       json,
       payment_id,
-      braveledger_state::GetRecoverySeed(ledger_));
+      ledger_->state()->GetRecoverySeed());
 
   const std::string url = braveledger_request_util::ClaimCredsUrl(trigger.id);
   auto url_callback = std::bind(&CredentialsPromotion::OnClaim,
@@ -212,16 +199,12 @@ void CredentialsPromotion::OnClaim(
     ledger::ResultCallback callback) {
   BLOG(6, ledger::UrlResponseToString(__func__, response));
 
-  if (response.status_code != net::HTTP_OK) {
-    callback(ledger::Result::LEDGER_ERROR);
-    return;
-  }
+  std::string claim_id;
+  const ledger::Result result =
+      braveledger_response_util::ParseClaimCreds(response, &claim_id);
 
-  const auto claim_id = ParseClaimCredsResponse(response.body);
-
-  if (claim_id.empty()) {
-    BLOG(0, "Claim id is missing");
-    callback(ledger::Result::LEDGER_ERROR);
+  if (result != ledger::Result::LEDGER_OK) {
+    callback(result);
     return;
   }
 
@@ -231,7 +214,10 @@ void CredentialsPromotion::OnClaim(
       trigger,
       callback);
 
-  ledger_->SavePromotionClaimId(trigger.id, claim_id, save_callback);
+  ledger_->database()->SavePromotionClaimId(
+      trigger.id,
+      claim_id,
+      save_callback);
 }
 
 void CredentialsPromotion::ClaimedSaved(
@@ -250,7 +236,7 @@ void CredentialsPromotion::ClaimedSaved(
       trigger,
       callback);
 
-  ledger_->UpdateCredsBatchStatus(
+  ledger_->database()->UpdateCredsBatchStatus(
       trigger.id,
       trigger.type,
       ledger::CredsBatchStatus::CLAIMED,
@@ -272,7 +258,7 @@ void CredentialsPromotion::ClaimStatusSaved(
       _1,
       trigger,
       callback);
-  ledger_->GetPromotion(trigger.id, get_callback);
+  ledger_->database()->GetPromotion(trigger.id, get_callback);
 }
 
 void CredentialsPromotion::RetryPreviousStepSaved(
@@ -306,7 +292,7 @@ void CredentialsPromotion::FetchSignedCreds(
             _1,
             callback);
 
-    ledger_->UpdateCredsBatchStatus(
+    ledger_->database()->UpdateCredsBatchStatus(
         trigger.id,
         trigger.type,
         ledger::CredsBatchStatus::BLINDED,
@@ -332,28 +318,26 @@ void CredentialsPromotion::OnFetchSignedCreds(
     ledger::ResultCallback callback) {
   BLOG(6, ledger::UrlResponseToString(__func__, response));
 
-  if (response.status_code == net::HTTP_ACCEPTED) {
-    callback(ledger::Result::RETRY);
-    return;
-  }
-
-  if (response.status_code != net::HTTP_OK) {
-    callback(ledger::Result::LEDGER_ERROR);
-    return;
-  }
-
   auto get_callback = std::bind(&CredentialsPromotion::SignedCredsSaved,
       this,
       _1,
       trigger,
       callback);
-  common_->GetSignedCredsFromResponse(trigger, response.body, get_callback);
+  common_->GetSignedCredsFromResponse(trigger, response, get_callback);
 }
 
 void CredentialsPromotion::SignedCredsSaved(
     const ledger::Result result,
     const CredentialsTrigger& trigger,
     ledger::ResultCallback callback) {
+  // Note: Translate ledger::Result::RETRY_SHORT into
+  // ledger::Result::RETRY, as promotion only supports the standard
+  // retry
+  if (result == ledger::Result::RETRY_SHORT) {
+    callback(ledger::Result::RETRY);
+    return;
+  }
+
   if (result != ledger::Result::LEDGER_OK) {
     BLOG(0, "Signed creds were not saved");
     callback(ledger::Result::LEDGER_ERROR);
@@ -365,7 +349,10 @@ void CredentialsPromotion::SignedCredsSaved(
       _1,
       trigger,
       callback);
-  ledger_->GetCredsBatchByTrigger(trigger.id, trigger.type, get_callback);
+  ledger_->database()->GetCredsBatchByTrigger(
+      trigger.id,
+      trigger.type,
+      get_callback);
 }
 
 void CredentialsPromotion::Unblind(
@@ -384,7 +371,7 @@ void CredentialsPromotion::Unblind(
       trigger,
       *creds,
       callback);
-  ledger_->GetPromotion(trigger.id, get_callback);
+  ledger_->database()->GetPromotion(trigger.id, get_callback);
 }
 
 void CredentialsPromotion::VerifyPublicKey(
@@ -467,8 +454,8 @@ void CredentialsPromotion::Completed(
     return;
   }
 
-  ledger_->PromotionCredentialCompleted(trigger.id, callback);
-  ledger_->UnblindedTokensReady();
+  ledger_->database()->PromotionCredentialCompleted(trigger.id, callback);
+  ledger_->ledger_client()->UnblindedTokensReady();
 }
 
 void CredentialsPromotion::RedeemTokens(
@@ -496,13 +483,15 @@ void CredentialsPromotion::RedeemTokens(
   std::string url;
   std::vector<std::string> headers;
   if (redeem.type == ledger::RewardsType::TRANSFER) {
-    payload = GenerateTransferTokensPayload(redeem, ledger_->GetPaymentId());
+    payload = GenerateTransferTokensPayload(
+        redeem,
+        ledger_->state()->GetPaymentId());
     url = braveledger_request_util::GetTransferTokens();
     headers = braveledger_request_util::BuildSignHeaders(
         "post /v1/suggestions/claim",
         payload,
-        ledger_->GetPaymentId(),
-        braveledger_state::GetRecoverySeed(ledger_));
+        ledger_->state()->GetPaymentId(),
+        ledger_->state()->GetRecoverySeed());
   } else {
     if (redeem.publisher_key.empty()) {
       BLOG(0, "Publisher key is empty");
@@ -511,7 +500,7 @@ void CredentialsPromotion::RedeemTokens(
     }
 
     payload = GenerateRedeemTokensPayload(redeem);
-    url = braveledger_request_util::GetReedemTokensUrl();
+    url = braveledger_request_util::GetRedeemTokensUrl();
   }
 
   ledger_->LoadURL(
@@ -530,7 +519,10 @@ void CredentialsPromotion::OnRedeemTokens(
     ledger::ResultCallback callback) {
   BLOG(6, ledger::UrlResponseToString(__func__, response));
 
-  if (response.status_code != net::HTTP_OK) {
+  const ledger::Result result =
+      braveledger_response_util::CheckRedeemTokens(response);
+  if (result != ledger::Result::LEDGER_OK) {
+    BLOG(0, "Failed to parse redeem tokens response");
     callback(ledger::Result::LEDGER_ERROR);
     return;
   }
@@ -540,7 +532,11 @@ void CredentialsPromotion::OnRedeemTokens(
     id = redeem.contribution_id;
   }
 
-  ledger_->MarkUblindedTokensAsSpent(token_id_list, redeem.type, id, callback);
+  ledger_->database()->MarkUnblindedTokensAsSpent(
+      token_id_list,
+      redeem.type,
+      id,
+      callback);
 }
 
 }  // namespace braveledger_credentials

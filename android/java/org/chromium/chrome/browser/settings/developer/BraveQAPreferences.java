@@ -6,16 +6,14 @@
 package org.chromium.chrome.browser.settings.developer;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.support.v7.app.AlertDialog;
-import androidx.preference.Preference;
-import androidx.preference.Preference.OnPreferenceChangeListener;
 import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,9 +22,13 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.preference.Preference;
+import androidx.preference.Preference.OnPreferenceChangeListener;
+
 import org.chromium.base.ContextUtils;
 import org.chromium.base.FileUtils;
 import org.chromium.base.Log;
+import org.chromium.base.annotations.CalledByNative;
 import org.chromium.chrome.R;
 import org.chromium.chrome.browser.BraveConfig;
 import org.chromium.chrome.browser.BraveRelaunchUtils;
@@ -35,24 +37,24 @@ import org.chromium.chrome.browser.BraveRewardsObserver;
 import org.chromium.chrome.browser.BraveRewardsPanelPopup;
 import org.chromium.chrome.browser.preferences.BravePrefServiceBridge;
 import org.chromium.chrome.browser.settings.BravePreferenceFragment;
+import org.chromium.chrome.browser.util.BraveDbUtil;
 import org.chromium.components.browser_ui.settings.ChromeSwitchPreference;
 import org.chromium.components.browser_ui.settings.SettingsUtils;
-import org.chromium.chrome.browser.util.BraveDbUtil;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Settings fragment containing preferences for QA team.
  */
 public class BraveQAPreferences extends BravePreferenceFragment
-        implements OnPreferenceChangeListener, BraveRewardsObserver {
+    implements OnPreferenceChangeListener, BraveRewardsObserver {
     private static final String PREF_USE_REWARDS_STAGING_SERVER = "use_rewards_staging_server";
+    private static final String PREF_USE_SYNC_STAGING_SERVER = "use_sync_staging_server";
     private static final String PREF_QA_MAXIMIZE_INITIAL_ADS_NUMBER =
-            "qa_maximize_initial_ads_number";
-    private static final String PREF_QA_DEBUG_NTP= "qa_debug_ntp";
+        "qa_maximize_initial_ads_number";
+    private static final String PREF_QA_DEBUG_NTP = "qa_debug_ntp";
 
     private static final String QA_ADS_PER_HOUR = "qa_ads_per_hour";
     private static final String QA_IMPORT_REWARDS_DB = "qa_import_rewards_db";
@@ -65,6 +67,7 @@ public class BraveQAPreferences extends BravePreferenceFragment
     private static final int DEFAULT_ADS_PER_HOUR = 2;
 
     private ChromeSwitchPreference mIsStagingServer;
+    private ChromeSwitchPreference mIsSyncStagingServer;
     private ChromeSwitchPreference mMaximizeAdsNumber;
     private ChromeSwitchPreference mDebugNTP;
     private Preference mRestoreWallet;
@@ -73,6 +76,7 @@ public class BraveQAPreferences extends BravePreferenceFragment
     private Preference mExportRewardsDb;
     private BraveDbUtil mDbUtil;
     private String mFileToImport;
+    private boolean mUseRewardsStagingServer;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -84,15 +88,22 @@ public class BraveQAPreferences extends BravePreferenceFragment
             mIsStagingServer.setOnPreferenceChangeListener(this);
         }
 
+        mIsSyncStagingServer =
+                (ChromeSwitchPreference) findPreference(PREF_USE_SYNC_STAGING_SERVER);
+        if (mIsSyncStagingServer != null) {
+            mIsSyncStagingServer.setOnPreferenceChangeListener(this);
+        }
+        mIsSyncStagingServer.setChecked(isSyncStagingUsed());
+
         mMaximizeAdsNumber =
-                (ChromeSwitchPreference) findPreference(PREF_QA_MAXIMIZE_INITIAL_ADS_NUMBER);
+            (ChromeSwitchPreference) findPreference(PREF_QA_MAXIMIZE_INITIAL_ADS_NUMBER);
         if (mMaximizeAdsNumber != null) {
             mMaximizeAdsNumber.setEnabled(mIsStagingServer.isChecked());
             mMaximizeAdsNumber.setOnPreferenceChangeListener(this);
         }
 
         mDebugNTP = (ChromeSwitchPreference) findPreference(PREF_QA_DEBUG_NTP);
-        if(mDebugNTP != null) {
+        if (mDebugNTP != null) {
             mDebugNTP.setOnPreferenceChangeListener(this);
         }
 
@@ -112,33 +123,33 @@ public class BraveQAPreferences extends BravePreferenceFragment
         if (mRestoreWallet != null) {
             mRestoreWallet.setOnPreferenceClickListener(preference -> {
                 LayoutInflater inflater = (LayoutInflater) getActivity().getSystemService(
-                        Context.LAYOUT_INFLATER_SERVICE);
+                    Context.LAYOUT_INFLATER_SERVICE);
                 View view = inflater.inflate(R.layout.qa_code_check, null);
                 EditText input = (EditText) view.findViewById(R.id.qa_code);
                 input.setInputType(InputType.TYPE_CLASS_TEXT);
 
                 DialogInterface.OnClickListener onClickListener =
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int button) {
-                                if (button == AlertDialog.BUTTON_POSITIVE) {
-                                    String restorePhrase = input.getText().toString();
-                                    if (!restorePhrase.isEmpty()) {
-                                        BraveRewardsNativeWorker.getInstance().RecoverWallet(
-                                                restorePhrase);
-                                    }
-                                }
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int button) {
+                        if (button == AlertDialog.BUTTON_POSITIVE) {
+                            String restorePhrase = input.getText().toString();
+                            if (!restorePhrase.isEmpty()) {
+                                BraveRewardsNativeWorker.getInstance().RecoverWallet(
+                                    restorePhrase);
                             }
-                        };
+                        }
+                    }
+                };
 
                 AlertDialog.Builder alert =
-                        new AlertDialog.Builder(getActivity(), R.style.Theme_Chromium_AlertDialog);
+                    new AlertDialog.Builder(getActivity(), R.style.Theme_Chromium_AlertDialog);
                 AlertDialog.Builder alertDialog =
-                        alert.setTitle("Enter Wallet restore phrase")
-                                .setView(view)
-                                .setPositiveButton(R.string.ok, onClickListener)
-                                .setNegativeButton(R.string.cancel, onClickListener)
-                                .setCancelable(false);
+                    alert.setTitle("Enter Wallet restore phrase")
+                    .setView(view)
+                    .setPositiveButton(R.string.ok, onClickListener)
+                    .setNegativeButton(R.string.cancel, onClickListener)
+                    .setCancelable(false);
                 Dialog dialog = alertDialog.create();
                 dialog.setCanceledOnTouchOutside(false);
                 dialog.show();
@@ -152,8 +163,8 @@ public class BraveQAPreferences extends BravePreferenceFragment
         if (mImportRewardsDb != null) {
             mImportRewardsDb.setOnPreferenceClickListener( preference -> {
                 Intent intent = new Intent()
-                        .setType("*/*")
-                        .setAction(Intent.ACTION_GET_CONTENT);
+                .setType("*/*")
+                .setAction(Intent.ACTION_GET_CONTENT);
 
                 startActivityForResult(Intent.createChooser(intent, "Select a file"), CHOOSE_FILE_FOR_IMPORT_REQUEST_CODE);
                 return true;
@@ -185,30 +196,40 @@ public class BraveQAPreferences extends BravePreferenceFragment
     @Override
     public boolean onPreferenceChange(Preference preference, Object newValue) {
         if (PREF_USE_REWARDS_STAGING_SERVER.equals(preference.getKey())) {
-            BravePrefServiceBridge.getInstance().setUseRewardsStagingServer((boolean) newValue);
             BraveRewardsNativeWorker.getInstance().ResetTheWholeState();
+            mUseRewardsStagingServer = (boolean) newValue;
             mMaximizeAdsNumber.setEnabled((boolean) newValue);
             enableMaximumAdsNumber(((boolean) newValue) && mMaximizeAdsNumber.isChecked());
-            BraveRelaunchUtils.askForRelaunch(getActivity());
         } else if (PREF_QA_MAXIMIZE_INITIAL_ADS_NUMBER.equals(preference.getKey())) {
             enableMaximumAdsNumber((boolean) newValue);
-        } else if (PREF_QA_DEBUG_NTP.equals(preference.getKey())) {
+        } else if (PREF_QA_DEBUG_NTP.equals(preference.getKey()) ||
+            PREF_USE_SYNC_STAGING_SERVER.equals(preference.getKey())) {
             setOnPreferenceValue(preference.getKey(), (boolean)newValue);
             BraveRelaunchUtils.askForRelaunch(getActivity());
         }
         return true;
     }
 
-    private void setOnPreferenceValue(String preferenceName, boolean newValue) {
+    private static void setOnPreferenceValue(String preferenceName, boolean newValue) {
         SharedPreferences sharedPreferences = ContextUtils.getAppSharedPreferences();
         SharedPreferences.Editor sharedPreferencesEditor = sharedPreferences.edit();
         sharedPreferencesEditor.putBoolean(preferenceName, newValue);
         sharedPreferencesEditor.apply();
     }
 
+    private static boolean getPreferenceValue(String preferenceName) {
+        SharedPreferences sharedPreferences = ContextUtils.getAppSharedPreferences();
+        return sharedPreferences.getBoolean(preferenceName, false);
+    }
+
+    @CalledByNative
+    public static boolean isSyncStagingUsed() {
+        return getPreferenceValue(PREF_USE_SYNC_STAGING_SERVER);
+    }
+
     private void checkQACode() {
         LayoutInflater inflater =
-                (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            (LayoutInflater) getActivity().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View view = inflater.inflate(R.layout.qa_code_check, null);
         final EditText input = (EditText) view.findViewById(R.id.qa_code);
 
@@ -229,8 +250,8 @@ public class BraveQAPreferences extends BravePreferenceFragment
                     @Override
                     public void run() {
                         InputMethodManager inputMethodManager =
-                                (InputMethodManager) getActivity().getSystemService(
-                                        Context.INPUT_METHOD_SERVICE);
+                            (InputMethodManager) getActivity().getSystemService(
+                                Context.INPUT_METHOD_SERVICE);
                         inputMethodManager.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT);
                     }
                 });
@@ -239,16 +260,16 @@ public class BraveQAPreferences extends BravePreferenceFragment
         input.requestFocus();
 
         AlertDialog.Builder alert =
-                new AlertDialog.Builder(getActivity(), R.style.Theme_Chromium_AlertDialog);
+            new AlertDialog.Builder(getActivity(), R.style.Theme_Chromium_AlertDialog);
         if (alert == null) {
             return;
         }
         AlertDialog.Builder alertDialog = alert
-                .setTitle("Enter QA code")
-                .setView(view)
-                .setPositiveButton(R.string.ok, onClickListener)
-                .setNegativeButton(R.string.cancel, onClickListener)
-                .setCancelable(false);
+                                          .setTitle("Enter QA code")
+                                          .setView(view)
+                                          .setPositiveButton(R.string.ok, onClickListener)
+                                          .setNegativeButton(R.string.cancel, onClickListener)
+                                          .setCancelable(false);
         Dialog dialog = alertDialog.create();
         dialog.setCanceledOnTouchOutside(false);
         dialog.show();
@@ -268,7 +289,7 @@ public class BraveQAPreferences extends BravePreferenceFragment
         }
         // Set saved values
         int adsPerHour = ContextUtils.getAppSharedPreferences().getInt(
-                QA_ADS_PER_HOUR, DEFAULT_ADS_PER_HOUR);
+                             QA_ADS_PER_HOUR, DEFAULT_ADS_PER_HOUR);
         BraveRewardsNativeWorker.getInstance().SetAdsPerHour(adsPerHour);
     }
 
@@ -280,7 +301,10 @@ public class BraveQAPreferences extends BravePreferenceFragment
             sharedPreferencesEditor.putBoolean(BraveRewardsPanelPopup.PREF_GRANTS_NOTIFICATION_RECEIVED, false);
             sharedPreferencesEditor.putBoolean(BraveRewardsPanelPopup.PREF_WAS_BRAVE_REWARDS_TURNED_ON, false);
             sharedPreferencesEditor.apply();
+
             BravePrefServiceBridge.getInstance().setSafetynetCheckFailed(false);
+            BravePrefServiceBridge.getInstance().setUseRewardsStagingServer(mUseRewardsStagingServer);
+
             BraveRelaunchUtils.askForRelaunch(getActivity());
         } else {
             BraveRelaunchUtils.askForRelaunchCustom(getActivity());
@@ -294,7 +318,7 @@ public class BraveQAPreferences extends BravePreferenceFragment
     public void OnRecoverWallet(int errorCode) {
         Context context = ContextUtils.getApplicationContext();
         String msg =
-                (0 == errorCode) ? "Wallet is successfully restored" : "Wallet recovery failed";
+            (0 == errorCode) ? "Wallet is successfully restored" : "Wallet recovery failed";
         Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
     }
 
@@ -317,8 +341,8 @@ public class BraveQAPreferences extends BravePreferenceFragment
                 && data != null) {
             try {
                 InputStream in =
-                        ContextUtils.getApplicationContext().getContentResolver().openInputStream(
-                                data.getData());
+                    ContextUtils.getApplicationContext().getContentResolver().openInputStream(
+                        data.getData());
                 mFileToImport = mDbUtil.importDestinationPath() + ".prep";
                 FileUtils.copyStreamToFile(in, new File(mFileToImport));
                 in.close();
@@ -348,9 +372,9 @@ public class BraveQAPreferences extends BravePreferenceFragment
             }
         };
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity(), R.style.Theme_Chromium_AlertDialog)
-                .setMessage(
-                        "This operation requires restart. Would you like to restart application and start operation?")
-                .setPositiveButton(R.string.ok, onClickListener).setNegativeButton(R.string.cancel, onClickListener);
+        .setMessage(
+            "This operation requires restart. Would you like to restart application and start operation?")
+        .setPositiveButton(R.string.ok, onClickListener).setNegativeButton(R.string.cancel, onClickListener);
         Dialog dialog = alertDialog.create();
         dialog.setCanceledOnTouchOutside(false);
         dialog.show();

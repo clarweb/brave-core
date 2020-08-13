@@ -5,9 +5,11 @@
 
 #include "brave/components/p3a/brave_p3a_log_store.h"
 
+#include "base/logging.h"
 #include "base/metrics/histogram_macros.h"
 #include "base/rand_util.h"
 #include "base/strings/string_number_conversions.h"
+#include "base/strings/string_util.h"
 #include "components/prefs/pref_registry_simple.h"
 #include "components/prefs/pref_service.h"
 #include "components/prefs/scoped_user_pref_update.h"
@@ -29,7 +31,7 @@ void RecordP3A(uint64_t answers_count) {
   } else if (10 <= answers_count) {
     answer = 3;
   }
-  UMA_HISTOGRAM_COUNTS_100("Brave.P3A.SentAnswersCount", answer);
+  UMA_HISTOGRAM_EXACT_LINEAR("Brave.P3A.SentAnswersCount", answer, 3);
 }
 
 }  // namespace
@@ -61,6 +63,21 @@ void BraveP3ALogStore::UpdateValue(const std::string& histogram_name,
   update->SetPath({histogram_name, kLogValueKey},
                   base::Value(base::NumberToString(value)));
   update->SetPath({histogram_name, kLogSentKey}, base::Value(entry.sent));
+}
+
+void BraveP3ALogStore::RemoveValueIfExists(const std::string& histogram_name) {
+  DCHECK(delegate_->IsActualMetric(histogram_name));
+  log_.erase(histogram_name);
+  unsent_entries_.erase(histogram_name);
+
+  // Update the persistent value.
+  DictionaryPrefUpdate update(local_state_, kPrefName);
+  update->RemovePath(histogram_name);
+
+  if (has_staged_log() && staged_entry_key_ == histogram_name) {
+    staged_entry_key_.clear();
+    staged_log_.clear();
+  }
 }
 
 void BraveP3ALogStore::ResetUploadStamps() {
@@ -103,6 +120,18 @@ const std::string& BraveP3ALogStore::staged_log() const {
   DCHECK(iter != log_.end());
 
   return staged_log_;
+}
+
+std::string BraveP3ALogStore::staged_log_type() const {
+  DCHECK(!staged_entry_key_.empty());
+  auto iter = log_.find(staged_entry_key_);
+  DCHECK(iter != log_.end());
+
+  if (base::StartsWith(iter->first, "Brave.P2A",
+                       base::CompareCase::SENSITIVE)) {
+    return "p2a";
+  }
+  return "p3a";
 }
 
 const std::string& BraveP3ALogStore::staged_log_hash() const {
@@ -153,6 +182,8 @@ void BraveP3ALogStore::DiscardStagedLog() {
   staged_entry_key_.clear();
   staged_log_.clear();
 }
+
+void BraveP3ALogStore::MarkStagedLogAsSent() {}
 
 void BraveP3ALogStore::PersistUnsentLogs() const {
   NOTREACHED();

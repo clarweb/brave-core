@@ -1,5 +1,5 @@
 diff --git a/build/config/chrome_build.gni b/build/config/chrome_build.gni
-index 883c6614d14b1932a6eaea36de5abd54ebe2f9e7..c3d7f0e25afa34d88a2126523637ba5f45ce2d60 100644
+index e8f9660f2c3d0def9307e4ebd2fd3e293150e6a7..85de05951af7ef10e532e56209342cc1683f3a82 100644
 --- a/build/config/chrome_build.gni
 +++ b/build/config/chrome_build.gni
 @@ -1,6 +1,7 @@
@@ -10,11 +10,3 @@ index 883c6614d14b1932a6eaea36de5abd54ebe2f9e7..c3d7f0e25afa34d88a2126523637ba5f
  
  declare_args() {
    # Select the desired branding flavor. False means normal Chromium branding,
-@@ -26,6 +27,7 @@ declare_args() {
-   } else {
-     branding_path_component = "chromium"
-   }
-+  if (brave_branding_path_component != "") { branding_path_component = brave_branding_path_component }
- }
- 
- declare_args() {

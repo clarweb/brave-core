@@ -18,6 +18,8 @@ NS_SWIFT_NAME(BraveRewardsConfiguration)
 //@property (nonatomic, getter=isDebug) BOOL debug;
 /// The rewards environment
 @property (nonatomic) BATEnvironment environment;
+/// The rewards build channel
+@property (nonatomic, nullable) BATBraveAdsBuildChannel *buildChannel;
 /// Where ledger and ads should save their state
 @property (nonatomic, copy) NSString *stateStoragePath;
 /// The number of seconds between overrides. Defaults to 0 (no override) which means reconciles
@@ -26,15 +28,15 @@ NS_SWIFT_NAME(BraveRewardsConfiguration)
 /// Whether or not to enable short retries between contribution attempts
 @property (nonatomic) BOOL useShortRetries;
 
-/// The default configuration. Environment is dev, no changes to ledger configuration
+/// The default configuration. Environment is dev, no changes to ads or ledger configuration
 ///
 /// State is stored in Application Support
 @property (nonatomic, class, readonly) BATBraveRewardsConfiguration *defaultConfiguration NS_SWIFT_NAME(default);
-/// The staging configuration. Environment is staging, no changes to ledger configuration
+/// The staging configuration. Environment is staging, no changes to ads or ledger configuration
 ///
 /// State is stored in Application Support
 @property (nonatomic, class, readonly) BATBraveRewardsConfiguration *stagingConfiguration NS_SWIFT_NAME(staging);
-/// The production configuration. Environment is production, no changes to ledger configuration
+/// The production configuration. Environment is production, no changes to ads or ledger configuration
 ///
 /// State is stored in Application Support
 @property (nonatomic, class, readonly) BATBraveRewardsConfiguration *productionConfiguration NS_SWIFT_NAME(production);
@@ -49,6 +51,11 @@ NS_SWIFT_NAME(BraveRewardsConfiguration)
 NS_SWIFT_NAME(BraveRewardsDelegate)
 @protocol BATBraveRewardsDelegate <NSObject>
 @required
+
+- (void)logMessageWithFilename:(NSString *)file
+                    lineNumber:(int)lineNumber
+                     verbosity:(int)verbosity
+                       message:(NSString *)message;
 
 /// Obtain the favicon URL given some page's URL. The client can then choose
 /// to download said favicon and cache it for later when `retrieveFavicon` is

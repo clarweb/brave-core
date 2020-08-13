@@ -3,8 +3,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "base/test/scoped_feature_list.h"
 #include "brave/browser/ui/views/translate/brave_translate_bubble_view.h"
-
 #include "chrome/test/views/chrome_views_test_base.h"
 #include "ui/events/keycodes/dom/dom_code.h"
 #include "ui/views/controls/button/label_button.h"
@@ -68,9 +68,15 @@ class MockTranslateBubbleModel : public TranslateBubbleModel {
 
   void DeclineTranslation() override { translation_declined_ = true; }
 
+  bool ShouldNeverTranslateLanguage() override {
+    return never_translate_language_;
+  }
+
   void SetNeverTranslateLanguage(bool value) override {
     never_translate_language_ = value;
   }
+
+  bool ShouldNeverTranslateSite() override { return never_translate_site_; }
 
   void SetNeverTranslateSite(bool value) override {
     never_translate_site_ = value;
@@ -209,15 +215,16 @@ class BraveTranslateBubbleViewTest : public ChromeViewsTestBase {
   std::unique_ptr<views::Widget> anchor_widget_;
   MockTranslateBubbleModel* mock_model_;
   MockBraveTranslateBubbleView* bubble_;
+  base::test::ScopedFeatureList scoped_feature_list_;
 };
 
 TEST_F(BraveTranslateBubbleViewTest, BraveBeforeTranslateView) {
   CreateAndShowBubble();
   views::Button* accept_button = static_cast<views::Button*>(
-      bubble_->GetViewByID(TranslateBubbleView::BUTTON_ID_TRANSLATE));
+      bubble_->GetViewByID(TranslateBubbleView::BUTTON_ID_DONE));
   EXPECT_TRUE(accept_button);
   views::Button* cancel_button = static_cast<views::Button*>(
-      bubble_->GetViewByID(TranslateBubbleView::BUTTON_ID_SHOW_ORIGINAL));
+      bubble_->GetViewByID(TranslateBubbleView::BUTTON_ID_CLOSE));
   EXPECT_TRUE(cancel_button);
 }
 
@@ -227,7 +234,7 @@ TEST_F(BraveTranslateBubbleViewTest, TranslateButton) {
   EXPECT_FALSE(bubble_->install_google_translate_called());
 
   // Press the "Translate" button.
-  PressButton(TranslateBubbleView::BUTTON_ID_TRANSLATE);
+  PressButton(TranslateBubbleView::BUTTON_ID_DONE);
   EXPECT_FALSE(mock_model_->translate_called_);
   EXPECT_TRUE(bubble_->install_google_translate_called());
 }
@@ -237,7 +244,7 @@ TEST_F(BraveTranslateBubbleViewTest, CancelButton) {
   EXPECT_FALSE(bubble_->GetWidget()->IsClosed());
 
   // Press the "Cancel" button.
-  PressButton(TranslateBubbleView::BUTTON_ID_CANCEL);
+  PressButton(TranslateBubbleView::BUTTON_ID_CLOSE);
   EXPECT_TRUE(bubble_->GetWidget()->IsClosed());
 }
 

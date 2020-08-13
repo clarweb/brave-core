@@ -20,7 +20,6 @@ vendor/bat-native-ledger/ @NejcZdovc
 
 # Ads
 vendor/bat-native-ads/ @tmancey
-vendor/bat-native-confirmations/ @tmancey
 components/brave_ads/ @tmancey
 components/services/bat_ads/ @tmancey
 
@@ -39,8 +38,8 @@ components/brave_wayback_machine @simonhong
 
 # Licensing of third-party components
 common/licenses/ @fmarier
-components/third_party/ @fmarier
 script/brave_license_helper.py @fmarier
+script/check_npm_licenses.py @fmarier
 script/generate_licenses.py @fmarier
 
 # Crypto Wallets
@@ -49,3 +48,22 @@ components/brave_wallet/ @bbondy @ryanml
 
 # Brave Referrals Service
 components/brave_referrals/browser/brave_referrals_service* @simonhong
+
+# Brave Sync
+components/brave_sync/ @darkdh
+components/sync/driver/ @darkdh
+chromium_src/components/sync/ @darkdh
+chromium_src/components/sync_device_info/device_info_sync_bridge.cc @darkdh
+
+# Speedreader
+browser/speedreader/ @iefremov
+components/speedreader/ @iefremov
+
+# P3A
+browser/p3a/ @iefremov
+components/brave_prochlo/ @iefremov
+components/p3a/ @iefremov
+components/weekly_storage/ @iefremov
+
+# Perf predictor
+components/brave_perf_predictor/ @iefremov

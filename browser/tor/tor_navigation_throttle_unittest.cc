@@ -8,15 +8,19 @@
 #include <utility>
 
 #include "base/files/scoped_temp_dir.h"
+#include "base/test/bind_test_util.h"
 #include "brave/browser/profiles/brave_profile_manager.h"
 #include "brave/browser/profiles/profile_util.h"
 #include "brave/browser/profiles/tor_unittest_profile_manager.h"
+#include "brave/browser/tor/tor_profile_service.h"
+#include "brave/browser/tor/tor_profile_service_factory.h"
 #include "chrome/test/base/scoped_testing_local_state.h"
 #include "chrome/test/base/testing_browser_process.h"
 #include "chrome/test/base/testing_profile.h"
 #include "content/public/browser/navigation_handle.h"
 #include "content/public/test/mock_navigation_handle.h"
 #include "content/public/test/browser_task_environment.h"
+#include "content/public/test/test_renderer_host.h"
 #include "content/public/test/web_contents_tester.h"
 #include "testing/gtest/include/gtest/gtest.h"
 #include "url/gurl.h"
@@ -48,6 +52,7 @@ class TorNavigationThrottleUnitTest : public testing::Test {
         content::WebContentsTester::CreateTestWebContents(profile, nullptr);
     tor_web_contents_ =
         content::WebContentsTester::CreateTestWebContents(tor_profile, nullptr);
+    tor_profile_service_ = TorProfileServiceFactory::GetForProfile(tor_profile);
   }
 
   void TearDown() override {
@@ -64,13 +69,19 @@ class TorNavigationThrottleUnitTest : public testing::Test {
     return tor_web_contents_.get();
   }
 
+  TorProfileService* tor_profile_service() {
+    return tor_profile_service_;
+  }
+
  private:
   content::BrowserTaskEnvironment task_environment_;
   // The path to temporary directory used to contain the test operations.
   base::ScopedTempDir temp_dir_;
   ScopedTestingLocalState local_state_;
+  content::RenderViewHostTestEnabler test_render_host_factories_;
   std::unique_ptr<content::WebContents> web_contents_;
   std::unique_ptr<content::WebContents> tor_web_contents_;
+  TorProfileService* tor_profile_service_;
   DISALLOW_COPY_AND_ASSIGN(TorNavigationThrottleUnitTest);
 };
 
@@ -88,6 +99,7 @@ TEST_F(TorNavigationThrottleUnitTest, Instantiation) {
 }
 
 TEST_F(TorNavigationThrottleUnitTest, WhitelistedScheme) {
+  tor_profile_service()->SetTorLaunchedForTest();
   content::MockNavigationHandle test_handle(tor_web_contents());
   std::unique_ptr<TorNavigationThrottle> throttle =
     TorNavigationThrottle::MaybeCreateThrottleFor(&test_handle);
@@ -121,6 +133,7 @@ TEST_F(TorNavigationThrottleUnitTest, WhitelistedScheme) {
 // Every schemes other than whitelisted scheme, no matter it is internal or
 // external scheme
 TEST_F(TorNavigationThrottleUnitTest, BlockedScheme) {
+  tor_profile_service()->SetTorLaunchedForTest();
   content::MockNavigationHandle test_handle(tor_web_contents());
   std::unique_ptr<TorNavigationThrottle> throttle =
     TorNavigationThrottle::MaybeCreateThrottleFor(&test_handle);
@@ -138,6 +151,28 @@ TEST_F(TorNavigationThrottleUnitTest, BlockedScheme) {
   test_handle.set_url(url3);
   EXPECT_EQ(NavigationThrottle::BLOCK_REQUEST,
             throttle->WillStartRequest().action()) << url3;
+}
+
+TEST_F(TorNavigationThrottleUnitTest, DeferUntilTorProcessLaunched) {
+  content::MockNavigationHandle test_handle(tor_web_contents());
+  std::unique_ptr<TorNavigationThrottle> throttle =
+    TorNavigationThrottle::MaybeCreateThrottleFor(&test_handle);
+  bool was_navigation_resumed = false;
+  throttle->set_resume_callback_for_testing(
+      base::BindLambdaForTesting([&]() { was_navigation_resumed = true; }));
+  GURL url("http://www.example.com");
+  test_handle.set_url(url);
+  EXPECT_EQ(NavigationThrottle::DEFER, throttle->WillStartRequest().action())
+      << url;
+  GURL url2("chrome://newtab");
+  test_handle.set_url(url2);
+  EXPECT_EQ(NavigationThrottle::PROCEED, throttle->WillStartRequest().action())
+      << url2;
+  throttle->OnTorLaunched(true, 5566);
+  EXPECT_TRUE(was_navigation_resumed);
+  tor_profile_service()->SetTorLaunchedForTest();
+  EXPECT_EQ(NavigationThrottle::PROCEED, throttle->WillStartRequest().action())
+      << url;
 }
 
 }  // namespace tor

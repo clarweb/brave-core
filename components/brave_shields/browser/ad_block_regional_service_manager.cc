@@ -58,12 +58,11 @@ void AdBlockRegionalServiceManager::StartRegionalServices() {
   // user can override this setting in the future
   bool checked_default_region =
       local_state->GetBoolean(kAdBlockCheckedDefaultRegion);
-  std::vector<FilterList>&  region_lists = FilterList::GetRegionalLists();
   if (!checked_default_region) {
     local_state->SetBoolean(kAdBlockCheckedDefaultRegion, true);
     auto it = brave_shields::FindAdBlockFilterListByLocale(
-        region_lists, g_brave_browser_process->GetApplicationLocale());
-    if (it == region_lists.end())
+        regional_catalog_, g_brave_browser_process->GetApplicationLocale());
+    if (it == regional_catalog_.end())
       return;
     EnableFilterList(it->uuid, true);
   }
@@ -114,13 +113,6 @@ bool AdBlockRegionalServiceManager::Start() {
   }
 
   return true;
-}
-
-void AdBlockRegionalServiceManager::Stop() {
-  base::AutoLock lock(regional_services_lock_);
-  for (const auto& regional_service : regional_services_) {
-    regional_service.second->Stop();
-  }
 }
 
 bool AdBlockRegionalServiceManager::ShouldStartRequest(
@@ -177,7 +169,6 @@ void AdBlockRegionalServiceManager::EnableFilterList(const std::string& uuid,
           std::make_pair(uuid, std::move(regional_service)));
     } else {
       DCHECK(it != regional_services_.end());
-      it->second->Stop();
       it->second->Unregister();
       regional_services_.erase(it);
     }
@@ -192,21 +183,22 @@ void AdBlockRegionalServiceManager::EnableFilterList(const std::string& uuid,
 }
 
 base::Optional<base::Value>
-AdBlockRegionalServiceManager::HostnameCosmeticResources(
-        const std::string& hostname) {
-  auto it = this->regional_services_.begin();
-  if (it == this->regional_services_.end()) {
+AdBlockRegionalServiceManager::UrlCosmeticResources(
+        const std::string& url) {
+  base::AutoLock lock(regional_services_lock_);
+  auto it = regional_services_.begin();
+  if (it == regional_services_.end()) {
     return base::Optional<base::Value>();
   }
   base::Optional<base::Value> first_value =
-      it->second->HostnameCosmeticResources(hostname);
+      it->second->UrlCosmeticResources(url);
 
-  for ( ; it != this->regional_services_.end(); it++) {
+  for ( ; it != regional_services_.end(); it++) {
     base::Optional<base::Value> next_value =
-        it->second->HostnameCosmeticResources(hostname);
+        it->second->UrlCosmeticResources(url);
     if (first_value) {
       if (next_value) {
-        MergeResourcesInto(&*first_value, &*next_value, false);
+        MergeResourcesInto(std::move(*next_value), &*first_value, false);
       }
     } else {
       first_value = std::move(next_value);
@@ -221,14 +213,15 @@ AdBlockRegionalServiceManager::HiddenClassIdSelectors(
         const std::vector<std::string>& classes,
         const std::vector<std::string>& ids,
         const std::vector<std::string>& exceptions) {
-  auto it = this->regional_services_.begin();
-  if (it == this->regional_services_.end()) {
+  base::AutoLock lock(regional_services_lock_);
+  auto it = regional_services_.begin();
+  if (it == regional_services_.end()) {
     return base::Optional<base::Value>();
   }
   base::Optional<base::Value> first_value =
       it->second->HiddenClassIdSelectors(classes, ids, exceptions);
 
-  for ( ; it != this->regional_services_.end(); it++) {
+  for ( ; it != regional_services_.end(); it++) {
     base::Optional<base::Value> next_value =
         it->second->HiddenClassIdSelectors(classes, ids, exceptions);
     if (first_value && first_value->is_list()) {
@@ -247,15 +240,11 @@ AdBlockRegionalServiceManager::HiddenClassIdSelectors(
   return first_value;
 }
 
-// static
-bool AdBlockRegionalServiceManager::IsSupportedLocale(
-    const std::string& locale) {
-  std::vector<FilterList>&  region_lists = FilterList::GetRegionalLists();
-  return (brave_shields::FindAdBlockFilterListByLocale(region_lists, locale) !=
-          region_lists.end());
+void AdBlockRegionalServiceManager::SetRegionalCatalog(
+        std::vector<adblock::FilterList> catalog) {
+  regional_catalog_ = std::move(catalog);
 }
 
-// static
 std::unique_ptr<base::ListValue>
 AdBlockRegionalServiceManager::GetRegionalLists() {
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
@@ -266,10 +255,9 @@ AdBlockRegionalServiceManager::GetRegionalLists() {
       local_state->GetDictionary(kAdBlockRegionalFilters);
 
   auto list_value = std::make_unique<base::ListValue>();
-  std::vector<FilterList>&  region_lists = FilterList::GetRegionalLists();
-  for (const auto& region_list : region_lists) {
-    // Most settings come directly from the region_lists vector, maintained in
-    // the AdBlock module
+  for (const auto& region_list : regional_catalog_) {
+    // Most settings come directly from the regional catalog from
+    // https://github.com/brave/adblock-resources
     auto dict = std::make_unique<base::DictionaryValue>();
     dict->SetString("uuid", region_list.uuid);
     dict->SetString("url", region_list.url);

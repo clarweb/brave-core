@@ -12,8 +12,10 @@
 #include "brave/components/brave_shields/browser/brave_shields_web_contents_observer.h"
 #include "brave/components/brave_webtorrent/browser/buildflags/buildflags.h"
 #include "brave/components/brave_webtorrent/browser/webtorrent_util.h"
+#include "chrome/browser/content_settings/host_content_settings_map_factory.h"
 #include "chrome/browser/profiles/profile.h"
 #include "content/public/browser/browser_thread.h"
+#include "net/base/isolation_info.h"
 
 namespace brave {
 
@@ -76,8 +78,13 @@ void BraveRequestInfo::FillCTX(const network::ResourceRequest& request,
   // TODO(iefremov): remove tab_url. Change tab_origin from GURL to Origin.
   // ctx->tab_url = request.top_frame_origin;
   if (request.trusted_params) {
+    // TODO(iefremov): Turns out it provides us a not expected value for
+    // cross-site top-level navigations. Fortunately for now it is not a problem
+    // for shields functionality. We should reconsider this machinery, also
+    // given that this is always empty for subresources.
     ctx->tab_origin =
-        request.trusted_params->network_isolation_key.GetTopFrameOrigin()
+        request.trusted_params->isolation_info.network_isolation_key()
+            .GetTopFrameOrigin()
             .value_or(url::Origin())
             .GetURL();
   }
@@ -93,14 +100,14 @@ void BraveRequestInfo::FillCTX(const network::ResourceRequest& request,
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context);
+  auto* map = HostContentSettingsMapFactory::GetForProfile(profile);
   ctx->allow_brave_shields =
-      brave_shields::GetBraveShieldsEnabled(profile, ctx->tab_origin);
-  ctx->allow_ads = brave_shields::GetAdControlType(profile, ctx->tab_origin) ==
-                   brave_shields::ControlType::ALLOW;
+      brave_shields::GetBraveShieldsEnabled(map, ctx->tab_origin);
+  ctx->allow_ads = brave_shields::GetAdControlType(
+      map, ctx->tab_origin) == brave_shields::ControlType::ALLOW;
   ctx->allow_http_upgradable_resource =
-      !brave_shields::GetHTTPSEverywhereEnabled(profile, ctx->tab_origin);
-  ctx->allow_referrers =
-      brave_shields::AllowReferrers(profile, ctx->tab_origin);
+      !brave_shields::GetHTTPSEverywhereEnabled(map, ctx->tab_origin);
+  ctx->allow_referrers = brave_shields::AllowReferrers(map, ctx->tab_origin);
   ctx->upload_data = GetUploadData(request);
 }
 

@@ -1,3 +1,4 @@
+// Copyright (c) 2019 The Brave Authors. All rights reserved.
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -9,8 +10,8 @@ import "brave/vendor/bat-native-ledger/include/bat/ledger/public/interfaces/ledg
 const string kServiceName = "bat_ledger";
 
 interface BatLedgerService {
-  Create(associated BatLedgerClient bat_ledger_client,
-         associated BatLedger& bat_ledger);
+  Create(pending_associated_remote<BatLedgerClient> bat_ledger_client,
+         pending_associated_receiver<BatLedger> database) => ();
   SetEnvironment(ledger.mojom.Environment environment);
   SetDebug(bool isDebug);
   SetReconcileInterval(int32 time);
@@ -61,7 +62,7 @@ interface BatLedger {
   ClaimPromotion(string promotion_id, string payload) => (ledger.mojom.Result result, string response);
   AttestPromotion(string promotion_id, string solution) => (ledger.mojom.Result result, ledger.mojom.Promotion? promotion);
   GetWalletPassphrase() => (string wallet_passphrase);
-  RecoverWallet(string passPhrase) => (ledger.mojom.Result result, double balance);
+  RecoverWallet(string passPhrase) => (ledger.mojom.Result result);
   
   SetRewardsMainEnabled(bool enabled);
   SetPublisherMinVisitTime(int32 duration_in_seconds);
@@ -70,9 +71,6 @@ interface BatLedger {
   SetPublisherAllowVideos(bool allow);
   SetAutoContributionAmount(double amount);
   SetAutoContributeEnabled(bool enabled);
-  UpdateAdsRewards();
-
-  OnTimer(uint32 timer_id);
 
   GetBalanceReport(ledger.mojom.ActivityMonth month, int32 year) =>
       (ledger.mojom.Result result, ledger.mojom.BalanceReportInfo report);
@@ -94,10 +92,6 @@ interface BatLedger {
 
   HasSufficientBalanceToReconcile() => (bool sufficient);
 
-  SetCatalogIssuers(string json);
-  ConfirmAd(string json, string confirmation_type);
-  ConfirmAction(string creative_instance_id, string creative_set_id, string confirmation_type);
-  GetTransactionHistory() => (string json);
   GetRewardsInternalsInfo() => (ledger.mojom.RewardsInternalsInfo info);
 
   SaveRecurringTip(ledger.mojom.RecurringTip info) => (ledger.mojom.Result result);
@@ -131,7 +125,7 @@ interface BatLedger {
 
   GetPendingContributionsTotal() => (double amount);
 
-  FetchBalance() => (ledger.mojom.Result result, ledger.mojom.Balance balance);
+  FetchBalance() => (ledger.mojom.Result result, ledger.mojom.Balance? balance);
 
   GetExternalWallet(string wallet_type) => (ledger.mojom.Result result, ledger.mojom.ExternalWallet? wallet);
 
@@ -154,6 +148,8 @@ interface BatLedger {
   GetAllMonthlyReportIds() => (array<string> ids);
 
   GetAllPromotions() => (map<string, ledger.mojom.Promotion> items);
+
+  Shutdown() => (ledger.mojom.Result result);
 };
 
 interface BatLedgerClient {
@@ -161,8 +157,7 @@ interface BatLedgerClient {
   LoadLedgerState() => (ledger.mojom.Result result, string data);
   LoadPublisherState() => (ledger.mojom.Result result, string data);
 
-  OnReconcileComplete(ledger.mojom.Result result, string viewing_id,
-      double amount, ledger.mojom.RewardsType type);
+  OnReconcileComplete(ledger.mojom.Result result, ledger.mojom.ContributionInfo contribution);
 
   OnPanelPublisherInfo(ledger.mojom.Result result,
                        ledger.mojom.PublisherInfo publisher_info,
@@ -170,22 +165,13 @@ interface BatLedgerClient {
   FetchFavIcon(string url, string favicon_key) => (bool success,
       string favicon_url);
 
-  LoadNicewareList() => (ledger.mojom.Result result, string data);
-
   LoadURL(string url, array<string> headers, string content,
       string content_type, ledger.mojom.UrlMethod method) => (ledger.mojom.UrlResponse response);
 
   [Sync]
-  SetTimer(uint64 time_offset) => (uint32 timer_id);
-  KillTimer(uint32 timer_id);
-  [Sync]
   URIEncode(string value) => (string encoded_value);
 
   PublisherListNormalized(array<ledger.mojom.PublisherInfo> list);
-
-  SaveState(string name, string value) => (ledger.mojom.Result result);
-  LoadState(string name) => (ledger.mojom.Result result, string value);
-  ResetState(string name) => (ledger.mojom.Result result);
 
   [Sync]
   GetBooleanState(string name) => (bool value);
@@ -220,12 +206,10 @@ interface BatLedgerClient {
   [Sync]
   GetUint64Option(string name) => (uint64 value);
 
-  SetConfirmationsIsReady(bool is_ready);
-  ConfirmationsTransactionHistoryDidChange();
-
   OnContributeUnverifiedPublishers(ledger.mojom.Result result, string publisher_key,
       string publisher_name);
 
+  [Sync]
   GetExternalWallets() => (map<string, ledger.mojom.ExternalWallet?> wallets);
 
   SaveExternalWallet(string wallet_type, ledger.mojom.ExternalWallet wallet);
@@ -249,4 +233,8 @@ interface BatLedgerClient {
   PendingContributionSaved(ledger.mojom.Result result);
 
   Log(string file, int32 line, int32 verbose_level, string message);
+
+  ClearAllNotifications();
+
+  WalletDisconnected(string wallet_type);
 };

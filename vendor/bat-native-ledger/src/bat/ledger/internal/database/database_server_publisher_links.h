@@ -19,29 +19,19 @@ class DatabaseServerPublisherLinks: public DatabaseTable {
   explicit DatabaseServerPublisherLinks(bat_ledger::LedgerImpl* ledger);
   ~DatabaseServerPublisherLinks() override;
 
-  bool Migrate(ledger::DBTransaction* transaction, const int target) override;
-
-  void InsertOrUpdateList(
+  void InsertOrUpdate(
       ledger::DBTransaction* transaction,
-      const std::vector<ledger::PublisherBanner>& list);
+      const ledger::ServerPublisherInfo& server_info);
+
+  void DeleteRecords(
+      ledger::DBTransaction* transaction,
+      const std::string& publisher_key_list);
 
   void GetRecord(
       const std::string& publisher_key,
       ServerPublisherLinksCallback callback);
 
  private:
-  bool CreateTableV7(ledger::DBTransaction* transaction);
-
-  bool CreateTableV15(ledger::DBTransaction* transaction);
-
-  bool CreateIndexV7(ledger::DBTransaction* transaction);
-
-  bool CreateIndexV15(ledger::DBTransaction* transaction);
-
-  bool MigrateToV7(ledger::DBTransaction* transaction);
-
-  bool MigrateToV15(ledger::DBTransaction* transaction);
-
   void OnGetRecord(
       ledger::DBCommandResponsePtr response,
       ServerPublisherLinksCallback callback);

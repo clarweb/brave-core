@@ -67,18 +67,21 @@ ios_framework_bundle("brave_rewards_ios_framework") {
   configs -= [ "//build/config/gcc:symbol_visibility_hidden" ]
 
   deps = [
+    "//brave/base:base",
     "//brave/vendor/bat-native-ledger",
     "//brave/vendor/bat-native-ads",
+    "//net:net",
     "//url",
     ":rewards_db",
     ":resources",
     ":coredata",
-    ":mojo_gen_wrappers",
+    ":ledger_mojo_gen_wrappers",
+    ":ads_mojo_gen_wrappers",
   ]
 
   sources = [
     "BATBraveRewards.h",
-    "BATBraveRewards.m",
+    "BATBraveRewards.mm",
     "Ledger/BATBraveLedger.h",
     "Ledger/BATBraveLedger.mm",
     "Ledger/BATBraveLedgerObserver.h",
@@ -90,8 +93,6 @@ ios_framework_bundle("brave_rewards_ios_framework") {
     "Ledger/Generated/NativeLedgerClientBridge.h",
     "Ledger/Generated/NativeLedgerClient.h",
     "Ledger/Generated/NativeLedgerClient.mm",
-    "Ledger/Generated/Records.h",
-    "Ledger/Generated/Records.mm",
     "Ledger/Models/BATRewardsNotification.h",
     "Ledger/Models/BATRewardsNotification.m",
     "Ledger/Models/BATPromotionSolution.h",
@@ -102,12 +103,8 @@ ios_framework_bundle("brave_rewards_ios_framework") {
     "Shared/BATCommonOperations.mm",
     "Shared/NSURL+Extensions.h",
     "Shared/NSURL+Extensions.mm",
-    "Shared/RewardsLogStream.h",
-    "Shared/RewardsLogStream.mm",
-    "Shared/Logger.h",
-    "Shared/Logger.mm",
-    "Shared/RewardsLogger.h",
-    "Shared/RewardsLogger.mm",
+    "Shared/RewardsLogging.h",
+    "Shared/RewardsLogging.mm",
     "objc-gen/CppTransformations.h",
     "Ads/BATAdNotification.h",
     "Ads/BATAdNotification.mm",
@@ -150,6 +147,9 @@ ios_framework_bundle("brave_rewards_ios_framework") {
     "$target_gen_dir/ledger.mojom.objc.h",
     "$target_gen_dir/ledger.mojom.objc+private.h",
     "$target_gen_dir/ledger.mojom.objc.mm",
+    "$target_gen_dir/ads.mojom.objc.h",
+    "$target_gen_dir/ads.mojom.objc+private.h",
+    "$target_gen_dir/ads.mojom.objc.mm",
   ]
 
   public_headers = [
@@ -157,14 +157,13 @@ ios_framework_bundle("brave_rewards_ios_framework") {
     "BATBraveRewards.h",
     "Ledger/BATBraveLedger.h",
     "Ledger/BATBraveLedgerObserver.h",
-    "Ledger/Generated/Records.h",
     "Ledger/Generated/Enums.h",
     "Ledger/Models/BATRewardsNotification.h",
     "Ledger/Models/BATPromotionSolution.h",
     "Ads/BATBraveAds.h",
     "Ads/BATAdNotification.h",
-    "Shared/RewardsLogger.h",
     "$target_gen_dir/ledger.mojom.objc.h",
+    "$target_gen_dir/ads.mojom.objc.h",
   ]
 
   libs = [
@@ -179,12 +178,8 @@ ios_framework_bundle("brave_rewards_ios_framework") {
 
 bundle_data("resources") {
   ads_dir = "//brave/vendor/bat-native-ads"
-  ledger_dir = "//brave/vendor/bat-native-ledger"
   sources = [
-    "$ads_dir/resources/bundle-schema.json",
-    "$ads_dir/resources/catalog-schema.json",
-    "$ads_dir/resources/user_models",
-    "$ledger_dir/niceware/wordlist",
+    "$ads_dir/data/resources/catalog-schema.json",
     "Ledger/Data/migrate.sql"
   ]
   outputs = [
@@ -228,7 +223,7 @@ action("compile_coredata") {
   ]
 }
 
-action("mojo_gen_wrappers") {
+action("ledger_mojo_gen_wrappers") {
   script = "scripts/mojo/gen_model_wrappers.py"
   mojom_module = rebase_path("$root_gen_dir/brave/vendor/bat-native-ledger/include/bat/ledger/public/interfaces/ledger.mojom-module")
   mojom_idl = rebase_path("//brave/vendor/bat-native-ledger/include/bat/ledger/public/interfaces/ledger.mojom")
@@ -248,7 +243,7 @@ action("mojo_gen_wrappers") {
     "$target_gen_dir/ledger.mojom.objc.h",
     "$target_gen_dir/ledger.mojom.objc+private.h",
     "$target_gen_dir/ledger.mojom.objc.mm",
-    "$target_gen_dir/objc_templates_bytecode/objc_templates.zip",
+    "$target_gen_dir/objc_templates_bytecode/ledger_objc_templates.zip",
   ]
   output_dir = rebase_path(target_gen_dir)
   args = [
@@ -259,5 +254,39 @@ action("mojo_gen_wrappers") {
   ]
   deps = [
     "//brave/vendor/bat-native-ledger/include/bat/ledger/public/interfaces:interfaces__parser"
+  ]
+}
+
+action("ads_mojo_gen_wrappers") {
+  script = "scripts/mojo/gen_model_wrappers.py"
+  mojom_module = rebase_path("$root_gen_dir/brave/vendor/bat-native-ads/include/bat/ads/public/interfaces/ads.mojom-module")
+  mojom_idl = rebase_path("//brave/vendor/bat-native-ads/include/bat/ads/public/interfaces/ads.mojom")
+  inputs = [
+    mojom_module,
+    mojom_idl,
+    "scripts/mojo/mojom_objc_generator.py",
+    "scripts/mojo/objc_templates/enum.tmpl",
+    "scripts/mojo/objc_templates/module.h.tmpl",
+    "scripts/mojo/objc_templates/module+private.h.tmpl",
+    "scripts/mojo/objc_templates/module.mm.tmpl",
+    "scripts/mojo/objc_templates/interface_declaration.tmpl",
+    "scripts/mojo/objc_templates/private_interface_declaration.tmpl",
+    "scripts/mojo/objc_templates/private_interface_implementation.tmpl",
+  ]
+  outputs = [
+    "$target_gen_dir/ads.mojom.objc.h",
+    "$target_gen_dir/ads.mojom.objc+private.h",
+    "$target_gen_dir/ads.mojom.objc.mm",
+    "$target_gen_dir/objc_templates_bytecode/ads_objc_templates.zip",
+  ]
+  output_dir = rebase_path(target_gen_dir)
+  args = [
+    "--mojom-module=$mojom_module",
+    "--module-include-path=bat/ads/public/interfaces",
+    "--mojom-file=$mojom_idl",
+    "--output-dir=$output_dir",
+  ]
+  deps = [
+    "//brave/vendor/bat-native-ads/include/bat/ads/public/interfaces:interfaces__parser"
   ]
 }

@@ -28,6 +28,11 @@ export const gridSitesReducer: Reducer<NewTab.GridSitesState | undefined> = (
 
   switch (action.type) {
     case types.GRID_SITES_SET_FIRST_RENDER_DATA: {
+      // Update existing default SR top sites in gridSites.
+      if (payload.defaultSuperReferralTopSites) {
+        state = gridSitesState
+            .gridSitesReducerUpdateDefaultSuperReferralTopSites(state, payload.defaultSuperReferralTopSites)
+      }
 
       // If there are legacy values from a previous
       // storage, update first render data with it
@@ -52,6 +57,9 @@ export const gridSitesReducer: Reducer<NewTab.GridSitesState | undefined> = (
           .gridSitesReducerSetDefaultSuperReferralTopSites(state, payload.defaultSuperReferralTopSites)
         storage.setDefaultSuperReferralTopSitesAddedToPinnedSites()
       }
+
+      // Cached gridSites can be updated when history has modified.
+      state = gridSitesState.gridSitesReducerDataUpdated(state, state.gridSites)
       break
     }
 

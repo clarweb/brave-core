@@ -3,7 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import("//brave/components/brave_ads/browser/buildflags/buildflags.gni")
+import("//third_party/protobuf/proto_library.gni")
 
 if (is_android) {
   import("//build/config/android/rules.gni")
@@ -25,7 +25,10 @@ config("internal_config") {
     "//brave/components/brave_rewards/test:*",
     "//brave/test:*",
   ]
-  include_dirs = [ "src" ]
+  include_dirs = [
+    "src",
+    "$target_gen_dir/src",
+  ]
 }
 
 group("bat-native-ledger") {
@@ -58,13 +61,11 @@ static_library("bat-native-ledger-standalone") {
 source_set("headers") {
   visibility = [
     ":*",
-    rebase_path("bat-native-confirmations", dep_base),
     # add this only when ads is in the same process
     # rebase_path("bat-native-ads", dep_base),
     "//brave/browser:browser_process",
     "//brave/components/brave_rewards/browser:browser",
     "//brave/components/brave_rewards/browser:testutil",
-    "//brave/components/brave_ads/browser:testutil",
     "//brave/vendor/brave-ios:rewards_db",
   ]
 
@@ -77,12 +78,17 @@ source_set("headers") {
     "include/bat/ledger/ledger_client.h",
     "include/bat/ledger/mojom_structs.h",
     "include/bat/ledger/option_keys.h",
-    "include/bat/ledger/transaction_info.h",
-    "include/bat/ledger/transactions_info.h",
   ]
 
   public_deps = [
     "include/bat/ledger/public/interfaces"
+  ]
+}
+
+proto_library("publishers_proto") {
+  sources = [
+    "src/bat/ledger/internal/publisher/protos/channel_response.proto",
+    "src/bat/ledger/internal/publisher/protos/publisher_prefix_list.proto",
   ]
 }
 
@@ -93,8 +99,6 @@ source_set("ledger") {
   output_name = "bat_native_ledger"
 
   sources = [
-    "src/bat/ledger/internal/bat_util.cc",
-    "src/bat/ledger/internal/bat_util.h",
     "src/bat/ledger/internal/api/api.cc",
     "src/bat/ledger/internal/api/api.h",
     "src/bat/ledger/internal/api/api_parameters.cc",
@@ -109,12 +113,14 @@ source_set("ledger") {
     "src/bat/ledger/internal/attestation/attestation_impl.h",
     "src/bat/ledger/internal/attestation/attestation_iosx.cc",
     "src/bat/ledger/internal/attestation/attestation_iosx.h",
-    "src/bat/ledger/internal/bat_helper.cc",
-    "src/bat/ledger/internal/bat_helper.h",
+    "src/bat/ledger/internal/legacy/bat_helper.cc",
+    "src/bat/ledger/internal/legacy/bat_helper.h",
     "src/bat/ledger/internal/legacy/bat_state.cc",
     "src/bat/ledger/internal/legacy/bat_state.h",
     "src/bat/ledger/internal/common/bind_util.cc",
     "src/bat/ledger/internal/common/bind_util.h",
+    "src/bat/ledger/internal/common/brotli_helpers.h",
+    "src/bat/ledger/internal/common/brotli_helpers.cc",
     "src/bat/ledger/internal/common/security_helper.cc",
     "src/bat/ledger/internal/common/security_helper.h",
     "src/bat/ledger/internal/common/time_util.cc",
@@ -158,6 +164,34 @@ source_set("ledger") {
     "src/bat/ledger/internal/credentials/credentials_util.h",
     "src/bat/ledger/internal/database/database.cc",
     "src/bat/ledger/internal/database/database.h",
+    "src/bat/ledger/internal/database/migration/migration_v1.h",
+    "src/bat/ledger/internal/database/migration/migration_v2.h",
+    "src/bat/ledger/internal/database/migration/migration_v3.h",
+    "src/bat/ledger/internal/database/migration/migration_v4.h",
+    "src/bat/ledger/internal/database/migration/migration_v5.h",
+    "src/bat/ledger/internal/database/migration/migration_v6.h",
+    "src/bat/ledger/internal/database/migration/migration_v7.h",
+    "src/bat/ledger/internal/database/migration/migration_v8.h",
+    "src/bat/ledger/internal/database/migration/migration_v9.h",
+    "src/bat/ledger/internal/database/migration/migration_v10.h",
+    "src/bat/ledger/internal/database/migration/migration_v11.h",
+    "src/bat/ledger/internal/database/migration/migration_v12.h",
+    "src/bat/ledger/internal/database/migration/migration_v13.h",
+    "src/bat/ledger/internal/database/migration/migration_v14.h",
+    "src/bat/ledger/internal/database/migration/migration_v15.h",
+    "src/bat/ledger/internal/database/migration/migration_v16.h",
+    "src/bat/ledger/internal/database/migration/migration_v17.h",
+    "src/bat/ledger/internal/database/migration/migration_v18.h",
+    "src/bat/ledger/internal/database/migration/migration_v19.h",
+    "src/bat/ledger/internal/database/migration/migration_v20.h",
+    "src/bat/ledger/internal/database/migration/migration_v21.h",
+    "src/bat/ledger/internal/database/migration/migration_v22.h",
+    "src/bat/ledger/internal/database/migration/migration_v23.h",
+    "src/bat/ledger/internal/database/migration/migration_v24.h",
+    "src/bat/ledger/internal/database/migration/migration_v25.h",
+    "src/bat/ledger/internal/database/migration/migration_v26.h",
+    "src/bat/ledger/internal/database/migration/migration_v27.h",
+    "src/bat/ledger/internal/database/migration/migration_v28.h",
     "src/bat/ledger/internal/database/database_activity_info.cc",
     "src/bat/ledger/internal/database/database_activity_info.h",
     "src/bat/ledger/internal/database/database_balance_report.cc",
@@ -186,10 +220,10 @@ source_set("ledger") {
     "src/bat/ledger/internal/database/database_processed_publisher.h",
     "src/bat/ledger/internal/database/database_promotion.cc",
     "src/bat/ledger/internal/database/database_promotion.h",
-    "src/bat/ledger/internal/database/database_promotion_creds.cc",
-    "src/bat/ledger/internal/database/database_promotion_creds.h",
     "src/bat/ledger/internal/database/database_publisher_info.cc",
     "src/bat/ledger/internal/database/database_publisher_info.h",
+    "src/bat/ledger/internal/database/database_publisher_prefix_list.cc",
+    "src/bat/ledger/internal/database/database_publisher_prefix_list.h",
     "src/bat/ledger/internal/database/database_recurring_tip.cc",
     "src/bat/ledger/internal/database/database_recurring_tip.h",
     "src/bat/ledger/internal/database/database_server_publisher_amounts.cc",
@@ -238,24 +272,34 @@ source_set("ledger") {
     "src/bat/ledger/internal/promotion/promotion_transfer.h",
     "src/bat/ledger/internal/promotion/promotion_util.cc",
     "src/bat/ledger/internal/promotion/promotion_util.h",
+    "src/bat/ledger/internal/legacy/bat_util.cc",
+    "src/bat/ledger/internal/legacy/bat_util.h",
     "src/bat/ledger/internal/legacy/client_properties.cc",
     "src/bat/ledger/internal/legacy/client_properties.h",
     "src/bat/ledger/internal/legacy/publisher_settings_properties.cc",
     "src/bat/ledger/internal/legacy/publisher_settings_properties.h",
     "src/bat/ledger/internal/legacy/report_balance_properties.cc",
     "src/bat/ledger/internal/legacy/report_balance_properties.h",
-    "src/bat/ledger/internal/legacy/unsigned_tx_properties.cc",
-    "src/bat/ledger/internal/legacy/unsigned_tx_properties.h",
     "src/bat/ledger/internal/legacy/wallet_info_properties.cc",
     "src/bat/ledger/internal/legacy/wallet_info_properties.h",
+    "src/bat/ledger/internal/publisher/prefix_list_reader.cc",
+    "src/bat/ledger/internal/publisher/prefix_list_reader.h",
+    "src/bat/ledger/internal/publisher/prefix_util.h",
+    "src/bat/ledger/internal/publisher/prefix_util.cc",
     "src/bat/ledger/internal/publisher/publisher.cc",
     "src/bat/ledger/internal/publisher/publisher.h",
-    "src/bat/ledger/internal/publisher/publisher_server_list.cc",
-    "src/bat/ledger/internal/publisher/publisher_server_list.h",
+    "src/bat/ledger/internal/publisher/publisher_prefix_list_updater.cc",
+    "src/bat/ledger/internal/publisher/publisher_prefix_list_updater.h",
+    "src/bat/ledger/internal/publisher/publisher_status_helper.cc",
+    "src/bat/ledger/internal/publisher/publisher_status_helper.h",
+    "src/bat/ledger/internal/publisher/server_publisher_fetcher.cc",
+    "src/bat/ledger/internal/publisher/server_publisher_fetcher.h",
+    "src/bat/ledger/internal/recovery/recovery.cc",
+    "src/bat/ledger/internal/recovery/recovery.h",
+    "src/bat/ledger/internal/recovery/recovery_empty_balance.cc",
+    "src/bat/ledger/internal/recovery/recovery_empty_balance.h",
     "src/bat/ledger/internal/report/report.cc",
     "src/bat/ledger/internal/report/report.h",
-    "src/bat/ledger/internal/request/request_api.cc",
-    "src/bat/ledger/internal/request/request_api.h",
     "src/bat/ledger/internal/request/request_attestation.cc",
     "src/bat/ledger/internal/request/request_attestation.h",
     "src/bat/ledger/internal/request/request_promotion.cc",
@@ -266,6 +310,26 @@ source_set("ledger") {
     "src/bat/ledger/internal/request/request_sku.h",
     "src/bat/ledger/internal/request/request_util.cc",
     "src/bat/ledger/internal/request/request_util.h",
+    "src/bat/ledger/internal/response/response_attestation.cc",
+    "src/bat/ledger/internal/response/response_attestation.h",
+    "src/bat/ledger/internal/response/response_credentials.cc",
+    "src/bat/ledger/internal/response/response_credentials.h",
+    "src/bat/ledger/internal/response/response_promotion.cc",
+    "src/bat/ledger/internal/response/response_promotion.h",
+    "src/bat/ledger/internal/response/response_publisher.cc",
+    "src/bat/ledger/internal/response/response_publisher.h",
+    "src/bat/ledger/internal/response/response_sku.cc",
+    "src/bat/ledger/internal/response/response_sku.h",
+    "src/bat/ledger/internal/response/response_uphold.cc",
+    "src/bat/ledger/internal/response/response_uphold.h",
+    "src/bat/ledger/internal/response/response_wallet.cc",
+    "src/bat/ledger/internal/response/response_wallet.h",
+    "src/bat/ledger/internal/endpoint/api/api_server.cc",
+    "src/bat/ledger/internal/endpoint/api/api_server.h",
+    "src/bat/ledger/internal/endpoint/api/api_util.cc",
+    "src/bat/ledger/internal/endpoint/api/api_util.h",
+    "src/bat/ledger/internal/endpoint/api/get_parameters/get_parameters.cc",
+    "src/bat/ledger/internal/endpoint/api/get_parameters/get_parameters.h",
     "src/bat/ledger/internal/sku/sku.h",
     "src/bat/ledger/internal/sku/sku_brave.cc",
     "src/bat/ledger/internal/sku/sku_brave.h",
@@ -290,8 +354,8 @@ source_set("ledger") {
     "src/bat/ledger/internal/state/state_migration_v1.h",
     "src/bat/ledger/internal/state/state_migration_v2.cc",
     "src/bat/ledger/internal/state/state_migration_v2.h",
-    "src/bat/ledger/internal/state/state_util.cc",
-    "src/bat/ledger/internal/state/state_util.h",
+    "src/bat/ledger/internal/state/state_migration_v3.cc",
+    "src/bat/ledger/internal/state/state_migration_v3.h",
     "src/bat/ledger/internal/legacy/client_state.cc",
     "src/bat/ledger/internal/legacy/client_state.h",
     "src/bat/ledger/internal/legacy/publisher_settings_state.cc",
@@ -302,8 +366,6 @@ source_set("ledger") {
     "src/bat/ledger/internal/legacy/report_balance_state.h",
     "src/bat/ledger/internal/legacy/state_reader.h",
     "src/bat/ledger/internal/legacy/state_writer.h",
-    "src/bat/ledger/internal/legacy/unsigned_tx_state.cc",
-    "src/bat/ledger/internal/legacy/unsigned_tx_state.h",
     "src/bat/ledger/internal/legacy/wallet_info_state.cc",
     "src/bat/ledger/internal/legacy/wallet_info_state.h",
     "src/bat/ledger/internal/uphold/uphold.h",
@@ -320,37 +382,40 @@ source_set("ledger") {
     "src/bat/ledger/internal/uphold/uphold_util.cc",
     "src/bat/ledger/internal/uphold/uphold_wallet.h",
     "src/bat/ledger/internal/uphold/uphold_wallet.cc",
-    "src/bat/ledger/internal/wallet/balance.h",
-    "src/bat/ledger/internal/wallet/balance.cc",
-    "src/bat/ledger/internal/wallet/create.h",
-    "src/bat/ledger/internal/wallet/create.cc",
-    "src/bat/ledger/internal/wallet/recover.h",
-    "src/bat/ledger/internal/wallet/recover.cc",
     "src/bat/ledger/internal/wallet/wallet.h",
     "src/bat/ledger/internal/wallet/wallet.cc",
+    "src/bat/ledger/internal/wallet/wallet_balance.h",
+    "src/bat/ledger/internal/wallet/wallet_balance.cc",
+    "src/bat/ledger/internal/wallet/wallet_claim.h",
+    "src/bat/ledger/internal/wallet/wallet_claim.cc",
+    "src/bat/ledger/internal/wallet/wallet_create.h",
+    "src/bat/ledger/internal/wallet/wallet_create.cc",
+    "src/bat/ledger/internal/wallet/wallet_recover.h",
+    "src/bat/ledger/internal/wallet/wallet_recover.cc",
     "src/bat/ledger/internal/wallet/wallet_util.h",
     "src/bat/ledger/internal/wallet/wallet_util.cc",
     "src/bat/ledger/internal/media/github.h",
     "src/bat/ledger/internal/media/github.cc",
     "src/bat/ledger/ledger.cc",
-    "src/bat/ledger/transaction_info.cc",
-    "src/bat/ledger/transactions_info.cc",
   ]
 
   deps = [
+    ":publishers_proto",
     "//base",
+    "//brave/components/brave_private_cdn",
     "//crypto",
+    "//net:net",
+    "//sql:sql",
     "//third_party/boringssl",
+    "//third_party/brotli:dec",
+    "//third_party/protobuf:protobuf_lite",
     "//third_party/re2",
     "//url",
-    rebase_path("bat-native-ads", dep_base),
-    rebase_path("bat-native-confirmations", dep_base),
-    rebase_path("bat-native-anonize:anonize2", dep_base),
     rebase_path("bip39wally-core-native:bip39wally-core", dep_base),
     rebase_path("bat-native-tweetnacl:tweetnacl", dep_base),
     rebase_path("bat-native-rapidjson", dep_base),
-    rebase_path("challenge_bypass_ristretto_ffi", dep_base),
     rebase_path("brave_base", dep_base),
+    rebase_path("challenge_bypass_ristretto_ffi", dep_base),
   ]
 
   public_deps = [

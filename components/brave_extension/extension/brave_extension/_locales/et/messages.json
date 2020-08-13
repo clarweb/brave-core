@@ -55,6 +55,18 @@
     "message": "Saitidevahelised jälitajad on blokeeritud",
     "description": "Message for the scripts blocked row label"
   },
+  "aggressiveAdsTrackersBlocking": {
+    "message": "Jälgijad ja reklaamid blokeeritud (põhjalik)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with aggressive heuristics"
+  },
+  "standardAdsTrackersBlocking": {
+    "message": "Jälgijad ja reklaamid blokeeritud (tavaline)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with standard heuristics"
+  },
+  "allowAdsTrackers": {
+    "message": "Luba kõik jälgijad ja reklaamid",
+    "description": "Message for the option in the ads and trackers blocking select field to allow all ads and trackers"
+  },
   "connectionsUpgradedHTTPS": {
     "message": "Ühendused täiendatud HTTPS-ile",
     "description": "Message for the connections upgraded row label and for the main blocked resources text when there is more than one connection upgraded (plural) and no other ads/trackers blocked"
@@ -79,16 +91,16 @@
     "message": "Kõik lubatud küpsisefailid",
     "description": "Message for the option in the cookies select field to allow all cookies"
   },
-  "thirdPartyFingerprintingBlocked": {
-    "message": "Saitideülene seadmetuvastus blokeeritud",
+  "standardFingerprinting": {
+    "message": "Sõrmejälje lugemine blokeeritud (standard)",
     "description": "Message for the option in the fingerprinting select field to block all 3rd party recognition attempts"
   },
-  "allFingerprintingBlocked": {
-    "message": "Seadmetuvastuse katsed blokeeritud",
+  "strictFingerprinting": {
+    "message": "Sõrmejälje lugemine blokeeritud (piiratud, võib saite lõhkuda)",
     "description": "Message for the option in the fingerprinting select field to block all fingerprinting attempts"
   },
-  "allFingerprintingAllowed": {
-    "message": "Kõik seadmetuvastuse katsed lubatud",
+  "allowAllFingerprinting": {
+    "message": "Luba sõrmejälje lugemine igal pool",
     "description": "Message for the option in the fingerprinting select field to allow all fingerprinting attempts"
   },
   "deviceRecognitionAttempts": {

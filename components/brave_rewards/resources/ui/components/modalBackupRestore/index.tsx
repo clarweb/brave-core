@@ -6,16 +6,16 @@ import * as React from 'react'
 import {
   StyledContent,
   StyledImport,
-  StyleButtonWrapper,
+  StyledButtonWrapper,
   StyledActionsWrapper,
   StyledDoneWrapper,
+  StyledLink,
   StyledStatus,
   GroupedButton,
   ActionButton,
   StyledTitle,
   StyledTitleWrapper,
   StyledSafe,
-  StyledTabWrapper,
   StyledControlWrapper,
   StyledText,
   StyledTextWrapper
@@ -28,16 +28,20 @@ import ControlWrapper from 'brave-ui/components/formControls/controlWrapper'
 export interface Props {
   backupKey: string
   activeTabId: number
-  onTabChange: () => void
+  showBackupNotice: boolean
+  onTabChange: (newTabId: number) => void
   onClose: () => void
   onCopy?: (key: string) => void
   onPrint?: (key: string) => void
   onSaveFile?: (key: string) => void
   onRestore: (key: string) => void
+  onVerify?: () => void
   error?: React.ReactNode
   id?: string
   testId?: string
   funds?: string
+  onReset: () => void
+  internalFunds: number
 }
 
 interface State {
@@ -58,6 +62,7 @@ export default class ModalBackupRestore extends React.PureComponent<Props, State
       errorShown: false
     }
   }
+
   onFileUpload = (inputFile: React.ChangeEvent<HTMLInputElement>) => {
     const input: HTMLInputElement = inputFile.target
     const self = this
@@ -102,24 +107,32 @@ export default class ModalBackupRestore extends React.PureComponent<Props, State
     }
   }
 
-  getBackup = () => {
+  getBackupLegacy = () => {
     const {
       backupKey,
       onClose,
       onCopy,
       onPrint,
-      onSaveFile
+      onSaveFile,
+      onVerify
     } = this.props
 
     return (
       <>
+        <StyledContent>
+          <StyledSafe>
+            {getLocale('rewardsBackupText1')}
+          </StyledSafe>
+          {getLocale('rewardsBackupText2')}
+        </StyledContent>
         <ControlWrapper text={getLocale('recoveryKeys')}>
           <TextArea
+            id={'backup-recovery-key'}
             value={backupKey}
             disabled={true}
           />
         </ControlWrapper>
-        <StyleButtonWrapper>
+        <StyledButtonWrapper>
           {
             onCopy
             ? <GroupedButton
@@ -153,12 +166,18 @@ export default class ModalBackupRestore extends React.PureComponent<Props, State
             />
             : null
           }
-        </StyleButtonWrapper>
+        </StyledButtonWrapper>
         <StyledContent>
           <StyledSafe>
-            {getLocale('rewardsBackupText2')}
+            {getLocale('rewardsBackupText3')}
           </StyledSafe>
-          {getLocale('rewardsBackupText3')}
+          {getLocale('rewardsBackupText4')}
+        </StyledContent>
+        <StyledContent>
+            {getLocale('rewardsBackupText5')}
+          <StyledLink onClick={onVerify}>
+            {getLocale('rewardsBackupText6')}
+          </StyledLink>
         </StyledContent>
         <StyledDoneWrapper>
           <Button
@@ -172,6 +191,43 @@ export default class ModalBackupRestore extends React.PureComponent<Props, State
     )
   }
 
+  getBackupNotice = () => {
+    const {
+      onClose,
+      onVerify
+    } = this.props
+
+    return (
+      <>
+        <StyledContent>
+          {getLocale('rewardsBackupNoticeText1')}
+        </StyledContent>
+        <StyledContent>
+          {getLocale('rewardsBackupNoticeText2')}
+          <StyledLink onClick={onVerify} id={'backup-verify-link'}>
+            {getLocale('rewardsBackupNoticeText3')}
+          </StyledLink>
+        </StyledContent>
+        <StyledDoneWrapper>
+          <Button
+            text={getLocale('done')}
+            size={'medium'}
+            type={'accent'}
+            onClick={onClose}
+          />
+        </StyledDoneWrapper>
+      </>
+    )
+  }
+
+  getBackup = () => {
+    if (this.props.showBackupNotice) {
+      return this.getBackupNotice()
+    } else {
+      return this.getBackupLegacy()
+    }
+  }
+
   getRestore = () => {
     const { error, onClose, funds } = this.props
     const errorShown = error && this.state.errorShown
@@ -182,7 +238,7 @@ export default class ModalBackupRestore extends React.PureComponent<Props, State
           funds
           ? <StyledStatus>
               <Alert type={'warning'} colored={true} bg={true}>
-                {`Backup your wallet before replacing. Or you will lose the fund, ${funds}, in your current wallet.`}
+                {getLocale('rewardsRestoreWarning', { funds: funds })}
               </Alert>
             </StyledStatus>
           : null
@@ -206,6 +262,7 @@ export default class ModalBackupRestore extends React.PureComponent<Props, State
           }
         >
           <TextArea
+            id={'backup-recovery-key'}
             fieldError={!!errorShown}
             value={this.state.recoveryKey}
             onChange={this.setRecoveryKey}
@@ -245,6 +302,55 @@ export default class ModalBackupRestore extends React.PureComponent<Props, State
     )
   }
 
+  confirmSelection = () => {
+    const confirmed = confirm(getLocale('rewardsResetConfirmation'))
+    if (confirmed === true) {
+      this.props.onReset()
+    }
+  }
+
+  getReset = () => {
+    return (
+      <>
+        <StyledTextWrapper>
+          <StyledText data-test-id={'reset-text'}>
+            {
+              this.props.internalFunds > 0
+              ? <span dangerouslySetInnerHTML={{ __html: getLocale('rewardsResetTextFunds', { amount: this.props.internalFunds }) }} />
+              : getLocale('rewardsResetTextNoFunds')
+            }
+          </StyledText>
+        </StyledTextWrapper>
+        <StyledActionsWrapper>
+          <ActionButton
+            id={'reset-button'}
+            level={'primary'}
+            type={'accent'}
+            text={getLocale('reset')}
+            size={'medium'}
+            onClick={this.confirmSelection}
+          />
+        </StyledActionsWrapper>
+      </>
+    )
+  }
+
+  getTabContent = (activeTabId: number) => {
+    switch (activeTabId) {
+      case 0: {
+        return this.getBackup()
+      }
+      case 1: {
+        return this.getRestore()
+      }
+      case 2: {
+        return this.getReset()
+      }
+    }
+
+    return null
+  }
+
   render () {
     const {
       id,
@@ -262,21 +368,19 @@ export default class ModalBackupRestore extends React.PureComponent<Props, State
           </StyledTitle>
         </StyledTitleWrapper>
         <StyledControlWrapper>
-          <StyledTabWrapper>
-            <Tab
-              onChange={onTabChange}
-              tabIndexSelected={activeTabId}
-              tabTitles={[
-                getLocale('backup'),
-                getLocale('restore')
-              ]}
-            />
-          </StyledTabWrapper>
+          <Tab
+            testId={'settings-modal-tabs'}
+            onChange={onTabChange}
+            tabIndexSelected={activeTabId}
+            tabTitles={[
+              getLocale('backup'),
+              getLocale('restore'),
+              getLocale('reset')
+            ]}
+          />
         </StyledControlWrapper>
         {
-          activeTabId === 0
-          ? this.getBackup()
-          : this.getRestore()
+          this.getTabContent(activeTabId)
         }
       </Modal>
     )

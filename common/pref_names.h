@@ -30,14 +30,11 @@ extern const char kAlternativeSearchEngineProviderInTor[];
 extern const char kBraveThemeType[];
 extern const char kUseOverriddenBraveThemeType[];
 extern const char kLocationBarIsWide[];
-extern const char kReferralPromoCode[];
 extern const char kReferralDownloadID[];
 extern const char kReferralTimestamp[];
 extern const char kReferralAttemptTimestamp[];
 extern const char kReferralAttemptCount[];
 extern const char kReferralHeaders[];
-extern const char kReferralCheckedForPromoCodeFile[];
-extern const char kReferralInitialization[];
 extern const char kReferralAndroidFirstRunTimestamp[];
 extern const char kHTTPSEVerywhereControlType[];
 extern const char kNoScriptControlType[];
@@ -56,7 +53,9 @@ extern const char kNewTabPageShowTopSites[];
 extern const char kNewTabPageShowStats[];
 extern const char kNewTabPageShowRewards[];
 extern const char kNewTabPageShowBinance[];
+extern const char kNewTabPageShowGemini[];
 extern const char kNewTabPageShowTogether[];
+extern const char kNewTabPageShowAddCard[];
 extern const char kBraveEnabledMediaRouter[];
 extern const char kBraveWalletAES256GCMSivNonce[];
 extern const char kBraveWalletEncryptedSeed[];
@@ -67,7 +66,6 @@ extern const char kBraveWalletWeb3Provider[];
 extern const char kLoadCryptoWalletsOnStartup[];
 extern const char kOptedIntoCryptoWallets[];
 extern const char kAlwaysShowBookmarkBarOnNTP[];
-extern const char kRemoteDebuggingEnabled[];
 extern const char kAutocompleteEnabled[];
 extern const char kTopSiteSuggestionsEnabled[];
 extern const char kBraveSuggestedSiteSuggestionsEnabled[];
@@ -80,12 +78,14 @@ extern const char kBinanceRefreshToken[];
 extern const char kBraveGCMChannelStatus[];
 #endif
 extern const char kImportDialogExtensions[];
+extern const char kImportDialogPayments[];
 
 #if defined(OS_ANDROID)
 extern const char kDesktopModeEnabled[];
 extern const char kPlayYTVideoInBrowserEnabled[];
 extern const char kBackgroundVideoPlaybackEnabled[];
 extern const char kSafetynetCheckFailed[];
+extern const char kSafetynetStatus[];
 #endif
 
 #endif  // BRAVE_COMMON_PREF_NAMES_H_

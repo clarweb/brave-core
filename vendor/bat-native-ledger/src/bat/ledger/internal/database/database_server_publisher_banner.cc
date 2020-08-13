@@ -29,216 +29,59 @@ DatabaseServerPublisherBanner::DatabaseServerPublisherBanner(
 
 DatabaseServerPublisherBanner::~DatabaseServerPublisherBanner() = default;
 
-bool DatabaseServerPublisherBanner::CreateTableV7(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-      "publisher_key LONGVARCHAR PRIMARY KEY NOT NULL UNIQUE,"
-      "title TEXT,"
-      "description TEXT,"
-      "background TEXT,"
-      "logo TEXT,"
-      "CONSTRAINT fk_%s_publisher_key"
-      "    FOREIGN KEY (publisher_key)"
-      "    REFERENCES server_publisher_info (publisher_key)"
-      "    ON DELETE CASCADE"
-      ")",
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseServerPublisherBanner::CreateTableV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-      "publisher_key LONGVARCHAR PRIMARY KEY NOT NULL UNIQUE,"
-      "title TEXT,"
-      "description TEXT,"
-      "background TEXT,"
-      "logo TEXT"
-      ")",
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseServerPublisherBanner::CreateIndexV7(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_key");
-}
-
-bool DatabaseServerPublisherBanner::CreateIndexV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_key");
-}
-
-bool DatabaseServerPublisherBanner::Migrate(
+void DatabaseServerPublisherBanner::InsertOrUpdate(
     ledger::DBTransaction* transaction,
-    const int target) {
+    const ledger::ServerPublisherInfo& server_info) {
   DCHECK(transaction);
+  DCHECK(!server_info.publisher_key.empty());
 
-  switch (target) {
-    case 7: {
-      return MigrateToV7(transaction);
-    }
-    case 15: {
-      return MigrateToV15(transaction);
-    }
-    default: {
-      return true;
-    }
-  }
-}
-
-
-bool DatabaseServerPublisherBanner::MigrateToV7(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  if (!DropTable(transaction, kTableName)) {
-    BLOG(0, "Table couldn't be dropped");
-    return false;
-  }
-
-  if (!CreateTableV7(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV7(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  if (!links_->Migrate(transaction, 7)) {
-    return false;
-  }
-
-  if (!amounts_->Migrate(transaction, 7)) {
-    return false;
-  }
-
-  return true;
-}
-
-bool DatabaseServerPublisherBanner::MigrateToV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string temp_table_name = base::StringPrintf(
-      "%s_temp",
-      kTableName);
-
-  if (!RenameDBTable(transaction, kTableName, temp_table_name)) {
-    BLOG(0, "Table couldn't be renamed");
-    return false;
-  }
-
-  const std::string query =
-      "DROP INDEX IF EXISTS server_publisher_banner_publisher_key_index;";
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  if (!CreateTableV15(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV15(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  const std::map<std::string, std::string> columns = {
-    { "publisher_key", "publisher_key" },
-    { "title", "title" },
-    { "description", "description" },
-    { "background", "background" },
-    { "logo", "logo" }
-  };
-
-  if (!MigrateDBTable(
-      transaction,
-      temp_table_name,
-      kTableName,
-      columns,
-      true)) {
-    BLOG(0, "Table migration failed");
-    return false;
-  }
-
-  if (!links_->Migrate(transaction, 15)) {
-    return false;
-  }
-
-  if (!amounts_->Migrate(transaction, 15)) {
-    return false;
-  }
-
-  return true;
-}
-
-void DatabaseServerPublisherBanner::InsertOrUpdateList(
-    const std::vector<ledger::PublisherBanner>& list,
-    ledger::ResultCallback callback) {
-  if (list.empty()) {
-    BLOG(1, "List is empty");
-    callback(ledger::Result::LEDGER_OK);
+  // Do not insert a record if there is no banner data
+  // or if banner data is empty.
+  ledger::PublisherBanner default_banner;
+  if (!server_info.banner || server_info.banner->Equals(default_banner)) {
+    BLOG(1, "Empty publisher banner data, skipping insert");
     return;
   }
 
-  auto transaction = ledger::DBTransaction::New();
-  const std::string query = base::StringPrintf(
+  auto command = ledger::DBCommand::New();
+  command->type = ledger::DBCommand::Type::RUN;
+  command->command = base::StringPrintf(
       "INSERT OR REPLACE INTO %s "
       "(publisher_key, title, description, background, logo) "
       "VALUES (?, ?, ?, ?, ?)",
       kTableName);
 
-  ledger::DBCommandPtr command;
-  for (const auto& info : list) {
-    command = ledger::DBCommand::New();
-    command->type = ledger::DBCommand::Type::RUN;
-    command->command = query;
+  BindString(command.get(), 0, server_info.publisher_key);
+  BindString(command.get(), 1, server_info.banner->title);
+  BindString(command.get(), 2, server_info.banner->description);
+  BindString(command.get(), 3, server_info.banner->background);
+  BindString(command.get(), 4, server_info.banner->logo);
 
-    BindString(command.get(), 0, info.publisher_key);
-    BindString(command.get(), 1, info.title);
-    BindString(command.get(), 2, info.description);
-    BindString(command.get(), 3, info.background);
-    BindString(command.get(), 4, info.logo);
+  transaction->commands.push_back(std::move(command));
 
-    transaction->commands.push_back(std::move(command));
+  links_->InsertOrUpdate(transaction, server_info);
+  amounts_->InsertOrUpdate(transaction, server_info);
+}
+
+void DatabaseServerPublisherBanner::DeleteRecords(
+    ledger::DBTransaction* transaction,
+    const std::string& publisher_key_list) {
+  DCHECK(transaction);
+  if (publisher_key_list.empty()) {
+    return;
   }
 
-  links_->InsertOrUpdateList(transaction.get(), list);
-  amounts_->InsertOrUpdateList(transaction.get(), list);
+  auto command = ledger::DBCommand::New();
+  command->type = ledger::DBCommand::Type::RUN;
+  command->command = base::StringPrintf(
+      "DELETE FROM %s WHERE publisher_key IN (%s)",
+      kTableName,
+      publisher_key_list.c_str());
 
-  auto transaction_callback = std::bind(&OnResultCallback,
-      _1,
-      callback);
+  transaction->commands.push_back(std::move(command));
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  links_->DeleteRecords(transaction, publisher_key_list);
+  amounts_->DeleteRecords(transaction, publisher_key_list);
 }
 
 void DatabaseServerPublisherBanner::GetRecord(
@@ -278,7 +121,9 @@ void DatabaseServerPublisherBanner::GetRecord(
           publisher_key,
           callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseServerPublisherBanner::OnGetRecord(
@@ -292,11 +137,15 @@ void DatabaseServerPublisherBanner::OnGetRecord(
     return;
   }
 
-  if (response->result->get_records().size() != 1) {
-    BLOG(1, "Record size is not correct: " <<
-        response->result->get_records().size());
+  if (response->result->get_records().empty()) {
+    BLOG(1, "Server publisher banner not found");
     callback(nullptr);
     return;
+  }
+
+  if (response->result->get_records().size() > 1) {
+    BLOG(1, "Record size is not correct: " <<
+        response->result->get_records().size());
   }
 
   auto* record = response->result->get_records()[0].get();

@@ -3,64 +3,68 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include <algorithm>
-#include <fstream>
-#include <functional>
-#include <map>
-#include <utility>
-#include <vector>
-
-#include "bat/ads/ad_history.h"
-#include "bat/ads/ads_client.h"
-#include "bat/ads/ads_history.h"
-#include "bat/ads/confirmation_type.h"
-#include "bat/ads/ad_notification_info.h"
-#include "bat/ads/purchase_intent_signal_history.h"
 #include "bat/ads/internal/ads_impl.h"
-#include "bat/ads/internal/classification_helper.h"
-#include "bat/ads/internal/logging.h"
-#include "bat/ads/internal/search_providers.h"
-#include "bat/ads/internal/reports.h"
-#include "bat/ads/internal/static_values.h"
-#include "bat/ads/internal/time_util.h"
-#include "bat/ads/internal/ad_events/ad_notification_event_factory.h"
-#include "bat/ads/internal/event_type_blur_info.h"
-#include "bat/ads/internal/event_type_destroy_info.h"
-#include "bat/ads/internal/event_type_focus_info.h"
-#include "bat/ads/internal/event_type_load_info.h"
-#include "bat/ads/internal/filters/ads_history_filter_factory.h"
-#include "bat/ads/internal/filters/ads_history_date_range_filter.h"
-#include "bat/ads/internal/frequency_capping/exclusion_rule.h"
-#include "bat/ads/internal/frequency_capping/frequency_capping.h"
-#include "bat/ads/internal/frequency_capping/exclusion_rules/per_hour_frequency_cap.h"
-#include "bat/ads/internal/frequency_capping/exclusion_rules/per_day_frequency_cap.h"
-#include "bat/ads/internal/frequency_capping/exclusion_rules/conversion_frequency_cap.h"
-#include "bat/ads/internal/frequency_capping/exclusion_rules/daily_cap_frequency_cap.h"
-#include "bat/ads/internal/frequency_capping/exclusion_rules/total_max_frequency_cap.h"
-#include "bat/ads/internal/frequency_capping/permission_rules/minimum_wait_time_frequency_cap.h"
-#include "bat/ads/internal/frequency_capping/permission_rules/ads_per_day_frequency_cap.h"
-#include "bat/ads/internal/frequency_capping/permission_rules/ads_per_hour_frequency_cap.h"
-#include "bat/ads/internal/sorts/ads_history_sort_factory.h"
-#include "bat/ads/internal/purchase_intent/purchase_intent_signal_info.h"
-#include "bat/ads/internal/purchase_intent/purchase_intent_classifier.h"
-#include "bat/ads/internal/url_util.h"
+
+#include <functional>
+#include <utility>
 
 #include "base/guid.h"
 #include "base/rand_util.h"
-#include "base/strings/string_number_conversions.h"
-#include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
-#include "base/strings/utf_string_conversions.h"
-#include "base/time/time.h"
-#include "brave/components/l10n/browser/locale_helper.h"
+#include "url/gurl.h"
+#include "bat/ads/ad_history.h"
+#include "bat/ads/ad_notification_info.h"
+#include "bat/ads/ads_client.h"
+#include "bat/ads/ads_history.h"
+#include "bat/ads/confirmation_type.h"
+#include "bat/ads/internal/ad_conversions/ad_conversions.h"
+#include "bat/ads/internal/ad_events/ad_notification_event_factory.h"
+#include "bat/ads/internal/ad_notifications/ad_notifications.h"
+#include "bat/ads/internal/bundle/bundle.h"
+#include "bat/ads/internal/classification/classification_util.h"
+#include "bat/ads/internal/classification/page_classifier/page_classifier_user_models.h"
+#include "bat/ads/internal/classification/purchase_intent_classifier/purchase_intent_classifier_user_models.h"
+#include "bat/ads/internal/confirmations/confirmations.h"
+#include "bat/ads/internal/database/database_initialize.h"
+#include "bat/ads/internal/eligible_ads/eligible_ads_filter_factory.h"
+#include "bat/ads/internal/filters/ads_history_date_range_filter.h"
+#include "bat/ads/internal/filters/ads_history_filter_factory.h"
+#include "bat/ads/internal/frequency_capping/exclusion_rules/conversion_frequency_cap.h"
+#include "bat/ads/internal/frequency_capping/exclusion_rules/daily_cap_frequency_cap.h"
+#include "bat/ads/internal/frequency_capping/exclusion_rules/exclusion_rule.h"
+#include "bat/ads/internal/frequency_capping/exclusion_rules/dismissed_frequency_cap.h"
+#include "bat/ads/internal/frequency_capping/exclusion_rules/landed_frequency_cap.h"
+#include "bat/ads/internal/frequency_capping/exclusion_rules/marked_as_inappropriate_frequency_cap.h"
+#include "bat/ads/internal/frequency_capping/exclusion_rules/marked_to_no_longer_receive_frequency_cap.h"
+#include "bat/ads/internal/frequency_capping/exclusion_rules/per_day_frequency_cap.h"
+#include "bat/ads/internal/frequency_capping/exclusion_rules/per_hour_frequency_cap.h"
+#include "bat/ads/internal/frequency_capping/exclusion_rules/subdivision_targeting_frequency_cap.h"
+#include "bat/ads/internal/frequency_capping/exclusion_rules/total_max_frequency_cap.h"
+#include "bat/ads/internal/frequency_capping/permission_rules/ads_per_day_frequency_cap.h"
+#include "bat/ads/internal/frequency_capping/permission_rules/ads_per_hour_frequency_cap.h"
+#include "bat/ads/internal/frequency_capping/permission_rules/minimum_wait_time_frequency_cap.h"
+#include "bat/ads/internal/logging.h"
+#include "bat/ads/internal/platform/platform_helper.h"
+#include "bat/ads/internal/reports/reports.h"
+#include "bat/ads/internal/search_engine/search_providers.h"
+#include "bat/ads/internal/security/security_util.h"
+#include "bat/ads/internal/server/ad_rewards/ad_rewards.h"
+#include "bat/ads/internal/server/get_catalog/get_catalog.h"
+#include "bat/ads/internal/server/get_subdivision/subdivision_targeting.h"
+#include "bat/ads/internal/server/redeem_unblinded_payment_tokens/redeem_unblinded_payment_tokens.h"
+#include "bat/ads/internal/server/redeem_unblinded_token/redeem_unblinded_token.h"
+#include "bat/ads/internal/server/refill_unblinded_tokens/refill_unblinded_tokens.h"
+#include "bat/ads/internal/sorts/ads_history/ads_history_sort_factory.h"
+#include "bat/ads/internal/string_util.h"
+#include "bat/ads/internal/time_util.h"
+#include "bat/ads/internal/url_util.h"
 
 #if defined(OS_ANDROID)
-#include "base/system/sys_info.h"
 #include "base/android/build_info.h"
+#include "base/system/sys_info.h"
 #endif
 
-#include "brave/components/l10n/common/locale_util.h"
-#include "url/gurl.h"
+namespace ads {
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -68,7 +72,20 @@ using std::placeholders::_3;
 
 namespace {
 
-const char kCategoryDelimiter = '-';
+const int kIdleThresholdInSeconds = 15;
+
+const uint64_t kSustainAdNotificationInteractionAfterSeconds = 10;
+
+const uint16_t kPurchaseIntentMaxSegments = 3;
+
+const int kDoNotDisturbFromHour = 21;  // 9pm
+const int kDoNotDisturbToHour = 6;     // 6am
+
+#if defined(OS_ANDROID)
+const int kMaximumAdNotifications = 3;
+#else
+const int kMaximumAdNotifications = 0;  // No limit
+#endif
 
 std::string GetDisplayUrl(const std::string& url) {
   GURL gurl(url);
@@ -80,107 +97,107 @@ std::string GetDisplayUrl(const std::string& url) {
 
 }  // namespace
 
-namespace ads {
-
-AdsImpl::AdsImpl(AdsClient* ads_client)
-    : is_foreground_(false),
-      active_tab_id_(0),
-      next_easter_egg_timestamp_in_seconds_(0),
-      client_(std::make_unique<Client>(this, ads_client)),
-      bundle_(std::make_unique<Bundle>(this, ads_client)),
-      ads_serve_(std::make_unique<AdsServe>(this, ads_client, bundle_.get())),
-      frequency_capping_(std::make_unique<FrequencyCapping>(client_.get())),
-      ad_conversions_(std::make_unique<AdConversions>(
-          this, ads_client, client_.get())),
-      page_classifier_(std::make_unique<PageClassifier>(this)),
-      purchase_intent_classifier_(std::make_unique<PurchaseIntentClassifier>(
-          kPurchaseIntentSignalLevel, kPurchaseIntentClassificationThreshold,
-              kPurchaseIntentSignalDecayTimeWindow)),
-      is_initialized_(false),
-      is_confirmations_ready_(false),
-      ad_notifications_(std::make_unique<AdNotifications>(this, ads_client)),
-      ads_client_(ads_client) {
+AdsImpl::AdsImpl(
+    AdsClient* ads_client)
+    : ads_client_(ads_client),
+      ad_conversions_(std::make_unique<AdConversions>(this)),
+      ad_notifications_(std::make_unique<AdNotifications>(this)),
+      ad_rewards_(std::make_unique<AdRewards>(this)),
+      bundle_(std::make_unique<Bundle>(this)),
+      client_(std::make_unique<Client>(this)),
+      confirmations_(std::make_unique<Confirmations>(this)),
+      database_(std::make_unique<database::Initialize>(this)),
+      get_catalog_(std::make_unique<GetCatalog>(this)),
+      page_classifier_(std::make_unique<classification::PageClassifier>(this)),
+      purchase_intent_classifier_(std::make_unique<
+          classification::PurchaseIntentClassifier>(this)),
+      redeem_unblinded_payment_tokens_(std::make_unique<
+          RedeemUnblindedPaymentTokens>(this)),
+      redeem_unblinded_token_(std::make_unique<RedeemUnblindedToken>(this)),
+      refill_unblinded_tokens_(std::make_unique<RefillUnblindedTokens>(this)),
+      subdivision_targeting_(std::make_unique<SubdivisionTargeting>(this)) {
   set_ads_client_for_logging(ads_client_);
+
+  redeem_unblinded_token_->set_delegate(this);
+  redeem_unblinded_payment_tokens_->set_delegate(this);
+  refill_unblinded_tokens_->set_delegate(this);
 }
 
 AdsImpl::~AdsImpl() = default;
-
-AdsClient* AdsImpl::get_ads_client() const {
-  return ads_client_;
-}
-
-Client* AdsImpl::get_client() const {
-  return client_.get();
-}
-
-AdNotifications* AdsImpl::get_ad_notifications() const {
-  return ad_notifications_.get();
-}
-
-PageClassifier* AdsImpl::get_page_classifier() const {
-  return page_classifier_.get();
-}
 
 void AdsImpl::Initialize(
     InitializeCallback callback) {
   BLOG(1, "Initializing ads");
 
-  initialize_callback_ = callback;
-
   if (IsInitialized()) {
     BLOG(1, "Already initialized ads");
-
-    initialize_callback_(FAILED);
+    callback(FAILED);
     return;
   }
 
-  auto initialize_step_2_callback =
-      std::bind(&AdsImpl::InitializeStep2, this, _1);
-  client_->Initialize(initialize_step_2_callback);
+  const auto initialize_step_2_callback =
+      std::bind(&AdsImpl::InitializeStep2, this, _1, std::move(callback));
+  database_->CreateOrOpen(initialize_step_2_callback);
 }
 
 void AdsImpl::InitializeStep2(
-    const Result result) {
+    const Result result,
+    InitializeCallback callback) {
   if (result != SUCCESS) {
-    initialize_callback_(FAILED);
+    BLOG(0, "Failed to initialize database: " << database_->get_last_message());
+    callback(FAILED);
     return;
   }
 
-  auto callback = std::bind(&AdsImpl::InitializeStep3, this, _1);
-  ad_notifications_->Initialize(callback);
+  const auto initialize_step_3_callback =
+      std::bind(&AdsImpl::InitializeStep3, this, _1, std::move(callback));
+  client_->Initialize(initialize_step_3_callback);
 }
 
 void AdsImpl::InitializeStep3(
-    const Result result) {
+    const Result result,
+    InitializeCallback callback) {
   if (result != SUCCESS) {
-    initialize_callback_(FAILED);
+    callback(FAILED);
     return;
   }
 
-  auto callback = std::bind(&AdsImpl::InitializeStep4, this, _1);
-  ad_conversions_->Initialize(callback);
+  const auto initialize_step_4_callback =
+      std::bind(&AdsImpl::InitializeStep4, this, _1, std::move(callback));
+  confirmations_->Initialize(initialize_step_4_callback);
 }
 
 void AdsImpl::InitializeStep4(
-    const Result result) {
+    const Result result,
+    InitializeCallback callback) {
   if (result != SUCCESS) {
-    initialize_callback_(FAILED);
+    callback(FAILED);
     return;
   }
 
-  auto user_model_languages = ads_client_->GetUserModelLanguages();
-  client_->SetUserModelLanguages(user_model_languages);
-
-  const std::string locale =
-      brave_l10n::LocaleHelper::GetInstance()->GetLocale();
-
-  ChangeLocale(locale);
+  const auto initialize_step_5_callback =
+      std::bind(&AdsImpl::InitializeStep5, this, _1, std::move(callback));
+  ad_notifications_->Initialize(initialize_step_5_callback);
 }
 
 void AdsImpl::InitializeStep5(
-    const Result result) {
+    const Result result,
+    InitializeCallback callback) {
   if (result != SUCCESS) {
-    initialize_callback_(FAILED);
+    callback(FAILED);
+    return;
+  }
+
+  const auto initialize_step_6_callback =
+      std::bind(&AdsImpl::InitializeStep6, this, _1, std::move(callback));
+  ad_conversions_->Initialize(initialize_step_6_callback);
+}
+
+void AdsImpl::InitializeStep6(
+    const Result result,
+    InitializeCallback callback) {
+  if (result != SUCCESS) {
+    callback(FAILED);
     return;
   }
 
@@ -192,7 +209,13 @@ void AdsImpl::InitializeStep5(
 
   ads_client_->SetIdleThreshold(kIdleThresholdInSeconds);
 
-  initialize_callback_(SUCCESS);
+  callback(SUCCESS);
+
+  UpdateAdRewards(/*should_reconcile*/ true);
+
+  subdivision_targeting_->MaybeFetchForCurrentLocale();
+
+  redeem_unblinded_payment_tokens_->RedeemAfterDelay(wallet_);
 
   ad_conversions_->StartTimerIfReady();
 
@@ -207,8 +230,8 @@ void AdsImpl::InitializeStep5(
 
   client_->UpdateAdUUID();
 
-  if (IsMobile()) {
-    if (client_->GetNextCheckServeAdNotificationTimestampInSeconds() == 0) {
+  if (PlatformHelper::GetInstance()->IsMobile()) {
+    if (client_->GetNextCheckServeAdNotificationDate().is_null()) {
       StartDeliveringAdNotificationsAfterSeconds(
           2 * base::Time::kSecondsPerMinute);
     } else {
@@ -216,12 +239,19 @@ void AdsImpl::InitializeStep5(
     }
   }
 
-  ads_serve_->DownloadCatalog();
+  const CatalogIssuersInfo catalog_issuers =
+      confirmations_->GetCatalogIssuers();
+  if (catalog_issuers.IsValid()) {
+    refill_unblinded_tokens_->MaybeRefill();
+    confirmations_->RetryFailedConfirmationsAfterDelay();
+  }
+
+  get_catalog_->Download();
 }
 
 #if defined(OS_ANDROID)
 void AdsImpl::RemoveAllAdNotificationsAfterReboot() {
-  auto ads_shown_history = client_->GetAdsShownHistory();
+  auto ads_shown_history = client_->GetAdsHistory();
   if (!ads_shown_history.empty()) {
     uint64_t ad_shown_timestamp =
         ads_shown_history.front().timestamp_in_seconds;
@@ -251,11 +281,6 @@ bool AdsImpl::IsInitialized() {
     return false;
   }
 
-  if (page_classifier_->ShouldClassifyPages() &&
-      !page_classifier_->IsInitialized()) {
-    return false;
-  }
-
   return true;
 }
 
@@ -273,50 +298,6 @@ void AdsImpl::Shutdown(
   callback(SUCCESS);
 }
 
-void AdsImpl::LoadUserModel() {
-  auto language = client_->GetUserModelLanguage();
-
-  auto callback = std::bind(&AdsImpl::OnUserModelLoaded, this, _1, _2);
-  ads_client_->LoadUserModelForLanguage(language, callback);
-}
-
-void AdsImpl::OnUserModelLoaded(
-    const Result result,
-    const std::string& json) {
-  auto language = client_->GetUserModelLanguage();
-
-  if (result != SUCCESS) {
-    BLOG(0, "Failed to load user model for " << language << " language");
-    return;
-  }
-
-  BLOG(3, "Successfully loaded user model for " << language << " language");
-
-  if (!page_classifier_->Initialize(json)) {
-    BLOG(0, "Failed to initialize page classification user model for "
-        << language << " language");
-    return;
-  }
-
-  BLOG(1, "Successfully initialized page classification user model for "
-      << language << " language");
-
-  if (!IsInitialized()) {
-    InitializeStep5(SUCCESS);
-  }
-}
-
-bool AdsImpl::IsMobile() const {
-  ClientInfo client_info;
-  ads_client_->GetClientInfo(&client_info);
-
-  if (client_info.platform != ANDROID_OS && client_info.platform != IOS) {
-    return false;
-  }
-
-  return true;
-}
-
 bool AdsImpl::GetAdNotification(
     const std::string& uuid,
     AdNotificationInfo* notification) {
@@ -326,11 +307,10 @@ bool AdsImpl::GetAdNotification(
 void AdsImpl::OnForeground() {
   is_foreground_ = true;
 
-  const Reports reports(this);
-  const std::string report = reports.GenerateForegroundEventReport();
-  BLOG(3, "Event log: " << report);
+  BLOG(1, "Browser window did become active");
 
-  if (IsMobile() && !ads_client_->CanShowBackgroundNotifications()) {
+  if (PlatformHelper::GetInstance()->IsMobile() &&
+      !ads_client_->CanShowBackgroundNotifications()) {
     StartDeliveringAdNotifications();
   }
 }
@@ -338,11 +318,10 @@ void AdsImpl::OnForeground() {
 void AdsImpl::OnBackground() {
   is_foreground_ = false;
 
-  const Reports reports(this);
-  const std::string report = reports.GenerateBackgroundEventReport();
-  BLOG(3, "Event log: " << report);
+  BLOG(1, "Browser window did enter background");
 
-  if (IsMobile() && !ads_client_->CanShowBackgroundNotifications()) {
+  if (PlatformHelper::GetInstance()->IsMobile() &&
+      !ads_client_->CanShowBackgroundNotifications()) {
     deliver_ad_notification_timer_.Stop();
   }
 }
@@ -363,7 +342,7 @@ void AdsImpl::OnUnIdle() {
 
   BLOG(1, "Browser state changed to unidle");
 
-  if (IsMobile()) {
+  if (PlatformHelper::GetInstance()->IsMobile()) {
     return;
   }
 
@@ -424,7 +403,8 @@ void AdsImpl::OnAdNotificationEvent(
 }
 
 bool AdsImpl::ShouldNotDisturb() const {
-  if (!IsAndroid()) {
+  const PlatformType platform = PlatformHelper::GetInstance()->GetPlatform();
+  if (platform != PlatformType::kAndroid) {
     return false;
   }
 
@@ -444,46 +424,46 @@ bool AdsImpl::ShouldNotDisturb() const {
   return true;
 }
 
-bool AdsImpl::IsAndroid() const {
-  ClientInfo client_info;
-  ads_client_->GetClientInfo(&client_info);
+int32_t AdsImpl::get_active_tab_id() const {
+  return active_tab_id_;
+}
 
-  if (client_info.platform != ANDROID_OS) {
-    return false;
-  }
+std::string AdsImpl::get_active_tab_url() const {
+  return active_tab_url_;
+}
 
-  return true;
+std::string AdsImpl::get_previous_tab_url() const {
+  return previous_tab_url_;
 }
 
 void AdsImpl::OnTabUpdated(
     const int32_t tab_id,
     const std::string& url,
     const bool is_active,
+    const bool is_browser_active,
     const bool is_incognito) {
   if (is_incognito) {
     return;
   }
 
-  if (is_active) {
+  if (is_active && is_browser_active) {
     BLOG(2, "Tab id " << tab_id << " is visible");
 
     active_tab_id_ = tab_id;
     previous_tab_url_ = active_tab_url_;
     active_tab_url_ = url;
-
-    const Reports reports(this);
-    FocusInfo focus_info;
-    focus_info.tab_id = tab_id;
-    const std::string report = reports.GenerateFocusEventReport(focus_info);
-    BLOG(3, "Event log: " << report);
   } else {
-    BLOG(3, "Tab id " << tab_id << " is occluded");
+    BLOG(7, "Tab id " << tab_id << " is occluded");
+  }
 
-    const Reports reports(this);
-    BlurInfo blur_info;
-    blur_info.tab_id = tab_id;
-    const std::string report = reports.GenerateBlurEventReport(blur_info);
-    BLOG(3, "Event log: " << report);
+  if (is_browser_active) {
+    if (!is_foreground_) {
+      OnForeground();
+    }
+  } else {
+    if (is_foreground_) {
+      OnBackground();
+    }
   }
 }
 
@@ -493,11 +473,41 @@ void AdsImpl::OnTabClosed(
 
   OnMediaStopped(tab_id);
 
-  const Reports reports(this);
-  DestroyInfo destroy_info;
-  destroy_info.tab_id = tab_id;
-  const std::string report = reports.GenerateDestroyEventReport(destroy_info);
-  BLOG(3, "Event log: " << report);
+  sustained_ad_notifications_.erase(tab_id);
+}
+
+void AdsImpl::OnWalletUpdated(
+    const std::string& payment_id,
+    const std::string& recovery_seed_base64) {
+  const std::vector<uint8_t> secret_key =
+      security::GenerateSecretKeyFromSeed(recovery_seed_base64);
+
+  if (secret_key.empty()) {
+    BLOG(0, "Invalid wallet secret key");
+    return;
+  }
+
+  WalletInfo wallet;
+  wallet.payment_id = payment_id;
+  wallet.secret_key = BytesToHexString(secret_key);
+
+  if (!wallet.IsValid()) {
+    BLOG(0, "Invalid wallet");
+    return;
+  }
+
+  if (wallet == wallet_) {
+    return;
+  }
+
+  wallet_ = wallet;
+
+  BLOG(1, "OnWalletUpdated:\n" << "  Payment id: " << wallet_.payment_id
+      << "\n  Private key: ********");
+
+  if (IsInitialized()) {
+    UpdateAdRewards(/*should_reconcile*/ true);
+  }
 }
 
 void AdsImpl::RemoveAllHistory(
@@ -507,17 +517,12 @@ void AdsImpl::RemoveAllHistory(
   callback(SUCCESS);
 }
 
-void AdsImpl::SetConfirmationsIsReady(
-    const bool is_ready) {
-  is_confirmations_ready_ = is_ready;
-}
-
 AdsHistory AdsImpl::GetAdsHistory(
     const AdsHistory::FilterType filter_type,
     const AdsHistory::SortType sort_type,
     const uint64_t from_timestamp,
     const uint64_t to_timestamp) {
-  auto history = client_->GetAdsShownHistory();
+  auto history = client_->GetAdsHistory();
 
   const auto date_range_filter = std::make_unique<AdsHistoryDateRangeFilter>();
   DCHECK(date_range_filter);
@@ -552,8 +557,11 @@ AdContent::LikeAction AdsImpl::ToggleAdThumbUp(
   auto like_action =
       client_->ToggleAdThumbUp(creative_instance_id, creative_set_id, action);
   if (like_action == AdContent::LikeAction::kThumbsUp) {
-    ConfirmAction(creative_instance_id, creative_set_id,
-        ConfirmationType::kUpvoted);
+    AdInfo ad;
+    ad.creative_instance_id = creative_instance_id;
+    ad.creative_set_id = creative_set_id;
+
+    confirmations_->ConfirmAd(ad, ConfirmationType::kUpvoted);
   }
 
   return like_action;
@@ -566,8 +574,11 @@ AdContent::LikeAction AdsImpl::ToggleAdThumbDown(
   auto like_action =
       client_->ToggleAdThumbDown(creative_instance_id, creative_set_id, action);
   if (like_action == AdContent::LikeAction::kThumbsDown) {
-    ConfirmAction(creative_instance_id, creative_set_id,
-        ConfirmationType::kDownvoted);
+    AdInfo ad;
+    ad.creative_instance_id = creative_instance_id;
+    ad.creative_set_id = creative_set_id;
+
+    confirmations_->ConfirmAd(ad, ConfirmationType::kDownvoted);
   }
 
   return like_action;
@@ -599,8 +610,11 @@ bool AdsImpl::ToggleFlagAd(
   auto flag_ad =
       client_->ToggleFlagAd(creative_instance_id, creative_set_id, flagged);
   if (flag_ad) {
-    ConfirmAction(creative_instance_id, creative_set_id,
-        ConfirmationType::kFlagged);
+    AdInfo ad;
+    ad.creative_instance_id = creative_instance_id;
+    ad.creative_set_id = creative_set_id;
+
+    confirmations_->ConfirmAd(ad, ConfirmationType::kFlagged);
   }
 
   return flag_ad;
@@ -608,144 +622,51 @@ bool AdsImpl::ToggleFlagAd(
 
 void AdsImpl::ChangeLocale(
     const std::string& locale) {
-  const std::string language_code = brave_l10n::GetLanguageCode(locale);
-  client_->SetUserModelLanguage(language_code);
+  subdivision_targeting_->MaybeFetchForLocale(locale);
+  page_classifier_->LoadUserModelForLocale(locale);
+  purchase_intent_classifier_->LoadUserModelForLocale(locale);
+}
 
-  if (!page_classifier_->ShouldClassifyPages()) {
-    client_->SetUserModelLanguage(language_code);
-
-    InitializeStep5(SUCCESS);
-    return;
+void AdsImpl::OnUserModelUpdated(
+    const std::string& id) {
+  if (kPageClassificationUserModelIds.find(id) !=
+      kPageClassificationUserModelIds.end()) {
+    page_classifier_->LoadUserModelForId(id);
+  } else if (kPurchaseIntentUserModelIds.find(id) !=
+      kPurchaseIntentUserModelIds.end()) {
+    purchase_intent_classifier_->LoadUserModelForId(id);
+  } else {
+    BLOG(0, "Unknown " << id << " user model");
   }
+}
 
-  LoadUserModel();
+void AdsImpl::OnAdsSubdivisionTargetingCodeHasChanged() {
+  subdivision_targeting_->MaybeFetchForCurrentLocale();
 }
 
 void AdsImpl::OnPageLoaded(
+    const int32_t tab_id,
+    const std::string& original_url,
     const std::string& url,
     const std::string& content) {
+  DCHECK(!original_url.empty());
   DCHECK(!url.empty());
 
   if (!IsInitialized()) {
-    BLOG(0, "Failed to classify page as not initialized");
+    BLOG(1, "OnPageLoaded failed as not initialized");
     return;
   }
 
-  const bool is_supported_url = IsSupportedUrl(url);
+  MaybeSustainAdNotification(tab_id, original_url);
 
-  if (is_supported_url) {
-    ad_conversions_->Check(url);
-  }
-
-  ExtractPurchaseIntentSignal(url);
-
-  if (SameSite(url, last_shown_ad_notification_.target_url)) {
-    BLOG(1, "Visited URL matches the last shown ad notification");
-
-    if (last_sustained_ad_notification_.creative_instance_id !=
-        last_shown_ad_notification_.creative_instance_id) {
-      last_sustained_ad_notification_ = AdNotificationInfo();
-    }
-
-    if (!SameSite(url, last_sustained_ad_notification_.target_url)) {
-      last_sustained_ad_notification_ = last_shown_ad_notification_;
-
-      StartSustainingAdNotificationInteraction();
-    } else {
-      if (sustain_ad_notification_interaction_timer_.IsRunning()) {
-        BLOG(1, "Already sustaining ad for visited URL");
-      } else {
-        BLOG(1, "Already sustained ad for visited URL");
-      }
-    }
-
-    return;
-  }
-
-  if (!last_shown_ad_notification_.target_url.empty()) {
-    BLOG(1, "Visited URL does not match the last shown ad notification");
-  }
-
-  if (!is_supported_url) {
-    BLOG(1, "Page not classified as visited URL is not supported");
-    return;
-  }
-
-  if (SearchProviders::IsSearchEngine(url)) {
-    BLOG(1, "Page not classified as visited URL is a search engine");
-    return;
-  }
-
-  MaybeClassifyPage(url, content);
+  ad_conversions_->MaybeConvert(url);
+  purchase_intent_classifier_->MaybeExtractIntentSignal(url);
+  page_classifier_->MaybeClassifyPage(url, content);
 }
 
-void AdsImpl::ExtractPurchaseIntentSignal(
-    const std::string& url) {
-  if (!page_classifier_->ShouldClassifyPages()) {
-    return;
-  }
-
-  if (!SearchProviders::IsSearchEngine(url) &&
-      SameSite(url, previous_tab_url_)) {
-    return;
-  }
-
-  PurchaseIntentSignalInfo purchase_intent_signal =
-      purchase_intent_classifier_->ExtractIntentSignal(url);
-
-  if (purchase_intent_signal.segments.empty() &&
-      purchase_intent_signal.timestamp_in_seconds == 0) {
-    return;
-  }
-
-  BLOG(1, "Extracting purchase intent signal from visited URL");
-
-  GeneratePurchaseIntentSignalHistoryEntry(purchase_intent_signal);
-}
-
-void AdsImpl::GeneratePurchaseIntentSignalHistoryEntry(
-    const PurchaseIntentSignalInfo& purchase_intent_signal) {
-  for (const auto& segment : purchase_intent_signal.segments) {
-    PurchaseIntentSignalHistory history;
-    history.timestamp_in_seconds = purchase_intent_signal.timestamp_in_seconds;
-    history.weight = purchase_intent_signal.weight;
-    client_->AppendToPurchaseIntentSignalHistoryForSegment(segment, history);
-  }
-}
-
-void AdsImpl::MaybeClassifyPage(
-    const std::string& url,
-    const std::string& content) {
-  std::string page_classification;
-
-  if (page_classifier_->ShouldClassifyPages()) {
-    page_classification = page_classifier_->ClassifyPage(url, content);
-    if (page_classification.empty()) {
-      BLOG(1, "Page not classified as not enough content");
-    } else {
-      const CategoryList winning_categories =
-          page_classifier_->GetWinningCategories();
-
-      BLOG(1, "Classified page as " << page_classification << ". Winning "
-          "page classification over time is " << winning_categories.front());
-    }
-  } else {
-    page_classification = kUntargetedPageClassification;
-  }
-
-  LoadInfo load_info;
-  load_info.tab_id = active_tab_id_;
-  load_info.tab_url = active_tab_url_;
-  load_info.tab_classification = page_classification;
-
-  const Reports reports(this);
-  const std::string report = reports.GenerateLoadEventReport(load_info);
-  BLOG(3, "Event log: " << report);
-}
-
-PurchaseIntentWinningCategoryList
-AdsImpl::GetWinningPurchaseIntentCategories() {
-  PurchaseIntentWinningCategoryList winning_categories;
+classification::PurchaseIntentWinningCategoryList
+AdsImpl::GetPurchaseIntentWinningCategories() {
+  classification::PurchaseIntentWinningCategoryList winning_categories;
 
   PurchaseIntentSignalSegmentHistoryMap purchase_intent_signal_history =
       client_->GetPurchaseIntentSignalHistory();
@@ -759,54 +680,48 @@ AdsImpl::GetWinningPurchaseIntentCategories() {
   return winning_categories;
 }
 
-void AdsImpl::ServeAdNotificationIfReady(
-    const bool should_force) {
+void AdsImpl::ServeAdNotificationIfReady() {
   if (!IsInitialized()) {
     FailedToServeAdNotification("Not initialized");
     return;
   }
 
-  if (!bundle_->IsReady()) {
-    FailedToServeAdNotification("Bundle not ready");
+  if (!bundle_->Exists()) {
+    FailedToServeAdNotification("Bundle does not exist");
     return;
   }
 
-  if (!should_force) {
-    if (!is_confirmations_ready_) {
-      FailedToServeAdNotification("Confirmations not ready");
-      return;
-    }
-
-    if (!IsAndroid() && !IsForeground()) {
-      FailedToServeAdNotification("Not in foreground");
-      return;
-    }
-
-    if (IsMediaPlaying()) {
-      FailedToServeAdNotification("Media playing in browser");
-      return;
-    }
-
-    if (ShouldNotDisturb()) {
-      FailedToServeAdNotification("Should not disturb");
-      return;
-    }
-
-    if (!IsAllowedToServeAdNotifications()) {
-      FailedToServeAdNotification("Not allowed based on history");
-      return;
-    }
+  const PlatformType platform = PlatformHelper::GetInstance()->GetPlatform();
+  if (platform != PlatformType::kAndroid && !IsForeground()) {
+    FailedToServeAdNotification("Not in foreground");
+    return;
   }
 
-  CategoryList categories = GetCategoriesToServeAd();
+  if (IsMediaPlaying()) {
+    FailedToServeAdNotification("Media playing in browser");
+    return;
+  }
+
+  if (ShouldNotDisturb()) {
+    FailedToServeAdNotification("Should not disturb");
+    return;
+  }
+
+  if (!IsAllowedToServeAdNotifications()) {
+    FailedToServeAdNotification("Not allowed based on history");
+    return;
+  }
+
+  classification::CategoryList categories = GetCategoriesToServeAd();
   ServeAdNotificationFromCategories(categories);
 }
 
-CategoryList AdsImpl::GetCategoriesToServeAd() {
-  CategoryList categories = page_classifier_->GetWinningCategories();
+classification::CategoryList AdsImpl::GetCategoriesToServeAd() {
+  classification::CategoryList categories =
+      page_classifier_->GetWinningCategories();
 
-  PurchaseIntentWinningCategoryList purchase_intent_categories =
-      GetWinningPurchaseIntentCategories();
+  classification::PurchaseIntentWinningCategoryList purchase_intent_categories =
+      GetPurchaseIntentWinningCategories();
   categories.insert(categories.end(),
       purchase_intent_categories.begin(), purchase_intent_categories.end());
 
@@ -814,7 +729,7 @@ CategoryList AdsImpl::GetCategoriesToServeAd() {
 }
 
 void AdsImpl::ServeAdNotificationFromCategories(
-    const CategoryList& categories) {
+    const classification::CategoryList& categories) {
   std::string catalog_id = bundle_->GetCatalogId();
   if (catalog_id.empty()) {
     FailedToServeAdNotification("No ad catalog");
@@ -832,18 +747,20 @@ void AdsImpl::ServeAdNotificationFromCategories(
     BLOG(1, "  " << category);
   }
 
-  auto callback = std::bind(&AdsImpl::OnServeAdNotificationFromCategories,
+  const auto callback = std::bind(&AdsImpl::OnServeAdNotificationFromCategories,
       this, _1, _2, _3);
-  ads_client_->GetCreativeAdNotifications(categories, callback);
+
+  database::table::CreativeAdNotifications database_table(this);
+  database_table.GetCreativeAdNotifications(categories, callback);
 }
 
 void AdsImpl::OnServeAdNotificationFromCategories(
     const Result result,
-    const CategoryList& categories,
+    const classification::CategoryList& categories,
     const CreativeAdNotificationList& ads) {
   auto eligible_ads = GetEligibleAds(ads);
   if (!eligible_ads.empty()) {
-    ServeAdNotification(eligible_ads);
+    ServeAdNotificationWithPacing(eligible_ads);
     return;
   }
 
@@ -862,10 +779,10 @@ void AdsImpl::OnServeAdNotificationFromCategories(
 }
 
 bool AdsImpl::ServeAdNotificationFromParentCategories(
-    const CategoryList& categories) {
-  CategoryList parent_categories;
+    const classification::CategoryList& categories) {
+  classification::CategoryList parent_categories;
   for (const auto& category : categories) {
-    auto pos = category.find_last_of(kCategoryDelimiter);
+    auto pos = category.find_last_of(classification::kCategorySeparator);
     if (pos == std::string::npos) {
       return false;
     }
@@ -885,9 +802,11 @@ bool AdsImpl::ServeAdNotificationFromParentCategories(
     BLOG(1, "  " << parent_category);
   }
 
-  auto callback = std::bind(&AdsImpl::OnServeAdNotificationFromCategories,
+  const auto callback = std::bind(&AdsImpl::OnServeAdNotificationFromCategories,
       this, _1, _2, _3);
-  ads_client_->GetCreativeAdNotifications(parent_categories, callback);
+
+  database::table::CreativeAdNotifications database_table(this);
+  database_table.GetCreativeAdNotifications(parent_categories, callback);
 
   return true;
 }
@@ -896,17 +815,19 @@ void AdsImpl::ServeUntargetedAdNotification() {
   BLOG(1, "Serving ad notification from untargeted category");
 
   std::vector<std::string> categories = {
-    kUntargetedPageClassification
+    classification::kUntargeted
   };
 
-  auto callback = std::bind(&AdsImpl::OnServeUntargetedAdNotification,
+  const auto callback = std::bind(&AdsImpl::OnServeUntargetedAdNotification,
       this, _1, _2, _3);
-  ads_client_->GetCreativeAdNotifications(categories, callback);
+
+  database::table::CreativeAdNotifications database_table(this);
+  database_table.GetCreativeAdNotifications(categories, callback);
 }
 
 void AdsImpl::OnServeUntargetedAdNotification(
     const Result result,
-    const std::vector<std::string>& categories,
+    const classification::CategoryList& categories,
     const CreativeAdNotificationList& ads) {
   auto eligible_ads = GetEligibleAds(ads);
   if (eligible_ads.empty()) {
@@ -914,28 +835,21 @@ void AdsImpl::OnServeUntargetedAdNotification(
     return;
   }
 
-  ServeAdNotification(eligible_ads);
+  ServeAdNotificationWithPacing(eligible_ads);
 }
 
-void AdsImpl::ServeAdNotification(
+void AdsImpl::ServeAdNotificationWithPacing(
     const CreativeAdNotificationList& ads) {
-  auto callback =
-      std::bind(&AdsImpl::OnServeAdNotification, this, _1, _2, ads);
-  ads_client_->GetAdConversions(callback);
-}
+  const auto pacing_filter =
+      EligibleAdsFilterFactory::Build(EligibleAdsFilter::Type::kPacing);
+  DCHECK(pacing_filter);
 
-void AdsImpl::OnServeAdNotification(
-    const Result result,
-    const AdConversionList& ad_conversions,
-    const CreativeAdNotificationList& ads) {
-  CreativeAdNotificationList eligible_ads =
-      GetEligibleAdsForConversions(ads, ad_conversions);
-  if (eligible_ads.empty()) {
-    FailedToServeAdNotification("No eligible ads found");
-    return;
-  }
+  const auto priority_filter =
+      EligibleAdsFilterFactory::Build(EligibleAdsFilter::Type::kPriority);
+  DCHECK(priority_filter);
 
-  eligible_ads = GetEligibleAdsForPriorities(eligible_ads);
+  const CreativeAdNotificationList eligible_ads =
+      priority_filter->Apply(pacing_filter->Apply(ads));
   if (eligible_ads.empty()) {
     FailedToServeAdNotification("No eligible ads found");
     return;
@@ -946,65 +860,13 @@ void AdsImpl::OnServeAdNotification(
   const int rand = base::RandInt(0, eligible_ads.size() - 1);
   const CreativeAdNotificationInfo ad = eligible_ads.at(rand);
 
-  if (ad.priority == 0) {
-    FailedToServeAdNotification("Pacing ad delivery [0]");
-    return;
-  }
-
-  const int rand_priority = base::RandInt(1, ad.priority);
-  if (rand_priority != 1) {
-    const std::string message = base::StringPrintf("Pacing ad delivery "
-        "[Roll(%d):%d]", ad.priority, rand_priority);
-
-    FailedToServeAdNotification(message);
-    return;
-  }
-
   ShowAdNotification(ad);
 
   SuccessfullyServedAd();
 }
 
-CreativeAdNotificationList AdsImpl::GetEligibleAdsForPriorities(
-    const CreativeAdNotificationList& ads) const {
-  std::map<unsigned int, CreativeAdNotificationList> prioritized_ads;
-
-  for (const auto& ad : ads) {
-    if (ad.priority == 0) {
-      continue;
-    }
-
-    const auto iter = prioritized_ads.find(ad.priority);
-    if (iter == prioritized_ads.end()) {
-      prioritized_ads.insert({ad.priority, {ad}});
-      continue;
-    }
-
-    iter->second.push_back(ad);
-  }
-
-  const auto iter = std::min_element(prioritized_ads.begin(),
-      prioritized_ads.end(), [](const auto& lhs, const auto& rhs) {
-    return lhs.first < rhs.first;
-  });
-
-  BLOG(2, iter->second.size() << " eligible ads with a priority of "
-      << iter->first);
-
-  for (const auto& prioritized_ad : prioritized_ads) {
-    if (prioritized_ad.first == iter->first) {
-      continue;
-    }
-
-    BLOG(2, prioritized_ad.second.size() << " ads with a priority of "
-        << prioritized_ad.first);
-  }
-
-  return iter->second;
-}
-
 void AdsImpl::SuccessfullyServedAd() {
-  if (IsMobile()) {
+  if (PlatformHelper::GetInstance()->IsMobile()) {
     StartDeliveringAdNotificationsAfterSeconds(
         base::Time::kSecondsPerHour / ads_client_->GetAdsPerHour());
   }
@@ -1014,7 +876,7 @@ void AdsImpl::FailedToServeAdNotification(
     const std::string& reason) {
   BLOG(1, "Ad notification not shown: " << reason);
 
-  if (IsMobile()) {
+  if (PlatformHelper::GetInstance()->IsMobile()) {
     StartDeliveringAdNotificationsAfterSeconds(
         2 * base::Time::kSecondsPerMinute);
   }
@@ -1025,24 +887,45 @@ std::vector<std::unique_ptr<ExclusionRule>>
   std::vector<std::unique_ptr<ExclusionRule>> exclusion_rules;
 
   std::unique_ptr<ExclusionRule> daily_cap_frequency_cap =
-      std::make_unique<DailyCapFrequencyCap>(frequency_capping_.get());
+      std::make_unique<DailyCapFrequencyCap>(this);
   exclusion_rules.push_back(std::move(daily_cap_frequency_cap));
 
   std::unique_ptr<ExclusionRule> per_day_frequency_cap =
-      std::make_unique<PerDayFrequencyCap>(frequency_capping_.get());
+      std::make_unique<PerDayFrequencyCap>(this);
   exclusion_rules.push_back(std::move(per_day_frequency_cap));
 
   std::unique_ptr<ExclusionRule> per_hour_frequency_cap =
-      std::make_unique<PerHourFrequencyCap>(frequency_capping_.get());
+      std::make_unique<PerHourFrequencyCap>(this);
   exclusion_rules.push_back(std::move(per_hour_frequency_cap));
 
   std::unique_ptr<ExclusionRule> total_max_frequency_cap =
-      std::make_unique<TotalMaxFrequencyCap>(frequency_capping_.get());
+      std::make_unique<TotalMaxFrequencyCap>(this);
   exclusion_rules.push_back(std::move(total_max_frequency_cap));
 
   std::unique_ptr<ExclusionRule> conversion_frequency_cap =
-      std::make_unique<ConversionFrequencyCap>(frequency_capping_.get());
+      std::make_unique<ConversionFrequencyCap>(this);
   exclusion_rules.push_back(std::move(conversion_frequency_cap));
+
+  std::unique_ptr<ExclusionRule> subdivision_targeting_frequency_cap =
+      std::make_unique<SubdivisionTargetingFrequencyCap>(this);
+  exclusion_rules.push_back(std::move(subdivision_targeting_frequency_cap));
+
+  std::unique_ptr<ExclusionRule> dismissed_frequency_cap =
+      std::make_unique<DismissedFrequencyCap>(this);
+  exclusion_rules.push_back(std::move(dismissed_frequency_cap));
+
+  std::unique_ptr<ExclusionRule> landed_frequency_cap =
+      std::make_unique<LandedFrequencyCap>(this);
+  exclusion_rules.push_back(std::move(landed_frequency_cap));
+
+  std::unique_ptr<ExclusionRule> marked_to_no_longer_recieve_frequency_cap =
+      std::make_unique<MarkedToNoLongerReceiveFrequencyCap>(this);
+  exclusion_rules.push_back(std::move(
+      marked_to_no_longer_recieve_frequency_cap));
+
+  std::unique_ptr<ExclusionRule> marked_as_inappropriate_frequency_cap =
+      std::make_unique<MarkedAsInappropriateFrequencyCap>(this);
+  exclusion_rules.push_back(std::move(marked_as_inappropriate_frequency_cap));
 
   return exclusion_rules;
 }
@@ -1053,6 +936,8 @@ CreativeAdNotificationList AdsImpl::GetEligibleAds(
 
   const auto exclusion_rules = CreateExclusionRules();
 
+  std::set<std::string> exclusion_reasons;
+
   auto unseen_ads = GetUnseenAdsAndRoundRobinIfNeeded(ads);
   for (const auto& ad : unseen_ads) {
     bool should_exclude = false;
@@ -1062,7 +947,11 @@ CreativeAdNotificationList AdsImpl::GetEligibleAds(
         continue;
       }
 
-      BLOG(2, exclusion_rule->GetLastMessage());
+      const std::string exclusion_reason = exclusion_rule->get_last_message();
+      if (!exclusion_reason.empty()) {
+        exclusion_reasons.insert(exclusion_reason);
+      }
+
       should_exclude = true;
     }
 
@@ -1070,42 +959,11 @@ CreativeAdNotificationList AdsImpl::GetEligibleAds(
       continue;
     }
 
-    if (client_->IsFilteredAd(ad.creative_set_id)) {
-      BLOG(2, "creativeSetId " << ad.creative_set_id << " excluded "
-          "due to being marked to no longer receive ads");
-
-      continue;
-    }
-
-    if (client_->IsFlaggedAd(ad.creative_set_id)) {
-      BLOG(2, "creativeSetId " << ad.creative_set_id << " excluded "
-          "due to being marked as inappropriate");
-
-      continue;
-    }
-
     eligible_ads.push_back(ad);
   }
 
-  return eligible_ads;
-}
-
-CreativeAdNotificationList AdsImpl::GetEligibleAdsForConversions(
-    const CreativeAdNotificationList& ads,
-    const AdConversionList& ad_conversions) {
-  CreativeAdNotificationList eligible_ads = ads;
-
-  if (ads_client_->ShouldAllowAdConversionTracking()) {
-    return eligible_ads;
-  }
-
-  for (const auto& ad_conversion : ad_conversions) {
-    const auto iter = std::remove_if(eligible_ads.begin(), eligible_ads.end(),
-        [&ad_conversion](CreativeAdNotificationInfo& ad_notification) {
-      return ad_notification.creative_set_id == ad_conversion.creative_set_id;
-    });
-
-    eligible_ads.erase(iter, eligible_ads.end());
+  for (const auto& exclusion_reason : exclusion_reasons) {
+    BLOG(2, exclusion_reason);
   }
 
   return eligible_ads;
@@ -1200,7 +1058,7 @@ CreativeAdNotificationList AdsImpl::GetAdsForUnseenAdvertisers(
   return unseen_ads;
 }
 
-bool AdsImpl::IsAdNotificationValid(  // TODO(tmancey)
+bool AdsImpl::IsAdNotificationValid(
     const CreativeAdNotificationInfo& info) {
   if (info.title.empty() ||
       info.body.empty() ||
@@ -1225,12 +1083,8 @@ bool AdsImpl::ShowAdNotification(
     return false;
   }
 
-  auto now_in_seconds = static_cast<uint64_t>(base::Time::Now().ToDoubleT());
-
-  client_->AppendTimestampToCreativeSetHistory(
-      info.creative_set_id, now_in_seconds);
-  client_->AppendTimestampToCampaignHistory(
-      info.campaign_id, now_in_seconds);
+  client_->AppendCreativeSetIdToCreativeSetHistory(info.creative_set_id);
+  client_->AppendCampaignIdToCampaignHistory(info.campaign_id);
 
   client_->UpdateSeenAdNotification(info.creative_instance_id, 1);
   client_->UpdateSeenAdvertiser(info.advertiser_id, 1);
@@ -1274,18 +1128,15 @@ std::vector<std::unique_ptr<PermissionRule>>
   std::vector<std::unique_ptr<PermissionRule>> permission_rules;
 
   std::unique_ptr<PermissionRule> ads_per_hour_frequency_cap =
-      std::make_unique<AdsPerHourFrequencyCap>(this, ads_client_,
-          frequency_capping_.get());
+      std::make_unique<AdsPerHourFrequencyCap>(this);
   permission_rules.push_back(std::move(ads_per_hour_frequency_cap));
 
   std::unique_ptr<PermissionRule> minimum_wait_time_frequency_cap =
-      std::make_unique<MinimumWaitTimeFrequencyCap>(this, ads_client_,
-          frequency_capping_.get());
+      std::make_unique<MinimumWaitTimeFrequencyCap>(this);
   permission_rules.push_back(std::move(minimum_wait_time_frequency_cap));
 
   std::unique_ptr<PermissionRule> ads_per_day_frequency_cap =
-      std::make_unique<AdsPerDayFrequencyCap>(ads_client_,
-          frequency_capping_.get());
+      std::make_unique<AdsPerDayFrequencyCap>(this);
   permission_rules.push_back(std::move(ads_per_day_frequency_cap));
 
   return permission_rules;
@@ -1301,7 +1152,8 @@ bool AdsImpl::IsAllowedToServeAdNotifications() {
       continue;
     }
 
-    BLOG(2, permission_rule->GetLastMessage());
+    BLOG(2, permission_rule->get_last_message());
+
     is_allowed = false;
   }
 
@@ -1309,16 +1161,16 @@ bool AdsImpl::IsAllowedToServeAdNotifications() {
 }
 
 void AdsImpl::StartDeliveringAdNotifications() {
-  auto now_in_seconds = static_cast<uint64_t>(base::Time::Now().ToDoubleT());
-  auto next_check_serve_ad_timestamp_in_seconds =
-      client_->GetNextCheckServeAdNotificationTimestampInSeconds();
+  const base::Time now = base::Time::Now();
+  const base::Time next_check_serve_ad_notification_date =
+      client_->GetNextCheckServeAdNotificationDate();
 
-  uint64_t delay;
-  if (now_in_seconds >= next_check_serve_ad_timestamp_in_seconds) {
+  base::TimeDelta delay;
+  if (now >= next_check_serve_ad_notification_date) {
     // Browser was launched after the next check to serve an ad
-    delay = 1 * base::Time::kSecondsPerMinute;
+    delay = base::TimeDelta::FromMinutes(1);
   } else {
-    delay = next_check_serve_ad_timestamp_in_seconds - now_in_seconds;
+    delay = next_check_serve_ad_notification_date - now;
   }
 
   const base::Time time = deliver_ad_notification_timer_.Start(delay,
@@ -1330,31 +1182,16 @@ void AdsImpl::StartDeliveringAdNotifications() {
 
 void AdsImpl::StartDeliveringAdNotificationsAfterSeconds(
     const uint64_t seconds) {
-  auto timestamp_in_seconds =
-      static_cast<uint64_t>(base::Time::Now().ToDoubleT() + seconds);
-  client_->SetNextCheckServeAdNotificationTimestampInSeconds(
-      timestamp_in_seconds);
+  const base::Time time = base::Time::Now() +
+      base::TimeDelta::FromSeconds(seconds);
+
+  client_->SetNextCheckServeAdNotificationDate(time);
 
   StartDeliveringAdNotifications();
 }
 
 void AdsImpl::DeliverAdNotification() {
   MaybeServeAdNotification(true);
-}
-
-bool AdsImpl::IsCatalogOlderThanOneDay() {
-  auto catalog_last_updated_timestamp_in_seconds =
-    bundle_->GetCatalogLastUpdatedTimestampInSeconds();
-
-  auto now_in_seconds = static_cast<uint64_t>(base::Time::Now().ToDoubleT());
-
-  if (catalog_last_updated_timestamp_in_seconds != 0 &&
-      now_in_seconds > catalog_last_updated_timestamp_in_seconds
-          + (base::Time::kSecondsPerHour * base::Time::kHoursPerDay)) {
-    return true;
-  }
-
-  return false;
 }
 
 void AdsImpl::MaybeServeAdNotification(
@@ -1387,12 +1224,22 @@ void AdsImpl::MaybeServeAdNotification(
     return;
   }
 
-  if (IsCatalogOlderThanOneDay()) {
-    FailedToServeAdNotification("Catalog older than one day");
+  const CatalogIssuersInfo catalog_issuers =
+      confirmations_->GetCatalogIssuers();
+  if (!catalog_issuers.IsValid()) {
+    FailedToServeAdNotification("Catalog issuers not initialized");
     return;
   }
 
-  ServeAdNotificationIfReady(false);
+  if (bundle_->IsOlderThanOneDay()) {
+    FailedToServeAdNotification("Catalog older than one day");
+
+    get_catalog_->Download();
+
+    return;
+  }
+
+  ServeAdNotificationIfReady();
 }
 
 const AdNotificationInfo& AdsImpl::get_last_shown_ad_notification() const {
@@ -1404,58 +1251,71 @@ void AdsImpl::set_last_shown_ad_notification(
   last_shown_ad_notification_ = info;
 }
 
-void AdsImpl::StartSustainingAdNotificationInteraction() {
-  const uint64_t delay = kSustainAdNotificationInteractionAfterSeconds;
-
-  const base::Time time = sustain_ad_notification_interaction_timer_.Start(
-      delay, base::BindOnce(&AdsImpl::SustainAdNotificationInteractionIfNeeded,
-          base::Unretained(this)));
-
-  BLOG(1, "Start timer to sustain ad for "
-      << last_shown_ad_notification_.target_url << " which will trigger "
-          << FriendlyDateAndTime(time));
-}
-
-void AdsImpl::SustainAdNotificationInteractionIfNeeded() {
-  if (!IsStillViewingAdNotification()) {
-    BLOG(1, "Failed to sustain ad. The domain for the focused tab does not "
-        "match " << last_shown_ad_notification_.target_url << " for the last "
-            "shown ad notification");
-
+void AdsImpl::MaybeSustainAdNotification(
+    const int32_t tab_id,
+    const std::string& url) {
+  if (!UrlHasScheme(url)) {
     return;
   }
 
-  BLOG(1, "Sustained ad for " << last_shown_ad_notification_.target_url);
+  if (!SameSite(url, last_shown_ad_notification_.target_url)) {
+    BLOG(1, "Visited URL does not match the last shown ad notification");
+    return;
+  }
 
-  ConfirmAd(last_shown_ad_notification_, ConfirmationType::kLanded);
+  BLOG(1, "Visited URL matches the last shown ad notification");
+
+  MaybeStartSustainingAdNotificationInteraction(tab_id,
+      last_shown_ad_notification_.target_url);
 }
 
-bool AdsImpl::IsStillViewingAdNotification() const {
-  return SameSite(active_tab_url_, last_shown_ad_notification_.target_url);
+void AdsImpl::MaybeStartSustainingAdNotificationInteraction(
+    const int32_t tab_id,
+    const std::string& url) {
+  const auto sustained_ad_notifications_iter =
+      std::find(sustained_ad_notifications_.begin(),
+          sustained_ad_notifications_.end(), tab_id);
+  if (sustained_ad_notifications_iter != sustained_ad_notifications_.end()) {
+    BLOG(1, "Already sustained ad for " << url);
+    return;
+  }
+
+  const auto sustaining_ad_notifications_iter =
+      std::find(sustaining_ad_notifications_.begin(),
+          sustaining_ad_notifications_.end(), tab_id);
+  if (sustaining_ad_notifications_iter != sustaining_ad_notifications_.end()) {
+    BLOG(1, "Already sustaining ad for " << url);
+    return;
+  }
+
+  const base::TimeDelta delay = base::TimeDelta::FromSeconds(
+      kSustainAdNotificationInteractionAfterSeconds);
+
+  const base::Time time = sustain_ad_notification_interaction_timer_.Start(
+      delay, base::BindOnce(&AdsImpl::SustainAdNotificationInteractionIfNeeded,
+          base::Unretained(this), tab_id, url));
+
+  sustaining_ad_notifications_.insert(tab_id);
+
+  BLOG(1, "Start timer to sustain ad for " << url << " which will trigger "
+      << FriendlyDateAndTime(time));
 }
 
-void AdsImpl::ConfirmAd(
-    const AdInfo& info,
-    const ConfirmationType confirmation_type) {
-  const Reports reports(this);
-  const std::string report = reports.GenerateConfirmationEventReport(
-      info.creative_instance_id, confirmation_type);
-  BLOG(3, "Event log: " << report);
+void AdsImpl::SustainAdNotificationInteractionIfNeeded(
+    const int32_t tab_id,
+    const std::string& url) {
+  sustained_ad_notifications_.insert(tab_id);
+  sustaining_ad_notifications_.erase(tab_id);
 
-  ads_client_->ConfirmAd(info, confirmation_type);
-}
+  if (tab_id != active_tab_id_) {
+    BLOG(1, "Failed to sustain ad for " << url);
+    return;
+  }
 
-void AdsImpl::ConfirmAction(
-    const std::string& creative_instance_id,
-    const std::string& creative_set_id,
-    const ConfirmationType confirmation_type) {
-  const Reports reports(this);
-  const std::string report = reports.GenerateConfirmationEventReport(
-      creative_instance_id, confirmation_type);
-  BLOG(3, "Event log: " << report);
+  BLOG(1, "Sustained ad for " << url);
 
-  ads_client_->ConfirmAction(creative_instance_id, creative_set_id,
-      confirmation_type);
+  confirmations_->ConfirmAd(last_shown_ad_notification_,
+      ConfirmationType::kLanded);
 }
 
 void AdsImpl::AppendAdNotificationToHistory(
@@ -1475,14 +1335,124 @@ void AdsImpl::AppendAdNotificationToHistory(
   ad_history.ad_content.ad_action = confirmation_type;
   ad_history.category_content.category = info.category;
 
-  client_->AppendAdHistoryToAdsShownHistory(ad_history);
+  client_->AppendAdHistoryToAdsHistory(ad_history);
 }
 
-bool AdsImpl::IsSupportedUrl(
-    const std::string& url) const {
-  DCHECK(!url.empty()) << "Invalid URL";
+//////////////////////////////////////////////////////////////////////////////
 
-  return GURL(url).SchemeIsHTTPOrHTTPS();
+void AdsImpl::UpdateAdRewards(
+    const bool should_reconcile) {
+  if (!IsInitialized()) {
+    return;
+  }
+
+  ad_rewards_->Update(wallet_, should_reconcile);
+}
+
+void AdsImpl::GetTransactionHistory(
+    GetTransactionHistoryCallback callback) {
+  if (!IsInitialized()) {
+    return;
+  }
+
+  StatementInfo statement;
+
+  statement.estimated_pending_rewards =
+      get_ad_rewards()->GetEstimatedPendingRewards();
+
+  statement.next_payment_date_in_seconds =
+      get_ad_rewards()->GetNextPaymentDateInSeconds();
+
+  statement.ad_notifications_received_this_month =
+      get_ad_rewards()->GetAdNotificationsReceivedThisMonth();
+
+  auto to_timestamp_in_seconds =
+      static_cast<uint64_t>(base::Time::Now().ToDoubleT());
+  const TransactionList transactions =
+      GetTransactions(0, to_timestamp_in_seconds);
+  statement.transactions = transactions;
+
+  callback(statement);
+}
+
+TransactionList AdsImpl::GetTransactions(
+    const uint64_t from_timestamp_in_seconds,
+    const uint64_t to_timestamp_in_seconds) {
+  TransactionList transactions = confirmations_->get_transactions();
+  TransactionList filtered_transactions(transactions.size());
+
+  auto iter = std::copy_if(transactions.begin(), transactions.end(),
+      filtered_transactions.begin(), [=](TransactionInfo& transaction) {
+    return transaction.timestamp_in_seconds >= from_timestamp_in_seconds &&
+        transaction.timestamp_in_seconds <= to_timestamp_in_seconds;
+  });
+
+  filtered_transactions.resize(std::distance(
+      filtered_transactions.begin(), iter));
+
+  return filtered_transactions;
+}
+
+TransactionList AdsImpl::GetUnredeemedTransactions() {
+  auto count = confirmations_->get_unblinded_payment_tokens()->Count();
+  if (count == 0) {
+    // There are no outstanding unblinded payment tokens to redeem
+    return {};
+  }
+
+  // Unredeemed transactions are always at the end of the transaction history
+  const TransactionList transactions = confirmations_->get_transactions();
+
+  const TransactionList filtered_transactions(transactions.end() - count,
+      transactions.end());
+
+  return filtered_transactions;
+}
+
+WalletInfo AdsImpl::get_wallet() const {
+  DCHECK(wallet_.IsValid());
+
+  return wallet_;
+}
+
+void AdsImpl::OnDidRedeemUnblindedToken(
+    const ConfirmationInfo& confirmation) {
+  BLOG(1, "Successfully redeemed unblinded token with confirmation id "
+      << confirmation.id << ", creative instance id "
+          << confirmation.creative_instance_id << " and "
+              << std::string(confirmation.type));
+}
+
+void AdsImpl::OnFailedToRedeemUnblindedToken(
+    const ConfirmationInfo& confirmation) {
+  BLOG(1, "Failed to redeem unblinded token with confirmation id "
+      << confirmation.id << ", creative instance id "
+          <<  confirmation.creative_instance_id << " and "
+              << std::string(confirmation.type));
+}
+
+void AdsImpl::OnDidRedeemUnblindedPaymentTokens() {
+  BLOG(1, "Successfully redeemed unblinded payment tokens");
+}
+
+void AdsImpl::OnFailedToRedeemUnblindedPaymentTokens() {
+  BLOG(1, "Failed to redeem unblinded payment tokens");
+}
+
+void AdsImpl::OnDidRetryRedeemingUnblindedPaymentTokens() {
+  BLOG(1, "Retry redeeming unblinded payment tokens");
+}
+
+void AdsImpl::OnDidRefillUnblindedTokens() {
+  BLOG(1, "Successfully refilled unblinded tokens");
+}
+
+void AdsImpl::OnFailedToRefillUnblindedTokens() {
+  BLOG(1, "Failed to refill unblinded tokens");
+}
+
+void AdsImpl::OnDidRetryRefillingUnblindedTokens() {
+  BLOG(1, "Retry refilling unblinded tokens");
 }
 
 }  // namespace ads

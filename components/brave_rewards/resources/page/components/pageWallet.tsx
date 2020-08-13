@@ -31,7 +31,6 @@ const clipboardCopy = require('clipboard-copy')
 
 interface State {
   activeTabId: number
-  modalBackup: boolean
   modalActivity: boolean
   modalPendingContribution: boolean
   modalVerify: boolean
@@ -45,7 +44,6 @@ class PageWallet extends React.Component<Props, State> {
     super(props)
     this.state = {
       activeTabId: 0,
-      modalBackup: false,
       modalActivity: false,
       modalPendingContribution: false,
       modalVerify: false
@@ -56,6 +54,11 @@ class PageWallet extends React.Component<Props, State> {
     return this.props.actions
   }
 
+  hasUserFunds () {
+    const { balance } = this.props.rewardsData
+    return balance && balance.wallets['anonymous'] > 0
+  }
+
   componentDidMount () {
     this.isBackupUrl()
     this.isVerifyUrl()
@@ -63,7 +66,7 @@ class PageWallet extends React.Component<Props, State> {
   }
 
   onModalBackupClose = () => {
-    if (this.urlHashIs('#backup-restore')) {
+    if (this.urlHashIs('#manage-wallet')) {
       window.location.hash = ''
     }
     this.actions.onModalBackupClose()
@@ -77,8 +80,11 @@ class PageWallet extends React.Component<Props, State> {
     this.actions.onModalBackupOpen()
   }
 
-  onModalBackupTabChange = () => {
-    const newTabId = this.state.activeTabId === 0 ? 1 : 0
+  showBackupNotice = () => {
+    return this.state.activeTabId === 0 && !this.hasUserFunds()
+  }
+
+  onModalBackupTabChange = (newTabId: number) => {
     this.setState({
       activeTabId: newTabId
     })
@@ -129,6 +135,11 @@ class PageWallet extends React.Component<Props, State> {
     }
   }
 
+  onModalBackupOnReset = () => {
+    this.actions.onModalBackupClose()
+    this.actions.completeReset()
+  }
+
   pullRecoveryKeyFromFile = (key: string) => {
     let recoveryKey = null
     if (key) {
@@ -153,26 +164,6 @@ class PageWallet extends React.Component<Props, State> {
   getConversion = () => {
     const { balance, parameters } = this.props.rewardsData
     return utils.convertBalance(balance.total, parameters.rate)
-  }
-
-  generatePromotions = () => {
-    const promotions = this.props.rewardsData.promotions
-    if (!promotions) {
-      return []
-    }
-
-    let claimedPromotions = promotions.filter((promotion: Rewards.Promotion) => {
-      return promotion.status === 4 // PromotionStatus::FINISHED
-    })
-
-    const typeUGP = 0
-    return claimedPromotions.map((promotion: Rewards.Promotion) => {
-      return {
-        amount: promotion.amount,
-        expiresAt: new Date(promotion.expiresAt).toLocaleDateString(),
-        type: promotion.type || typeUGP
-      }
-    })
   }
 
   onModalActivityToggle = () => {
@@ -201,7 +192,7 @@ class PageWallet extends React.Component<Props, State> {
   }
 
   isBackupUrl = () => {
-    if (this.urlHashIs('#backup-restore')) {
+    if (this.urlHashIs('#manage-wallet')) {
       this.onModalBackupOpen()
     }
   }
@@ -233,12 +224,10 @@ class PageWallet extends React.Component<Props, State> {
   }
 
   walletAlerts = (): AlertWallet | null => {
-    const { total } = this.props.rewardsData.balance
     const {
-      walletRecoverySuccess,
+      walletRecoveryStatus,
       walletServerProblem,
-      walletCorrupted,
-      onlyAnonWallet
+      walletCorrupted
     } = this.props.rewardsData.ui
 
     if (walletServerProblem) {
@@ -248,14 +237,12 @@ class PageWallet extends React.Component<Props, State> {
       }
     }
 
-    if (walletRecoverySuccess) {
-      const batFormatString = onlyAnonWallet ? getLocale('batPoints') : getLocale('bat')
-
+    if (walletRecoveryStatus === 0) {
       return {
-        node: <><b>{getLocale('walletRestored')}</b> {getLocale('walletRecoverySuccess', { balance: total.toString(), currency: batFormatString })}</>,
+        node: <><b>{getLocale('walletRestored')}</b> {getLocale('walletRecoverySuccess')}</>,
         type: 'success',
         onAlertClose: () => {
-          this.actions.onClearAlert('walletRecoverySuccess')
+          this.actions.onClearAlert('walletRecoveryStatus')
         }
       }
     }
@@ -349,15 +336,24 @@ class PageWallet extends React.Component<Props, State> {
     this.actions.removeAllPendingContribution()
   }
 
-  handleUpholdLink = (link: string) => {
-    const { ui, externalWallet } = this.props.rewardsData
-    if (!ui.onBoardingDisplayed &&
-        (!externalWallet || (externalWallet && externalWallet.status === 0))) {
+  handleUpholdLink = () => {
+    const { ui, externalWallet, balance } = this.props.rewardsData
+
+    if (!externalWallet) {
+      return
+    }
+
+    if (balance.total < 25) {
+      window.open(externalWallet.loginUrl, '_self')
+      return
+    }
+
+    if (!ui.onBoardingDisplayed && externalWallet.status === 0) {
       this.toggleVerifyModal()
       return
     }
 
-    window.open(link, '_self')
+    window.open(externalWallet.verifyUrl, '_self')
   }
 
   onVerifyClick = (hideVerify: boolean) => {
@@ -372,7 +368,7 @@ class PageWallet extends React.Component<Props, State> {
       this.actions.onOnBoardingDisplayed()
     }
 
-    this.handleUpholdLink(externalWallet.verifyUrl)
+    this.handleUpholdLink()
   }
 
   getWalletStatus = (): WalletState | undefined => {
@@ -395,6 +391,9 @@ class PageWallet extends React.Component<Props, State> {
       // WalletStatus::DISCONNECTED_VERIFIED
       case 4:
         return 'disconnected_verified'
+      // ledger::WalletStatus::PENDING
+      case 5:
+        return 'pending'
       default:
         return 'unverified'
     }
@@ -425,7 +424,7 @@ class PageWallet extends React.Component<Props, State> {
     }
 
     if (externalWallet.verifyUrl) {
-      this.handleUpholdLink(externalWallet.verifyUrl)
+      this.handleUpholdLink()
       return
     }
   }
@@ -466,13 +465,15 @@ class PageWallet extends React.Component<Props, State> {
         name: getLocale('panelAddFunds'),
         action: this.onFundsAction.bind(this, 'add'),
         icon: <WalletAddIcon />,
-        testId: 'panel-add-funds'
+        testId: 'panel-add-funds',
+        externalWallet: true
       },
       {
         name: getLocale('panelWithdrawFunds'),
         action: this.onFundsAction.bind(this, 'withdraw'),
         icon: <WalletWithdrawIcon />,
-        testId: 'panel-withdraw-funds'
+        testId: 'panel-withdraw-funds',
+        externalWallet: true
       }
     ]
   }
@@ -736,6 +737,31 @@ class PageWallet extends React.Component<Props, State> {
     )
   }
 
+  getInternalFunds = () => {
+    const { balance } = this.props.rewardsData
+    if (!balance.wallets) {
+      return 0
+    }
+
+    return (balance.wallets['anonymous'] || 0) + (balance.wallets['blinded'] || 0)
+  }
+
+  getBackupErrorMessage = () => {
+    const { ui } = this.props.rewardsData
+    const { walletRecoveryStatus } = ui
+
+    // ledger::Result::CORRUPTED_DATA
+    if (walletRecoveryStatus === 17) {
+      return <span dangerouslySetInnerHTML={{ __html: getLocale('walletRecoveryOutdated') }} />
+    }
+
+    if (walletRecoveryStatus !== 0) {
+      return getLocale('walletRecoveryFail')
+    }
+
+    return ''
+  }
+
   render () {
     const {
       recoveryKey,
@@ -745,7 +771,7 @@ class PageWallet extends React.Component<Props, State> {
       pendingContributionTotal
     } = this.props.rewardsData
     const { total } = balance
-    const { walletRecoverySuccess, emptyWallet, modalBackup, onlyAnonWallet } = ui
+    const { emptyWallet, modalBackup, onlyAnonWallet } = ui
 
     const pendingTotal = parseFloat((pendingContributionTotal || 0).toFixed(3))
 
@@ -765,7 +791,6 @@ class PageWallet extends React.Component<Props, State> {
           onSettingsClick={this.onModalBackupOpen}
           showCopy={showCopy}
           showSecActions={true}
-          grants={this.generatePromotions()}
           alert={this.walletAlerts()}
           walletState={this.getWalletStatus()}
           onVerifyClick={onVerifyClick}
@@ -773,6 +798,7 @@ class PageWallet extends React.Component<Props, State> {
           goToUphold={this.goToUphold}
           greetings={this.getGreetings()}
           onlyAnonWallet={onlyAnonWallet}
+          showLoginMessage={balance.total < 25}
         >
           {
             enabledMain
@@ -793,13 +819,17 @@ class PageWallet extends React.Component<Props, State> {
             ? <ModalBackupRestore
               activeTabId={this.state.activeTabId}
               backupKey={recoveryKey}
+              showBackupNotice={this.showBackupNotice()}
               onTabChange={this.onModalBackupTabChange}
               onClose={this.onModalBackupClose}
               onCopy={this.onModalBackupOnCopy}
               onPrint={this.onModalBackupOnPrint}
               onSaveFile={this.onModalBackupOnSaveFile}
               onRestore={this.onModalBackupOnRestore}
-              error={walletRecoverySuccess === false ? getLocale('walletRecoveryFail') : ''}
+              onVerify={this.onVerifyClick.bind(this, true)}
+              onReset={this.onModalBackupOnReset}
+              internalFunds={this.getInternalFunds()}
+              error={this.getBackupErrorMessage()}
             />
             : null
         }

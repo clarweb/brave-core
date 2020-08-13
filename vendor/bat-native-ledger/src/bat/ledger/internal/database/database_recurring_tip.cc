@@ -30,147 +30,6 @@ DatabaseRecurringTip::DatabaseRecurringTip(
 
 DatabaseRecurringTip::~DatabaseRecurringTip() = default;
 
-bool DatabaseRecurringTip::CreateTableV2(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "publisher_id LONGVARCHAR NOT NULL PRIMARY KEY UNIQUE,"
-        "amount DOUBLE DEFAULT 0 NOT NULL,"
-        "added_date INTEGER DEFAULT 0 NOT NULL,"
-        "CONSTRAINT fk_%s_publisher_id"
-        "    FOREIGN KEY (publisher_id)"
-        "    REFERENCES publisher_info (publisher_id)"
-        "    ON DELETE CASCADE"
-      ")",
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseRecurringTip::CreateTableV15(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "publisher_id LONGVARCHAR NOT NULL PRIMARY KEY UNIQUE,"
-        "amount DOUBLE DEFAULT 0 NOT NULL,"
-        "added_date INTEGER DEFAULT 0 NOT NULL"
-      ")",
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseRecurringTip::CreateIndexV2(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_id");
-}
-
-bool DatabaseRecurringTip::CreateIndexV15(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_id");
-}
-
-bool DatabaseRecurringTip::Migrate(
-    ledger::DBTransaction* transaction,
-    const int target) {
-  DCHECK(transaction);
-
-  switch (target) {
-    case 2: {
-      return MigrateToV2(transaction);
-    }
-    case 15: {
-      return MigrateToV15(transaction);
-    }
-    default: {
-      return true;
-    }
-  }
-}
-
-bool DatabaseRecurringTip::MigrateToV2(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  if (!DropTable(transaction, kTableName)) {
-    BLOG(0, "Table couldn't be dropped");
-    return false;
-  }
-
-  if (!CreateTableV2(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV2(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  return true;
-}
-
-bool DatabaseRecurringTip::MigrateToV15(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string temp_table_name = base::StringPrintf(
-      "%s_temp",
-      kTableName);
-
-  if (!RenameDBTable(transaction, kTableName, temp_table_name)) {
-    BLOG(0, "Table couldn't be renamed");
-    return false;
-  }
-
-  const std::string query =
-      "DROP INDEX IF EXISTS recurring_donation_publisher_id_index;";
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  if (!CreateTableV15(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV15(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  const std::map<std::string, std::string> columns = {
-    { "publisher_id", "publisher_id" },
-    { "amount", "amount" },
-    { "added_date", "added_date" }
-  };
-
-  if (!MigrateDBTable(
-      transaction,
-      temp_table_name,
-      kTableName,
-      columns,
-      true)) {
-    BLOG(0, "Table migration failed");
-    return false;
-  }
-  return true;
-}
-
 void DatabaseRecurringTip::InsertOrUpdate(
     ledger::RecurringTipPtr info,
     ledger::ResultCallback callback) {
@@ -202,7 +61,9 @@ void DatabaseRecurringTip::InsertOrUpdate(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseRecurringTip::GetAllRecords(
@@ -211,7 +72,7 @@ void DatabaseRecurringTip::GetAllRecords(
 
   const std::string query = base::StringPrintf(
     "SELECT pi.publisher_id, pi.name, pi.url, pi.favIcon, "
-    "rd.amount, rd.added_date, spi.status, pi.provider "
+    "rd.amount, rd.added_date, spi.status, spi.updated_at, pi.provider "
     "FROM %s as rd "
     "INNER JOIN publisher_info AS pi ON rd.publisher_id = pi.publisher_id "
     "LEFT JOIN server_publisher_info AS spi "
@@ -230,6 +91,7 @@ void DatabaseRecurringTip::GetAllRecords(
       ledger::DBCommand::RecordBindingType::DOUBLE_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
+      ledger::DBCommand::RecordBindingType::INT64_TYPE,
       ledger::DBCommand::RecordBindingType::STRING_TYPE
   };
 
@@ -240,7 +102,9 @@ void DatabaseRecurringTip::GetAllRecords(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseRecurringTip::OnGetAllRecords(
@@ -266,7 +130,8 @@ void DatabaseRecurringTip::OnGetAllRecords(
     info->reconcile_stamp = GetInt64Column(record_pointer, 5);
     info->status = static_cast<ledger::mojom::PublisherStatus>(
         GetInt64Column(record_pointer, 6));
-    info->provider = GetStringColumn(record_pointer, 7);
+    info->status_updated_at = GetInt64Column(record_pointer, 7);
+    info->provider = GetStringColumn(record_pointer, 8);
 
     list.push_back(std::move(info));
   }
@@ -301,7 +166,9 @@ void DatabaseRecurringTip::DeleteRecord(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 }  // namespace braveledger_database

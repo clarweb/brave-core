@@ -31,337 +31,6 @@ DatabasePendingContribution::DatabasePendingContribution(
 
 DatabasePendingContribution::~DatabasePendingContribution() = default;
 
-bool DatabasePendingContribution::CreateTableV3(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "publisher_id LONGVARCHAR NOT NULL,"
-        "amount DOUBLE DEFAULT 0 NOT NULL,"
-        "added_date INTEGER DEFAULT 0 NOT NULL,"
-        "viewing_id LONGVARCHAR NOT NULL,"
-        "category INTEGER NOT NULL,"
-        "CONSTRAINT fk_%s_publisher_id"
-        "    FOREIGN KEY (publisher_id)"
-        "    REFERENCES publisher_info (publisher_id)"
-        "    ON DELETE CASCADE"
-      ")",
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabasePendingContribution::CreateTableV8(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "publisher_id LONGVARCHAR NOT NULL,"
-        "amount DOUBLE DEFAULT 0 NOT NULL,"
-        "added_date INTEGER DEFAULT 0 NOT NULL,"
-        "viewing_id LONGVARCHAR NOT NULL,"
-        "type INTEGER NOT NULL,"
-        "CONSTRAINT fk_%s_publisher_id"
-        "    FOREIGN KEY (publisher_id)"
-        "    REFERENCES publisher_info (publisher_id)"
-        "    ON DELETE CASCADE"
-      ")",
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabasePendingContribution::CreateTableV12(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "pending_contribution_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-        "publisher_id LONGVARCHAR NOT NULL,"
-        "amount DOUBLE DEFAULT 0 NOT NULL,"
-        "added_date INTEGER DEFAULT 0 NOT NULL,"
-        "viewing_id LONGVARCHAR NOT NULL,"
-        "type INTEGER NOT NULL,"
-        "CONSTRAINT fk_%s_publisher_id"
-        "    FOREIGN KEY (publisher_id)"
-        "    REFERENCES publisher_info (publisher_id)"
-        "    ON DELETE CASCADE"
-      ")",
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabasePendingContribution::CreateTableV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "pending_contribution_id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-        "publisher_id LONGVARCHAR NOT NULL,"
-        "amount DOUBLE DEFAULT 0 NOT NULL,"
-        "added_date INTEGER DEFAULT 0 NOT NULL,"
-        "viewing_id LONGVARCHAR NOT NULL,"
-        "type INTEGER NOT NULL"
-      ")",
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabasePendingContribution::CreateIndexV3(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_id");
-}
-
-bool DatabasePendingContribution::CreateIndexV8(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_id");
-}
-
-bool DatabasePendingContribution::CreateIndexV12(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_id");
-}
-
-bool DatabasePendingContribution::CreateIndexV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_id");
-}
-
-bool DatabasePendingContribution::Migrate(
-    ledger::DBTransaction* transaction,
-    const int target) {
-  DCHECK(transaction);
-
-  switch (target) {
-    case 3: {
-      return MigrateToV3(transaction);
-    }
-    case 8: {
-      return MigrateToV8(transaction);
-    }
-    case 12: {
-      return MigrateToV12(transaction);
-    }
-    case 15: {
-      return MigrateToV15(transaction);
-    }
-    default: {
-      return true;
-    }
-  }
-}
-
-bool DatabasePendingContribution::MigrateToV3(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  if (!DropTable(transaction, kTableName)) {
-    BLOG(0, "Table couldn't be dropped");
-    return false;
-  }
-
-  if (!CreateTableV3(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV3(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  return true;
-}
-
-bool DatabasePendingContribution::MigrateToV8(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string temp_table_name = base::StringPrintf(
-      "%s_temp",
-      kTableName);
-
-  if (!RenameDBTable(transaction, kTableName, temp_table_name)) {
-    BLOG(0, "Table couldn't be renamed");
-    return false;
-  }
-
-  const std::string query =
-      "DROP INDEX IF EXISTS pending_contribution_publisher_id_index;";
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  if (!CreateTableV8(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV8(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  const std::map<std::string, std::string> columns = {
-    { "publisher_id", "publisher_id" },
-    { "amount", "amount" },
-    { "added_date", "added_date" },
-    { "viewing_id", "viewing_id" },
-    { "category", "type" }
-  };
-
-  if (!MigrateDBTable(
-      transaction,
-      temp_table_name,
-      kTableName,
-      columns,
-      true)) {
-    BLOG(0, "Table migration failed");
-    return false;
-  }
-
-  return true;
-}
-
-bool DatabasePendingContribution::MigrateToV12(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string temp_table_name = base::StringPrintf(
-      "%s_temp",
-      kTableName);
-
-  if (!RenameDBTable(transaction, kTableName, temp_table_name)) {
-    BLOG(0, "Table couldn't be renamed");
-    return false;
-  }
-
-  const std::string query =
-      "DROP INDEX IF EXISTS pending_contribution_publisher_id_index;";
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  if (!CreateTableV12(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV12(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  const std::map<std::string, std::string> columns = {
-    { "publisher_id", "publisher_id" },
-    { "amount", "amount" },
-    { "added_date", "added_date" },
-    { "viewing_id", "viewing_id" },
-    { "type", "type" }
-  };
-
-  if (!MigrateDBTable(
-      transaction,
-      temp_table_name,
-      kTableName,
-      columns,
-      true)) {
-    BLOG(0, "Table migration failed");
-    return false;
-  }
-  return true;
-}
-
-bool DatabasePendingContribution::MigrateToV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string temp_table_name = base::StringPrintf(
-      "%s_temp",
-      kTableName);
-
-  if (!RenameDBTable(transaction, kTableName, temp_table_name)) {
-    BLOG(0, "Table couldn't be renamed");
-    return false;
-  }
-
-  const std::string query =
-      "DROP INDEX IF EXISTS pending_contribution_publisher_id_index;";
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  if (!CreateTableV15(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV15(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  const std::map<std::string, std::string> columns = {
-    { "pending_contribution_id", "pending_contribution_id" },
-    { "publisher_id", "publisher_id" },
-    { "amount", "amount" },
-    { "added_date", "added_date" },
-    { "viewing_id", "viewing_id" },
-    { "type", "type" }
-  };
-
-  if (!MigrateDBTable(
-      transaction,
-      temp_table_name,
-      kTableName,
-      columns,
-      true)) {
-    BLOG(0, "Table migration failed");
-    return false;
-  }
-  return true;
-}
-
 void DatabasePendingContribution::InsertOrUpdateList(
     ledger::PendingContributionList list,
     ledger::ResultCallback callback) {
@@ -398,7 +67,9 @@ void DatabasePendingContribution::InsertOrUpdateList(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePendingContribution::GetReservedAmount(
@@ -424,7 +95,9 @@ void DatabasePendingContribution::GetReservedAmount(
           _1,
           callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePendingContribution::OnGetReservedAmount(
@@ -452,8 +125,8 @@ void DatabasePendingContribution::GetAllRecords(
   auto transaction = ledger::DBTransaction::New();
   const std::string query = base::StringPrintf(
     "SELECT pc.pending_contribution_id, pi.publisher_id, pi.name, "
-    "pi.url, pi.favIcon, spi.status, pi.provider, pc.amount, pc.added_date, "
-    "pc.viewing_id, pc.type "
+    "pi.url, pi.favIcon, spi.status, spi.updated_at, pi.provider, "
+    "pc.amount, pc.added_date, pc.viewing_id, pc.type "
     "FROM %s as pc "
     "INNER JOIN publisher_info AS pi ON pc.publisher_id = pi.publisher_id "
     "LEFT JOIN server_publisher_info AS spi "
@@ -471,6 +144,7 @@ void DatabasePendingContribution::GetAllRecords(
       ledger::DBCommand::RecordBindingType::STRING_TYPE,
       ledger::DBCommand::RecordBindingType::STRING_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
+      ledger::DBCommand::RecordBindingType::INT64_TYPE,
       ledger::DBCommand::RecordBindingType::STRING_TYPE,
       ledger::DBCommand::RecordBindingType::DOUBLE_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
@@ -486,7 +160,9 @@ void DatabasePendingContribution::GetAllRecords(
           _1,
           callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePendingContribution::OnGetAllRecords(
@@ -511,12 +187,13 @@ void DatabasePendingContribution::OnGetAllRecords(
     info->favicon_url = GetStringColumn(record_pointer, 4);
     info->status = static_cast<ledger::mojom::PublisherStatus>(
         GetInt64Column(record_pointer, 5));
-    info->provider = GetStringColumn(record_pointer, 6);
-    info->amount = GetDoubleColumn(record_pointer, 7);
-    info->added_date = GetInt64Column(record_pointer, 8);
-    info->viewing_id = GetStringColumn(record_pointer, 9);
+    info->status_updated_at = GetInt64Column(record_pointer, 6);
+    info->provider = GetStringColumn(record_pointer, 7);
+    info->amount = GetDoubleColumn(record_pointer, 8);
+    info->added_date = GetInt64Column(record_pointer, 9);
+    info->viewing_id = GetStringColumn(record_pointer, 10);
     info->type = static_cast<ledger::RewardsType>(
-        GetIntColumn(record_pointer, 10));
+        GetIntColumn(record_pointer, 11));
     info->expiration_date =
         info->added_date +
         braveledger_ledger::_pending_contribution_expiration;
@@ -553,7 +230,9 @@ void DatabasePendingContribution::DeleteRecord(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePendingContribution::DeleteAllRecords(
@@ -571,7 +250,9 @@ void DatabasePendingContribution::DeleteAllRecords(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 }  // namespace braveledger_database

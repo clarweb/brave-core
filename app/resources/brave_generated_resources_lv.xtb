@@ -9,9 +9,8 @@
 <translation id="2445484935443597917">Izveidot jaunu profilu</translation>
 <translation id="2666990579225592931">Atvērt viesa režīma logu</translation>
 <translation id="120759863357279975"><ph name="EXTENSION_NAME"/> (extension ID "<ph name="EXTENSION_ID"/>") nav atļauts Brave.</translation>
-<translation id="7450557937477381864">Aizvērt Chrome</translation>
-<translation id="7008934821596358692">Lai pabeigtu importēšanu, aizveriet visus Chrome logus.</translation>
 <translation id="6786747875388722282">Paplašinājumi</translation>
+<translation id="984275831282074731">Maksājumu veidi</translation>
 <translation id="3699882589215410581">Instalēt un palaist Widevine</translation>
 <translation id="8926389886865778422">Nejautāt atkārtoti</translation>
 <translation id="4726634924419692905">Vaicāt, kad vietne vēlas instalēt Widevine uz jūsu datora.</translation>
@@ -22,7 +21,6 @@
 <translation id="8410111618231938546">Google Widevine ir Digitālā satura tiesību pārvaldības (DRM) koda daļa, kas mums, Brave Software, nepieder un ko mēs nevaram pārbaudīt. Google Widevine kods tiek ielādēts no Google serveriem, nevis no mūsu serveriem. Tas tiek ielādēts tikai tad, ja Jūs iespējojat šo opciju. Mēs atturam no DRM izmantošanas, bet mēs cienām lietotāju izvēli un pieņemam, ka daži Brave lietotāji vēlas izmantot pakalpojumus, kuriem tas ir nepieciešams.
 
 Instalējot šo paplašinājumu, Jūs piekrītat Google Widevine Lietošanas noteikumiem. Jūs piekrītat, ka Brave neatbild ne par kādiem bojājumiem vai zaudējumiem saistībā ar Jūsu Google Widevine lietojumu.</translation>
-<translation id="453977518730680921">Automātiski atskaņot medijus</translation>
 <translation id="410351446219883937">Automātiska atskaņošana</translation>
 <translation id="2240268017737062801">Vaicāt, ja vietne vēlas automātiski atskaņot medijus</translation>
 <translation id="3371702087847741961">Vaicāt, ja vietne vēlas automātiski atskaņot medijus (ieteicams)</translation>
@@ -39,11 +37,14 @@ Instalējot šo paplašinājumu, Jūs piekrītat Google Widevine Lietošanas not
 <translation id="7635711399568194460">Slēpj Brave balvu pogu atrašanās vietas joslā, kad Brave balvas nav iespējotas</translation>
 <translation id="1520361618554057102">Vienmēr rādīt grāmatzīmes jaunas cilnes lapā</translation>
 <translation id="5802665280774361839">Parādīt automātiskās pabeigšanas ierakstus adreses joslā</translation>
+<translation id="597020512043916976">Rādīt populārākās vietnes automātiskās pabeigšanas ieteikumos</translation>
+<translation id="264150068416846820">Rādīt Brave ieteiktās vietnes automātiskās pabeigšanas ieteikumos</translation>
 <translation id="7781069478569868053">Jaunas cilnes lapa</translation>
 <translation id="2467749191278759605">Pielāgojiet savu Brave informācijas paneli</translation>
 <translation id="1717331825806276156">Fona attēli</translation>
 <translation id="1820041496463124489">Sponsorētie attēli</translation>
 <translation id="8173998484743827990">Brave statistika</translation>
+<translation id="5551238871320268996">Brave Together</translation>
 <translation id="6966052266404721769">Binance</translation>
 <translation id="4643117005422448078">Populāras vietnes</translation>
 <translation id="1776831331757823105">Pulkstenis</translation>
@@ -72,9 +73,9 @@ Instalējot šo paplašinājumu, Jūs piekrītat Google Widevine Lietošanas not
 <translation id="7390783310074170337">Noklusējuma skats</translation>
 <translation id="130615081792797568">Vienkāršs skats</translation>
 <translation id="2360360976480535628">Uzlabots skats</translation>
-<translation id="5709627087332022422">Bloķēt starpvietņu izsekotājus</translation>
-<translation id="6447842834002726250">Sīkfaili</translation>
-<translation id="6522412052085018663">Identificējošās ciparvirknes veidošana</translation>
+<translation id="2133317862976486547">Izsekotāju un reklāmu bloķēšana</translation>
+<translation id="4385707520896576447">Sīkfailu bloķēšana</translation>
+<translation id="4978786495456601191">Pirkstu nospiedumu ņemšanas bloķēšana</translation>
 <translation id="3570081523466826008">Jaunināt savienojumus uz HTTPS</translation>
 <translation id="4824468494729001999">Bloķēt skriptus</translation>
 <translation id="519861640102428255">Izskats un noskaņojums</translation>
@@ -83,12 +84,12 @@ Instalējot šo paplašinājumu, Jūs piekrītat Google Widevine Lietošanas not
 <translation id="863171915776379000">Atļaut Facebook pieteikšanos un iegultās ziņas</translation>
 <translation id="5165042248369837294">Atļaut Twitter iegultos tvītus</translation>
 <translation id="958971637207126733">Atļaut LinkedIn iegultās ziņas</translation>
-<translation id="4699812599455071925">Bloķēt tikai starpvietņu sīkfailus</translation>
-<translation id="5657156137487675418">Atļaut visus sīkfailus</translation>
-<translation id="6883611015375728278">Bloķēt visus sīkfailus</translation>
-<translation id="5963670684159057574">Bloķēt starpvietņu identificējošās dokumenta ciparvirknes veidošanu</translation>
-<translation id="769702552748212954">Atļaut visu identificējošās dokumenta ciparvirknes veidošanu</translation>
-<translation id="4540198958192073185">Bloķēt visu pirkstu nospiedumu ņemšanu</translation>
+<translation id="4078738236287221428">Agresīvais režīms</translation>
+<translation id="7740996059027112821">Standarta</translation>
+<translation id="4176463684765177261">Atspējots</translation>
+<translation id="5770288601196774623">Tikai starpvietņu</translation>
+<translation id="3587482841069643663">Visi</translation>
+<translation id="5533533363827555308">Stingrais režīms, var radīt vietņu darbības traucējumus</translation>
 <translation id="8942080017911802454">WebRTC IP apstrādes politika</translation>
 <translation id="6165508094623778733">Uzzināt vairāk</translation>
 <translation id="8798099450830957504">Noklusējums</translation>
@@ -96,8 +97,47 @@ Instalējot šo paplašinājumu, Jūs piekrītat Google Widevine Lietošanas not
 <translation id="5825943197137337319">Tikai noklusējuma publiskais interfeiss</translation>
 <translation id="1689062823386843231">Atspējot UDP protokolu, kam netiek izmantots starpniekserveris</translation>
 <translation id="8502234992433094996">Informatīvajiem paziņojumiem lietot Google pakalpojumus</translation>
-<translation id="3888068426966679906">Attāla atkļūdošana</translation>
-<translation id="6645631466045614531">Piekļūt pakalpojumam Sync, izmantojot</translation>
+<translation id="5565355416171743213">Sākt lietot sinhronizāciju</translation>
+<translation id="4332558599726753990">Sinhronizācijas iestatīšana</translation>
+<translation id="2187778349654214731">Lai sāktu, Brave jābūt instalētam visās ierīcēs, kuras plānojat sinhronizēt. Pēc tam droši sasaistiet šīs ierīces kopā, izmantojot sinhronizācijas kodu.</translation>
+<translation id="7530575064080939974">Pārvaldīt sinhronizētās ierīces</translation>
+<translation id="7575156386943878014">Sinhronizācijas pārvaldnieks</translation>
+<translation id="1755198127524719638">Sinhronizācijas iestatījumi</translation>
+<translation id="7558480201297099157">Pārvaldiet informāciju, kuru vēlaties sinhronizēt starp ierīcēm. Šie iestatījumi attiecas tikai uz šo ierīci.</translation>
+<translation id="7731928563672901833">Ierīču saraksts</translation>
+<translation id="28332161031213248">Tālāk dotajā ierīču sarakstā ir ietvertas visas jūsu sinhronizācijas ķēdē esošās ierīces. Jebkuru no šīm ierīcēm var pārvaldīt no jebkuras citas ierīces.</translation>
+<translation id="1313162974556054106">Ierīces nosaukums</translation>
+<translation id="923757506389336140"><ph name="DEVICE_NAME"/> (Šī ierīce)</translation>
+<translation id="3686835020221422649">Pēdējoreiz aktīvs</translation>
+<translation id="2569646144216067185">Vārdu skaits: <ph name="WORD_COUNT"/></translation>
+<translation id="7885157704277298658">Nokopēts!</translation>
+<translation id="8802630444265810662">QR kods, kas jānoskenē ar mobilo ierīci, lai pārraidītu sinhronizācijas kodu</translation>
+<translation id="6221331245829088299">QR koda parādīšanas laikā radās kļūda, lūdzu, atsvaidziniet un mēģiniet vēlreiz.</translation>
+<translation id="298546024891487702">Vispirms, visās ierīcēs, kuras vēlaties sinhronizēt, jābūt instalētam Brave. Lai savienotu tās ķēdē, aktivizējiet sinhronizācijas ķēdi, ko izmantosiet, lai droši savienotu visas ierīces.</translation>
+<translation id="6200528822592747640">Sākt jaunu sinhronizācijas ķēdi</translation>
+<translation id="5184726904895809379">Man ir sinhronizācijas kods</translation>
+<translation id="8780295742023331191">Skatīt sinhronizācijas kodu</translation>
+<translation id="9017050385815017931">Tālrunis/planšetdators</translation>
+<translation id="1736420071277903564">Dators</translation>
+<translation id="3407602902101449803">Sinhronizācijas ķēdes QR kods</translation>
+<translation id="8369686073965491869">Mobilās ierīces iestatījumu panelī pārejiet uz Brave Sync pakalpojumu un noklikšķiniet uz pogas</translation>
+<translation id="6527776448555649991">“Skenēt sinhronizācijas kodu”.</translation>
+<translation id="1400862780574843709">Izmantojiet kameru, lai noskenētu zemāk doto QR kodu.</translation>
+<translation id="5086223971958279691">Sinhronizācijas ķēdes kods</translation>
+<translation id="2899261497479389619">Mērķa datora iestatījumos pārejiet uz Brave Sync pakalpojumu un noklikšķiniet uz pogas</translation>
+<translation id="4827439149833241990">“Man ir sinhronizācijas kods”.</translation>
+<translation id="24067401253841795">Ievadiet sinhronizācijas ķēdes koda vārdus, kas norādīti turpmāk. Uztveriet šo kodu kā paroli. Ja kāda persona tam piekļūst, viņš(-a) var veikt izmaiņas Jūsu sinhronizētajos datos.</translation>
+<translation id="3034163433136515805">Skatiet QR kodu</translation>
+<translation id="5373825572723282843">Ievadiet sinhronizācijas kodu</translation>
+<translation id="5734745018569675530">Ievadiet norādītos sinhronizācijas ķēdes koda vārdus lodziņā zemāk.</translation>
+<translation id="1061533051865606843">Pievienot jaunu ierīci</translation>
+<translation id="5093410893656857925">Ierīces veida izvēle</translation>
+<translation id="4581190919849683048">Kāda veida ierīci jūs vēlaties sinhronizēt?</translation>
+<translation id="4112587618563511470">Nederīgs sinhronizācijas kods, lūdzu, pārbaudiet un mēģiniet vēlreiz.</translation>
+<translation id="2339730291919608488">Pamest sinhronizācijas ķēdi</translation>
+<translation id="115699408012835975">Ja atiestatīsiet sihronizāciju, jums būs atkārtoti jāievada sinhronizācijas kods no citas ierīces, lai veiktu ar to sinhronizāciju. Vai tiešām vēlaties turpināt?</translation>
+<translation id="3396347744975515056">Brave sinhronizācijas pakalpojums ir atjaunināts, un to nepieciešams iestatīt</translation>
+<translation id="7473245612074035141">Sākt iestatīšanu</translation>
 <translation id="6696935187608454456">Dzeramnauda par palīdzību</translation>
 <translation id="2775956301559569472">Parādīt Wayback Machine uzvedni 404 lapās</translation>
 <translation id="1807246157184219062">Gaišs</translation>
@@ -110,6 +150,7 @@ Instalējot šo paplašinājumu, Jūs piekrītat Google Widevine Lietošanas not
 <translation id="7701040980221191251">Neviens</translation>
 <translation id="1085027414516521238">MetaMask</translation>
 <translation id="3905324891414560921">Web3 nodrošinātājs Dapps lietošanai</translation>
+<translation id="5913089932885076110">Ielādēt kripto makus startēšanas brīdī</translation>
 <translation id="6554397389149987360">Izmanto funkcijas Hangouts elementu, lai pārlūkprogrammā iespējotu ekrāna kopīgošanu un citas funkcijas.</translation>
 <translation id="1765684547504191670">Izmanto funkcijas Media Router elementu, lai pārlūkā iespējotu Chromecast.</translation>
 <translation id="9156965752763025780">Izmaiņas stāsies spēkā, kad restartēsiet Brave.</translation>
@@ -171,10 +212,13 @@ Instalējot šo paplašinājumu, Jūs piekrītat Google Widevine Lietošanas not
 <translation id="6469509880167172749">Automātiski nosūtīt pilnīgi privātu produktu analīzi Brave serveriem</translation>
 <translation id="7090566321964540749">Izmantojot anonīmo informāciju, Brave var tikai novērtēt konkrētu funkciju vispārējo lietojumu.</translation>
 <translation id="9111960429693394744">Vai Dapps vēlaties izmantot Brave kriptovalūtas makus vai MetaMask?</translation>
+<translation id="8721775358057000783">Vai vēlaties šajā lapā palaist kripto makus web3 atbalstam?</translation>
 <translation id="7583735190612229830">Iestatiet kripto makus, lai tie mijiedarbotos ar šo lietotni un citām tai līdzīgām lietotnēm.</translation>
-<translation id="8337117349965899723">Izmantot kripto makus</translation>
+<translation id="4823406846571523661">Iestatīt kripto makus</translation>
 <translation id="5756155765711979898">Izmantot MetaMask</translation>
 <translation id="6754134632841262799">Iestatīšana</translation>
+<translation id="8199661191594897555">Startēt kripto makus un atkārtoti ielādēt</translation>
+<translation id="8428213095426709021">Iestatījumi</translation>
 <translation id="4552520379838695057">Diemžēl, šī lapa nav atrodama.</translation>
 <translation id="2609895996619941644">Vai vēlaties pārbaudīt, vai Wayback Machine nav pieejama tās saglabātā versija?</translation>
 <translation id="8053093028263274061">Diemžēl, saglabātā versija nav pieejama.</translation>
@@ -185,8 +229,10 @@ Instalējot šo paplašinājumu, Jūs piekrītat Google Widevine Lietošanas not
 <translation id="2336228925368920074">Saglabāt visas cilnes kā grāmatzīmes...</translation>
 <translation id="796831669370432378">Lai pievienotu grāmatzīmi, klikšķinet uz grāmatzīmes pogas, kas atrodas blakus adrešu joslai</translation>
 <translation id="4989337484121655457">Nepieciešama pilnīga piekļuve diskam</translation>
-<translation id="8025559074845816210">Brave ir nepieciešama pilnīga piekļuve diskam, lai importētu jūsu grāmatzīmes no Safari.</translation>
+<translation id="5501596373144334003">Brave ir nepieciešama pilnīga piekļuve diskam, lai importētu jūsu grāmatzīmes un vēsturi no Safari.</translation>
 <translation id="8515328844674404333">Uzziniet, kā sistēmas preferencēs piešķirt pilnīgu piekļuvi diskam.</translation>
 <translation id="6414878884710400018">Atvērt sistēmas preferences</translation>
 <translation id="5570470519803062774">Vietņu un vairogu iestatījumi</translation>
+<translation id="8487693399751278191">Importēt grāmatzīmes tagad...</translation>
+<translation id="2557899542277210112">Ātrai piekļuvei ievietojiet savas grāmatzīmes šeit, grāmatzīmju joslā.</translation>
 </translationbundle>

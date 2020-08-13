@@ -5,6 +5,7 @@
 
 #include <utility>
 
+#include "base/guid.h"
 #include "bat/ledger/internal/contribution/contribution_tip.h"
 #include "bat/ledger/internal/ledger_impl.h"
 
@@ -13,11 +14,9 @@ using std::placeholders::_2;
 
 namespace braveledger_contribution {
 
-ContributionTip::ContributionTip(bat_ledger::LedgerImpl* ledger,
-    Contribution* contribution) :
-    ledger_(ledger),
-    contribution_(contribution) {
-  DCHECK(ledger_ && contribution_);
+ContributionTip::ContributionTip(bat_ledger::LedgerImpl* ledger) :
+    ledger_(ledger) {
+  DCHECK(ledger_);
 }
 
 ContributionTip::~ContributionTip() = default;
@@ -39,7 +38,9 @@ void ContributionTip::Process(
       amount,
       callback);
 
-  ledger_->GetServerPublisherInfo(publisher_key, server_callback);
+  ledger_->publisher()->GetServerPublisherInfo(
+      publisher_key,
+      server_callback);
 }
 
 void ContributionTip::ServerPublisher(
@@ -74,12 +75,29 @@ void ContributionTip::ServerPublisher(
   queue_list.push_back(std::move(publisher));
 
   auto queue = ledger::ContributionQueue::New();
+  queue->id = base::GenerateGUID();
   queue->type = ledger::RewardsType::ONE_TIME_TIP;
   queue->amount = amount;
   queue->partial = false;
   queue->publishers = std::move(queue_list);
 
-  contribution_->Start(std::move(queue));
+  auto save_callback = std::bind(&ContributionTip::QueueSaved,
+      this,
+      _1,
+      callback);
+
+  ledger_->database()->SaveContributionQueue(std::move(queue), save_callback);
+}
+
+void ContributionTip::QueueSaved(
+    const ledger::Result result,
+    ledger::ResultCallback callback) {
+  if (result == ledger::Result::LEDGER_OK) {
+    ledger_->contribution()->ProcessContributionQueue();
+  } else {
+    BLOG(0, "Queue was not saved");
+  }
+
   callback(ledger::Result::LEDGER_OK);
 }
 
@@ -95,7 +113,7 @@ void ContributionTip::SavePending(
   ledger::PendingContributionList list;
   list.push_back(std::move(contribution));
 
-  ledger_->SavePendingContribution(std::move(list), callback);
+  ledger_->database()->SavePendingContribution(std::move(list), callback);
 }
 
 void ContributionTip::OnSavePending(
@@ -104,7 +122,7 @@ void ContributionTip::OnSavePending(
   if (result != ledger::Result::LEDGER_OK) {
     BLOG(0, "Pending tip save failed");
   } else {
-    ledger_->PendingContributionSaved(result);
+    ledger_->ledger_client()->PendingContributionSaved(result);
   }
 
   callback(result);

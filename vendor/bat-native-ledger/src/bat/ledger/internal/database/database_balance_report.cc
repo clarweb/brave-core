@@ -55,73 +55,6 @@ DatabaseBalanceReport::DatabaseBalanceReport(
 
 DatabaseBalanceReport::~DatabaseBalanceReport() = default;
 
-bool DatabaseBalanceReport::CreateTableV22(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "balance_report_id LONGVARCHAR PRIMARY KEY NOT NULL,"
-        "grants_ugp DOUBLE DEFAULT 0 NOT NULL,"
-        "grants_ads DOUBLE DEFAULT 0 NOT NULL,"
-        "auto_contribute DOUBLE DEFAULT 0 NOT NULL,"
-        "tip_recurring DOUBLE DEFAULT 0 NOT NULL,"
-        "tip DOUBLE DEFAULT 0 NOT NULL"
-      ")",
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseBalanceReport::CreateIndexV22(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "balance_report_id");
-}
-
-bool DatabaseBalanceReport::Migrate(
-    ledger::DBTransaction* transaction,
-    const int target) {
-  DCHECK(transaction);
-
-  switch (target) {
-    case 22: {
-      return MigrateToV22(transaction);
-    }
-    default: {
-      return true;
-    }
-  }
-}
-
-bool DatabaseBalanceReport::MigrateToV22(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  if (!DropTable(transaction, kTableName)) {
-    BLOG(0, "Table couldn't be dropped");
-    return false;
-  }
-
-  if (!CreateTableV22(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV22(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  return true;
-}
-
 void DatabaseBalanceReport::InsertOrUpdate(
     ledger::BalanceReportInfoPtr info,
     ledger::ResultCallback callback) {
@@ -157,7 +90,9 @@ void DatabaseBalanceReport::InsertOrUpdate(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseBalanceReport::InsertOrUpdateList(
@@ -197,7 +132,9 @@ void DatabaseBalanceReport::InsertOrUpdateList(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseBalanceReport::SetAmount(
@@ -245,7 +182,9 @@ void DatabaseBalanceReport::SetAmount(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseBalanceReport::GetRecord(
@@ -303,7 +242,9 @@ void DatabaseBalanceReport::GetRecord(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 void DatabaseBalanceReport::OnGetRecord(
     ledger::DBCommandResponsePtr response,
@@ -366,7 +307,9 @@ void DatabaseBalanceReport::GetAllRecords(
           _1,
           callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseBalanceReport::OnGetAllRecords(
@@ -413,7 +356,9 @@ void DatabaseBalanceReport::DeleteAllRecords(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 }  // namespace braveledger_database

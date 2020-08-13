@@ -55,6 +55,18 @@
     "message": "Rastrejadors entre llocs bloquejats",
     "description": "Message for the scripts blocked row label"
   },
+  "aggressiveAdsTrackersBlocking": {
+    "message": "Rastrejadors & anuncis bloquejats (agressiu)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with aggressive heuristics"
+  },
+  "standardAdsTrackersBlocking": {
+    "message": "Rastrejadors i anuncis bloquejats (estàndard)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with standard heuristics"
+  },
+  "allowAdsTrackers": {
+    "message": "Permeteu tots els rastrejadors & anuncis",
+    "description": "Message for the option in the ads and trackers blocking select field to allow all ads and trackers"
+  },
   "connectionsUpgradedHTTPS": {
     "message": "Connexions actualitzades a HTTPS",
     "description": "Message for the connections upgraded row label and for the main blocked resources text when there is more than one connection upgraded (plural) and no other ads/trackers blocked"
@@ -79,16 +91,16 @@
     "message": "Totes les galetes permeses",
     "description": "Message for the option in the cookies select field to allow all cookies"
   },
-  "thirdPartyFingerprintingBlocked": {
-    "message": "S'ha bloquejat l'identificador d'empremta dactilar creuada",
+  "standardFingerprinting": {
+    "message": "Impremtes digitals bloquejades (estàndard)",
     "description": "Message for the option in the fingerprinting select field to block all 3rd party recognition attempts"
   },
-  "allFingerprintingBlocked": {
-    "message": "Intents d'identificació per empremta dactilar bloquejats",
+  "strictFingerprinting": {
+    "message": "Empremta digital bloquejada (estrictament, pot trencar llocs)",
     "description": "Message for the option in the fingerprinting select field to block all fingerprinting attempts"
   },
-  "allFingerprintingAllowed": {
-    "message": "Es permeten tots els intents d'identificació per empremta dactilar",
+  "allowAllFingerprinting": {
+    "message": "Permet totes les empremtes dactilars",
     "description": "Message for the option in the fingerprinting select field to allow all fingerprinting attempts"
   },
   "deviceRecognitionAttempts": {

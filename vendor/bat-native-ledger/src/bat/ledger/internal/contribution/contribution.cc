@@ -13,27 +13,20 @@
 
 #include "base/guid.h"
 #include "bat/ledger/global_constants.h"
-#include "bat/ledger/internal/bat_util.h"
 #include "bat/ledger/internal/common/bind_util.h"
 #include "bat/ledger/internal/common/time_util.h"
 #include "bat/ledger/internal/contribution/contribution.h"
-#include "bat/ledger/internal/contribution/contribution_ac.h"
-#include "bat/ledger/internal/contribution/contribution_anon_card.h"
-#include "bat/ledger/internal/contribution/contribution_external_wallet.h"
-#include "bat/ledger/internal/contribution/contribution_monthly.h"
-#include "bat/ledger/internal/contribution/contribution_tip.h"
-#include "bat/ledger/internal/contribution/contribution_sku.h"
-#include "bat/ledger/internal/contribution/contribution_unblinded.h"
 #include "bat/ledger/internal/contribution/contribution_util.h"
-#include "bat/ledger/internal/contribution/unverified.h"
-#include "bat/ledger/internal/uphold/uphold.h"
-#include "bat/ledger/internal/wallet/balance.h"
 #include "bat/ledger/internal/ledger_impl.h"
-#include "brave_base/random.h"
+#include "bat/ledger/internal/publisher/publisher_status_helper.h"
+#include "bat/ledger/internal/uphold/uphold.h"
+#include "bat/ledger/internal/wallet/wallet_balance.h"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
 using std::placeholders::_3;
+
+using braveledger_time_util::GetRandomizedDelay;
 
 namespace {
 ledger::ContributionStep ConvertResultIntoContributionStep(
@@ -48,6 +41,15 @@ ledger::ContributionStep ConvertResultIntoContributionStep(
     case ledger::Result::NOT_ENOUGH_FUNDS: {
       return ledger::ContributionStep::STEP_NOT_ENOUGH_FUNDS;
     }
+    case ledger::Result::REWARDS_OFF: {
+      return ledger::ContributionStep::STEP_REWARDS_OFF;
+    }
+    case ledger::Result::AC_OFF: {
+      return ledger::ContributionStep::STEP_AC_OFF;
+    }
+    case ledger::Result::TOO_MANY_RESULTS: {
+      return ledger::ContributionStep::STEP_RETRY_COUNT;
+    }
     default: {
       return ledger::ContributionStep::STEP_FAILED;
     }
@@ -60,20 +62,17 @@ namespace braveledger_contribution {
 
 Contribution::Contribution(bat_ledger::LedgerImpl* ledger) :
     ledger_(ledger),
-    unverified_(std::make_unique<Unverified>(ledger, this)),
+    unverified_(std::make_unique<Unverified>(ledger)),
     unblinded_(std::make_unique<Unblinded>(ledger)),
-    sku_(std::make_unique<ContributionSKU>(ledger, this)),
+    sku_(std::make_unique<ContributionSKU>(ledger)),
     uphold_(std::make_unique<braveledger_uphold::Uphold>(ledger)),
-    monthly_(std::make_unique<ContributionMonthly>(ledger, this)),
-    ac_(std::make_unique<ContributionAC>(ledger, this)),
-    tip_(std::make_unique<ContributionTip>(ledger, this)),
-    anon_card_(std::make_unique<ContributionAnonCard>(ledger, this)),
-    last_reconcile_timer_id_(0u),
-    queue_timer_id_(0u) {
+    monthly_(std::make_unique<ContributionMonthly>(ledger)),
+    ac_(std::make_unique<ContributionAC>(ledger)),
+    tip_(std::make_unique<ContributionTip>(ledger)),
+    anon_card_(std::make_unique<ContributionAnonCard>(ledger)) {
   DCHECK(ledger_ && uphold_);
   external_wallet_ = std::make_unique<ContributionExternalWallet>(
       ledger,
-      this,
       uphold_.get());
 }
 
@@ -87,11 +86,15 @@ void Contribution::Initialize() {
 }
 
 void Contribution::CheckContributionQueue() {
-  const auto start_timer_in = ledger::is_testing
-      ? 1
-      : brave_base::random::Geometric(15);
+  base::TimeDelta delay = ledger::is_testing
+      ? base::TimeDelta::FromSeconds(1)
+      : GetRandomizedDelay(base::TimeDelta::FromSeconds(15));
 
-  SetTimer(&queue_timer_id_, start_timer_in);
+  BLOG(1, "Queue timer set for " << delay);
+
+  queue_timer_.Start(FROM_HERE, delay,
+      base::BindOnce(&Contribution::ProcessContributionQueue,
+          base::Unretained(this)));
 }
 
 void Contribution::ProcessContributionQueue() {
@@ -102,7 +105,7 @@ void Contribution::ProcessContributionQueue() {
   const auto callback = std::bind(&Contribution::OnProcessContributionQueue,
       this,
       _1);
-  ledger_->GetFirstContributionQueue(callback);
+  ledger_->database()->GetFirstContributionQueue(callback);
 }
 
 void Contribution::OnProcessContributionQueue(
@@ -121,7 +124,7 @@ void Contribution::CheckNotCompletedContributions() {
       this,
       _1);
 
-  ledger_->GetNotCompletedContributions(get_callback);
+  ledger_->database()->GetNotCompletedContributions(get_callback);
 }
 
 void Contribution::NotCompletedContributions(
@@ -145,15 +148,15 @@ void Contribution::HasSufficientBalance(
 }
 
 void Contribution::ResetReconcileStamp() {
-  ledger_->ResetReconcileStamp();
+  ledger_->state()->ResetReconcileStamp();
   SetReconcileTimer();
 }
 
 void Contribution::StartMonthlyContribution() {
-  const auto reconcile_stamp = ledger_->GetReconcileStamp();
+  const auto reconcile_stamp = ledger_->state()->GetReconcileStamp();
   ResetReconcileStamp();
 
-  if (!ledger_->GetRewardsMainEnabled()) {
+  if (!ledger_->state()->GetRewardsMainEnabled()) {
     return;
   }
 
@@ -196,7 +199,7 @@ void Contribution::OnBalance(
 void Contribution::Start(ledger::ContributionQueuePtr info) {
   const auto info_converted =
       braveledger_bind_util::FromContributionQueueToString(std::move(info));
-  ledger_->FetchBalance(
+  ledger_->wallet()->FetchBalance(
       std::bind(&Contribution::OnBalance,
                 this,
                 info_converted,
@@ -204,95 +207,75 @@ void Contribution::Start(ledger::ContributionQueuePtr info) {
                 _2));
 }
 
-void Contribution::OnTimer(uint32_t timer_id) {
-  unverified_->OnTimer(timer_id);
-  uphold_->OnTimer(timer_id);
-
-  for (const auto& value : retry_timers_) {
-    if (value.second != timer_id) {
-      continue;
-    }
-
-    std::string contribution_id = value.first;
-    retry_timers_[contribution_id] = 0u;
-
-    auto callback = std::bind(&Contribution::SetRetryCounter,
-        this,
-        _1);
-    ledger_->GetContributionInfo(contribution_id, callback);
-    return;
-  }
-
-  if (timer_id == last_reconcile_timer_id_) {
-    last_reconcile_timer_id_ = 0;
-    StartMonthlyContribution();
-    return;
-  }
-
-  if (timer_id == queue_timer_id_) {
-    ProcessContributionQueue();
-  }
-}
-
 void Contribution::SetReconcileTimer() {
-  if (last_reconcile_timer_id_ != 0) {
+  if (last_reconcile_timer_.IsRunning()) {
     return;
   }
 
   uint64_t now = std::time(nullptr);
-  uint64_t next_reconcile_stamp = ledger_->GetReconcileStamp();
+  uint64_t next_reconcile_stamp = ledger_->state()->GetReconcileStamp();
 
-  uint64_t time_to_next_reconcile =
-      (next_reconcile_stamp == 0 || next_reconcile_stamp < now) ?
-        0 : next_reconcile_stamp - now;
-
-  SetTimer(&last_reconcile_timer_id_, time_to_next_reconcile);
-}
-
-void Contribution::SetTimer(uint32_t* timer_id, uint64_t start_timer_in) {
-  if (start_timer_in == 0) {
-    start_timer_in = brave_base::random::Geometric(45);
+  base::TimeDelta delay;
+  if (next_reconcile_stamp > now) {
+    delay = base::TimeDelta::FromSeconds(next_reconcile_stamp - now);
   }
 
-  BLOG(1, "Timer will start in " << start_timer_in);
+  BLOG(1, "Last reconcile timer set for " << delay);
 
-  ledger_->SetTimer(start_timer_in, timer_id);
+  last_reconcile_timer_.Start(FROM_HERE, delay,
+      base::BindOnce(&Contribution::StartMonthlyContribution,
+          base::Unretained(this)));
 }
 
 void Contribution::ContributionCompleted(
-    const std::string& contribution_id,
-    const ledger::RewardsType type,
-    const double amount,
-    const ledger::Result result) {
-  if (result == ledger::Result::LEDGER_OK) {
-    ledger_->SetBalanceReportItem(
-        braveledger_time_util::GetCurrentMonth(),
-        braveledger_time_util::GetCurrentYear(),
-        GetReportTypeFromRewardsType(type),
-        amount);
+    const ledger::Result result,
+    ledger::ContributionInfoPtr contribution) {
+  if (!contribution) {
+    BLOG(0, "Contribution is null");
+    return;
   }
 
-  if (contribution_id.empty()) {
-    BLOG(0, "Contribution id is empty");
-    return;
+  // TODO(https://github.com/brave/brave-browser/issues/7717)
+  // rename to ContributionCompleted
+  ledger_->ledger_client()->OnReconcileComplete(
+      result,
+      contribution->Clone());
+
+  if (result == ledger::Result::LEDGER_OK) {
+    ledger_->database()->SaveBalanceReportInfoItem(
+        braveledger_time_util::GetCurrentMonth(),
+        braveledger_time_util::GetCurrentYear(),
+        GetReportTypeFromRewardsType(contribution->type),
+        contribution->amount,
+        [](const ledger::Result){});
   }
 
   auto save_callback = std::bind(&Contribution::ContributionCompletedSaved,
       this,
-      _1);
+      _1,
+      contribution->contribution_id);
 
-  ledger_->UpdateContributionInfoStepAndCount(
-      contribution_id,
+  ledger_->database()->UpdateContributionInfoStepAndCount(
+      contribution->contribution_id,
       ConvertResultIntoContributionStep(result),
       -1,
       save_callback);
 }
 
-void Contribution::ContributionCompletedSaved(const ledger::Result result) {
+void Contribution::ContributionCompletedSaved(
+    const ledger::Result result,
+    const std::string& contribution_id) {
   if (result != ledger::Result::LEDGER_OK) {
     BLOG(0, "Contribution step and count failed");
-    return;
   }
+
+  auto callback = std::bind(&Contribution::OnMarkUnblindedTokensAsSpendable,
+      this,
+      _1,
+      contribution_id);
+  ledger_->database()->MarkUnblindedTokensAsSpendable(
+      contribution_id,
+      callback);
 }
 
 void Contribution::ContributeUnverifiedPublishers() {
@@ -322,7 +305,7 @@ void Contribution::MarkContributionQueueAsComplete(const std::string& id) {
       this,
       _1);
 
-  ledger_->MarkContributionQueueAsComplete(id, callback);
+  ledger_->database()->MarkContributionQueueAsComplete(id, callback);
 }
 
 void Contribution::CreateNewEntry(
@@ -341,7 +324,7 @@ void Contribution::CreateNewEntry(
   }
 
   const double wallet_balance =
-      braveledger_wallet::Balance::GetPerWalletBalance(
+      braveledger_wallet::WalletBalance::GetPerWalletBalance(
           wallet_type,
           balance->wallets);
   if (wallet_balance == 0) {
@@ -352,10 +335,6 @@ void Contribution::CreateNewEntry(
         std::move(queue));
     return;
   }
-
-
-  BLOG(1, "Creating contribution(" << wallet_type << ") for " <<
-      queue->amount << " type " << queue->type);
 
   const std::string contribution_id = base::GenerateGUID();
 
@@ -374,30 +353,18 @@ void Contribution::CreateNewEntry(
     queue_publishers.push_back(item->Clone());
   }
 
-  ledger::ContributionQueuePublisherList publishers_new;
-  ledger::ContributionQueuePublisherList publishers_left;
   if (wallet_balance < queue->amount) {
     contribution->amount = wallet_balance;
     queue->amount = queue->amount - wallet_balance;
-
-    if (queue->type == ledger::RewardsType::RECURRING_TIP ||
-        queue->type == ledger::RewardsType::ONE_TIME_TIP) {
-      AdjustPublisherListAmounts(
-          std::move(queue_publishers),
-          &publishers_new,
-          &publishers_left,
-          wallet_balance);
-      queue->publishers = std::move(publishers_left);
-    } else {
-      publishers_new = std::move(queue_publishers);
-    }
   } else {
-    publishers_new = std::move(queue_publishers);
     queue->amount = 0;
   }
 
+  BLOG(1, "Creating contribution(" << wallet_type << ") for " <<
+      queue->amount << " type " << queue->type);
+
   ledger::ContributionPublisherList publisher_list;
-  for (const auto& item : publishers_new) {
+  for (const auto& item : queue_publishers) {
     auto publisher = ledger::ContributionPublisher::New();
     publisher->contribution_id = contribution_id;
     publisher->publisher_key = item->publisher_key;
@@ -417,7 +384,7 @@ void Contribution::CreateNewEntry(
       *balance,
       braveledger_bind_util::FromContributionQueueToString(queue->Clone()));
 
-  ledger_->SaveContributionInfo(
+  ledger_->database()->SaveContributionInfo(
       contribution->Clone(),
       save_callback);
 }
@@ -478,8 +445,8 @@ void Contribution::OnEntrySaved(
       balance,
       braveledger_bind_util::FromContributionQueueToString(queue->Clone()));
 
-    ledger_->SaveContributionQueue(queue->Clone(), save_callback);
-  } else if (queue->type != ledger::RewardsType::ONE_TIME_TIP) {
+    ledger_->database()->SaveContributionQueue(queue->Clone(), save_callback);
+  } else {
     MarkContributionQueueAsComplete(queue->id);
   }
 }
@@ -565,7 +532,6 @@ void Contribution::TransferFunds(
     uphold_->TransferFunds(
         transaction.amount,
         destination,
-        std::move(wallet),
         callback);
     return;
   }
@@ -613,7 +579,7 @@ void Contribution::RetryUnblinded(
       types,
       callback);
 
-  ledger_->GetContributionInfo(contribution_id, get_callback);
+  ledger_->database()->GetContributionInfo(contribution_id, get_callback);
 }
 
 void Contribution::RetryUnblindedContribution(
@@ -627,12 +593,14 @@ void Contribution::Result(
     const ledger::Result result,
     const std::string& contribution_id) {
   if (result == ledger::Result::RETRY_SHORT) {
-    SetRetryTimer(contribution_id, 5);
+    SetRetryTimer(contribution_id, base::TimeDelta::FromSeconds(5));
     return;
   }
 
   if (result == ledger::Result::RETRY) {
-    SetRetryTimer(contribution_id);
+    SetRetryTimer(
+        contribution_id,
+        GetRandomizedDelay(base::TimeDelta::FromSeconds(45)));
     return;
   }
 
@@ -641,7 +609,7 @@ void Contribution::Result(
       _1,
       result);
 
-  ledger_->GetContributionInfo(contribution_id, get_callback);
+  ledger_->database()->GetContributionInfo(contribution_id, get_callback);
 }
 
 void Contribution::OnResult(
@@ -653,53 +621,54 @@ void Contribution::OnResult(
   }
 
   if (result == ledger::Result::RETRY_LONG) {
-    if (ledger::short_retries) {
-      SetRetryTimer(contribution->contribution_id, 1);
-      return;
-    }
-
     if (contribution->processor ==
         ledger::ContributionProcessor::BRAVE_TOKENS) {
-      SetRetryTimer(contribution->contribution_id);
+      SetRetryTimer(
+          contribution->contribution_id,
+          GetRandomizedDelay(base::TimeDelta::FromSeconds(45)));
     } else {
       SetRetryTimer(
           contribution->contribution_id,
-          brave_base::random::Geometric(450));
+          GetRandomizedDelay(base::TimeDelta::FromSeconds(450)));
     }
 
     return;
   }
 
-  ledger_->ContributionCompleted(
+  ledger_->contribution()->ContributionCompleted(
       result,
-      contribution->amount,
-      contribution->contribution_id,
-      contribution->type);
+      std::move(contribution));
 }
 
 void Contribution::SetRetryTimer(
     const std::string& contribution_id,
-    const uint64_t start_timer_in) {
+    base::TimeDelta delay) {
   if (contribution_id.empty()) {
     BLOG(0, "Contribution id is empty");
     return;
   }
 
-  if (!retry_timers_[contribution_id]) {
-    retry_timers_[contribution_id] = 0u;
-  }
-
-  uint64_t timer_seconds = start_timer_in;
   if (ledger::short_retries) {
-    timer_seconds = 1;
-  } else if (start_timer_in == 0) {
-    timer_seconds = brave_base::random::Geometric(45);
+    delay = base::TimeDelta::FromSeconds(1);
   }
 
-  BLOG(1, "Timer for contribution retry (" << contribution_id << ") will "
-      "start in " << timer_seconds);
+  BLOG(1, "Timer for contribution retry (" << contribution_id << ") "
+      "set for " << delay);
 
-  ledger_->SetTimer(timer_seconds, &retry_timers_[contribution_id]);
+  retry_timers_[contribution_id].Start(FROM_HERE, delay,
+      base::BindOnce(&Contribution::OnRetryTimerElapsed,
+          base::Unretained(this),
+          contribution_id));
+}
+
+void Contribution::OnRetryTimerElapsed(const std::string& contribution_id) {
+  retry_timers_.erase(contribution_id);
+
+  auto callback = std::bind(&Contribution::SetRetryCounter,
+      this,
+      _1);
+
+  ledger_->database()->GetContributionInfo(contribution_id, callback);
 }
 
 void Contribution::SetRetryCounter(ledger::ContributionInfoPtr contribution) {
@@ -708,13 +677,12 @@ void Contribution::SetRetryCounter(ledger::ContributionInfoPtr contribution) {
     return;
   }
 
-  if (contribution->retry_count == 3) {
+  if (contribution->retry_count == 3 &&
+      contribution->step != ledger::ContributionStep::STEP_PREPARE) {
     BLOG(0, "Contribution failed after 3 retries");
-    ledger_->ContributionCompleted(
-        ledger::Result::LEDGER_ERROR,
-        contribution->amount,
-        contribution->contribution_id,
-        contribution->type);
+    ledger_->contribution()->ContributionCompleted(
+        ledger::Result::TOO_MANY_RESULTS,
+        std::move(contribution));
     return;
   }
 
@@ -723,11 +691,21 @@ void Contribution::SetRetryCounter(ledger::ContributionInfoPtr contribution) {
       _1,
       braveledger_bind_util::FromContributionToString(contribution->Clone()));
 
-  ledger_->UpdateContributionInfoStepAndCount(
+  ledger_->database()->UpdateContributionInfoStepAndCount(
       contribution->contribution_id,
       contribution->step,
       contribution->retry_count + 1,
       save_callback);
+}
+
+void Contribution::OnMarkUnblindedTokensAsSpendable(
+    const ledger::Result result,
+    const std::string& contribution_id) {
+  BLOG_IF(
+      1,
+      result != ledger::Result::LEDGER_OK,
+      "Failed to mark unblinded tokens as unreserved for contribution "
+          << contribution_id);
 }
 
 void Contribution::Retry(
@@ -748,6 +726,23 @@ void Contribution::Retry(
 
   // negative steps are final steps, nothing to retry
   if (static_cast<int>(contribution->step) < 0) {
+    return;
+  }
+
+  if (!ledger_->state()->GetRewardsMainEnabled()) {
+    BLOG(1, "Rewards is disabled, completing contribution");
+    ledger_->contribution()->ContributionCompleted(
+        ledger::Result::REWARDS_OFF,
+        std::move(contribution));
+    return;
+  }
+
+  if (contribution->type == ledger::RewardsType::AUTO_CONTRIBUTE &&
+      !ledger_->state()->GetAutoContributeEnabled()) {
+    BLOG(1, "AC is disabled, completing contribution");
+    ledger_->contribution()->ContributionCompleted(
+        ledger::Result::AC_OFF,
+        std::move(contribution));
     return;
   }
 
@@ -785,6 +780,19 @@ void Contribution::Retry(
       return;
     }
   }
+}
+
+void Contribution::GetRecurringTips(
+    ledger::PublisherInfoListCallback callback) {
+  ledger_->database()->GetRecurringTips([this, callback](
+      ledger::PublisherInfoList list) {
+    // The publisher status field may be expired. Attempt to refresh
+    // expired publisher status values before executing callback.
+    braveledger_publisher::RefreshPublisherStatus(
+        ledger_,
+        std::move(list),
+        callback);
+  });
 }
 
 }  // namespace braveledger_contribution

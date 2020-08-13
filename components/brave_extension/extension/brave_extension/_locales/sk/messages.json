@@ -55,6 +55,18 @@
     "message": "Cross-site trackery zablokované",
     "description": "Message for the scripts blocked row label"
   },
+  "aggressiveAdsTrackersBlocking": {
+    "message": "Sledovače a reklamy sú zablokované (agresívne)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with aggressive heuristics"
+  },
+  "standardAdsTrackersBlocking": {
+    "message": "Sledovače a reklamy zablokované (štandardné)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with standard heuristics"
+  },
+  "allowAdsTrackers": {
+    "message": "Povoliť všetky sledovače a reklamy",
+    "description": "Message for the option in the ads and trackers blocking select field to allow all ads and trackers"
+  },
   "connectionsUpgradedHTTPS": {
     "message": "Pripojenia aktualizované na HTTPS",
     "description": "Message for the connections upgraded row label and for the main blocked resources text when there is more than one connection upgraded (plural) and no other ads/trackers blocked"
@@ -79,16 +91,16 @@
     "message": "Všetky cookies povolené",
     "description": "Message for the option in the cookies select field to allow all cookies"
   },
-  "thirdPartyFingerprintingBlocked": {
-    "message": "Odtlačky prstov na viacerých stránkach blokované",
+  "standardFingerprinting": {
+    "message": "Používanie odtlačkov prstov blokované (Štandardne)",
     "description": "Message for the option in the fingerprinting select field to block all 3rd party recognition attempts"
   },
-  "allFingerprintingBlocked": {
-    "message": "Pokusy s odtlačkami prstov zablokované",
+  "strictFingerprinting": {
+    "message": "Používanie odtlačkov prstov zablokované (striktne, môže prerušiť činnosť stránok)",
     "description": "Message for the option in the fingerprinting select field to block all fingerprinting attempts"
   },
-  "allFingerprintingAllowed": {
-    "message": "Všetky pokusy s odtlačkami prstov sú povolené",
+  "allowAllFingerprinting": {
+    "message": "Povoliť všetky odtlačky prstov",
     "description": "Message for the option in the fingerprinting select field to allow all fingerprinting attempts"
   },
   "deviceRecognitionAttempts": {

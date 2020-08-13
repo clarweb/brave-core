@@ -20,13 +20,15 @@
 #include "base/observer_list.h"
 #include "base/one_shot_event.h"
 #include "base/memory/weak_ptr.h"
+#include "base/values.h"
 #include "bat/ledger/ledger_client.h"
 #include "brave/components/services/bat_ledger/public/interfaces/bat_ledger.mojom.h"
 #include "brave/components/brave_rewards/browser/rewards_service.h"
 #include "brave/components/greaselion/browser/buildflags/buildflags.h"
 #include "chrome/browser/bitmap_fetcher/bitmap_fetcher_service.h"
 #include "content/public/browser/browser_thread.h"
-#include "mojo/public/cpp/bindings/associated_binding.h"
+#include "mojo/public/cpp/bindings/associated_receiver.h"
+#include "mojo/public/cpp/bindings/associated_remote.h"
 #include "mojo/public/cpp/bindings/remote.h"
 #include "brave/components/brave_rewards/browser/balance_report.h"
 #include "brave/components/brave_rewards/browser/content_site.h"
@@ -34,10 +36,8 @@
 #include "brave/components/brave_rewards/browser/publisher_banner.h"
 #include "brave/components/brave_rewards/browser/rewards_service_private_observer.h"
 
-#if defined(OS_ANDROID) && defined(BRAVE_CHROMIUM_BUILD)
-#include "brave/components/brave_rewards/browser/android/safetynet_check.h"
-#elif defined(OS_ANDROID)
-#include "chrome/browser/android/brave/safetynet_check.h"
+#if defined(OS_ANDROID)
+#include "brave/components/safetynet/safetynet_check.h"
 #endif
 
 namespace base {
@@ -66,13 +66,13 @@ class GreaselionService;
 #endif
 
 class Profile;
-class BraveRewardsBrowserTest;
+class RewardsFlagBrowserTest;
 
 namespace brave_rewards {
 
 class RewardsDatabase;
 class RewardsNotificationServiceImpl;
-class BraveRewardsBrowserTest;
+class RewardsBrowserTest;
 
 using GetEnvironmentCallback = base::Callback<void(ledger::Environment)>;
 using GetDebugCallback = base::Callback<void(bool)>;
@@ -90,6 +90,8 @@ using ExternalWalletAuthorizationCallback =
         const ledger::Result,
         const std::map<std::string, std::string>&)>;
 
+using StopLedgerCallback = base::OnceCallback<void(ledger::Result)>;
+
 class RewardsServiceImpl : public RewardsService,
                            public ledger::LedgerClient,
                            public base::SupportsWeakPtr<RewardsServiceImpl> {
@@ -105,6 +107,8 @@ class RewardsServiceImpl : public RewardsService,
 
   // KeyedService:
   void Shutdown() override;
+
+  bool IsInitialized() override;
 
   void Init(
       std::unique_ptr<RewardsServiceObserver> extension_observer,
@@ -232,7 +236,6 @@ class RewardsServiceImpl : public RewardsService,
 
   const RewardsNotificationService::RewardsNotificationsMap&
     GetAllNotifications() override;
-  void ResetTheWholeState(const base::Callback<void(bool)>& callback) override;
 
   void SetAutoContributionAmount(const double amount) const override;
 
@@ -276,8 +279,8 @@ class RewardsServiceImpl : public RewardsService,
 
   void FetchBalance(FetchBalanceCallback callback) override;
 
-  void GetExternalWallets(
-      ledger::GetExternalWalletsCallback callback) override;
+  std::map<std::string, ledger::ExternalWalletPtr>
+  GetExternalWallets() override;
 
   void GetExternalWallet(const std::string& wallet_type,
                          GetExternalWalletCallback callback) override;
@@ -311,10 +314,13 @@ class RewardsServiceImpl : public RewardsService,
 
   void GetAllMonthlyReportIds(GetAllMonthlyReportIdsCallback callback) override;
 
+  void GetAllContributions(GetAllContributionsCallback callback) override;
+
   void GetAllPromotions(GetAllPromotionsCallback callback) override;
 
   // Testing methods
   void SetLedgerEnvForTesting();
+  void PrepareLedgerEnvForTesting();
   void StartMonthlyContributionForTest();
   void MaybeShowNotificationAddFundsForTesting(
       base::OnceCallback<void(bool)> callback);
@@ -325,9 +331,24 @@ class RewardsServiceImpl : public RewardsService,
   void ForTestingSetTestResponseCallback(GetTestResponseCallback callback);
 
  private:
-  friend class ::BraveRewardsBrowserTest;
+  friend class ::RewardsFlagBrowserTest;
 
-  const base::OneShotEvent& ready() const { return ready_; }
+  void EnableGreaseLion(const bool enabled);
+
+  void StopLedger(StopLedgerCallback callback);
+
+  void OnStopLedger(
+      StopLedgerCallback callback,
+      const ledger::Result result);
+  void OnStopLedgerForCompleteReset(
+      SuccessCallback callback,
+      const ledger::Result result);
+
+  void Reset();
+
+  bool ResetOnFilesTaskRunner();
+
+  void OnCreate();
 
   void OnResult(ledger::ResultCallback callback, const ledger::Result result);
 
@@ -335,7 +356,6 @@ class RewardsServiceImpl : public RewardsService,
                       ledger::Result result);
   void OnLedgerStateLoaded(ledger::OnLoadCallback callback,
                               std::pair<std::string, base::Value> data);
-  void LoadNicewareList(ledger::GetNicewareListCallback callback) override;
   void OnPublisherStateLoaded(ledger::OnLoadCallback callback,
                               const std::string& data);
   void OnGetRewardsParameters(
@@ -353,7 +373,6 @@ class RewardsServiceImpl : public RewardsService,
                                  uint32_t limit,
                                  ledger::PublisherInfoListCallback callback,
                                  ledger::PublisherInfoList list);
-  void OnTimer(uint32_t timer_id);
   void OnSavedState(ledger::ResultCallback callback, bool success);
   void OnLoadedState(ledger::OnLoadCallback callback,
                      const std::string& value);
@@ -365,8 +384,6 @@ class RewardsServiceImpl : public RewardsService,
       const bool recurring,
       const double amount);
 
-  void OnResetTheWholeState(base::Callback<void(bool)> callback,
-                                 bool success);
   void OnRecurringTip(const ledger::Result result);
 
   void TriggerOnGetCurrentBalanceReport(
@@ -467,22 +484,18 @@ class RewardsServiceImpl : public RewardsService,
       GetAnonWalletStatusCallback callback,
       const ledger::Result result);
 
+  void OnRecoverWallet(const ledger::Result result);
+
   // ledger::LedgerClient
-  void OnRecoverWallet(
-      ledger::Result result,
-      double balance);
   void OnReconcileComplete(
       const ledger::Result result,
-      const std::string& contribution_id,
-      const double amount,
-      const ledger::RewardsType type) override;
+      ledger::ContributionInfoPtr contribution) override;
   void OnAttestPromotion(
       AttestPromotionCallback callback,
       const ledger::Result result,
       ledger::PromotionPtr promotion);
   void LoadLedgerState(ledger::OnLoadCallback callback) override;
   void LoadPublisherState(ledger::OnLoadCallback callback) override;
-  void SetTimer(uint64_t time_offset, uint32_t* timer_id) override;
   void LoadURL(const std::string& url,
       const std::vector<std::string>& headers,
       const std::string& content,
@@ -493,21 +506,6 @@ class RewardsServiceImpl : public RewardsService,
   void SetPublisherMinVisits(int visits) const override;
   void SetPublisherAllowNonVerified(bool allow) const override;
   void SetPublisherAllowVideos(bool allow) const override;
-  void UpdateAdsRewards() const override;
-  void SetCatalogIssuers(
-      const std::string& json) override;
-  void ConfirmAd(
-      const std::string& json,
-      const std::string& confirmation_type) override;
-  void ConfirmAction(
-      const std::string& creative_instance_id,
-      const std::string& creative_set_id,
-      const std::string& confirmation_type) override;
-  void SetConfirmationsIsReady(const bool is_ready) override;
-  void GetTransactionHistory(
-      GetTransactionHistoryCallback callback) override;
-  void ConfirmationsTransactionHistoryDidChange() override;
-
   void OnPanelPublisherInfo(const ledger::Result result,
                             ledger::PublisherInfoPtr info,
                             uint64_t window_id) override;
@@ -522,11 +520,22 @@ class RewardsServiceImpl : public RewardsService,
                                     ledger::FetchIconCallback callback,
                                     bool success);
 
+  bool MaybeTailDiagnosticLog(
+      const int num_lines);
+
   void DiagnosticLog(
       const std::string& file,
       const int line,
       const int verbose_level,
       const std::string& message) override;
+
+  bool WriteToDiagnosticLogOnFileTaskRunner(
+      const base::FilePath& log_path,
+      const int num_lines,
+      const std::string& file,
+      const int line,
+      const int verbose_level,
+      const std::string& message);
 
   void OnWriteToLogOnFileTaskRunner(
     const bool success);
@@ -535,11 +544,20 @@ class RewardsServiceImpl : public RewardsService,
       const int num_lines,
       LoadDiagnosticLogCallback callback) override;
 
+  std::string LoadDiagnosticLogOnFileTaskRunner(
+      const base::FilePath& path,
+      const int num_lines);
+
   void OnLoadDiagnosticLogOnFileTaskRunner(
       LoadDiagnosticLogCallback callback,
       const std::string& value);
 
   void ClearDiagnosticLog(ClearDiagnosticLogCallback callback) override;
+
+  void CompleteReset(SuccessCallback callback) override;
+
+  bool ClearDiagnosticLogOnFileTaskRunner(
+      const base::FilePath& path);
 
   void OnClearDiagnosticLogOnFileTaskRunner(
       ClearDiagnosticLogCallback callback,
@@ -551,13 +569,6 @@ class RewardsServiceImpl : public RewardsService,
       const int verbose_level,
       const std::string& message) override;
 
-  void SaveState(const std::string& name,
-                 const std::string& value,
-                 ledger::ResultCallback callback) override;
-  void LoadState(const std::string& name,
-                 ledger::OnLoadCallback callback) override;
-  void ResetState(const std::string& name,
-                  ledger::ResultCallback callback) override;
   void SetBooleanState(const std::string& name, bool value) override;
   bool GetBooleanState(const std::string& name) const override;
   void SetIntegerState(const std::string& name, int value) override;
@@ -579,9 +590,6 @@ class RewardsServiceImpl : public RewardsService,
   std::string GetStringOption(const std::string& name) const override;
   int64_t GetInt64Option(const std::string& name) const override;
   uint64_t GetUint64Option(const std::string& name) const override;
-
-
-  void KillTimer(uint32_t timer_id) override;
 
   void PublisherListNormalized(ledger::PublisherInfoList list) override;
 
@@ -622,12 +630,13 @@ class RewardsServiceImpl : public RewardsService,
       const bool recurring,
       const ledger::Result result);
 
+  void ClearAllNotifications() override;
+
+  void WalletDisconnected(const std::string& wallet_type) override;
+
   // end ledger::LedgerClient
 
   // Mojo Proxy methods
-  void OnGetTransactionHistory(
-      GetTransactionHistoryCallback callback,
-      const std::string& json);
   void OnGetAutoContributeProperties(
       const GetAutoContributePropertiesCallback& callback,
       ledger::AutoContributePropertiesPtr props);
@@ -683,9 +692,15 @@ class RewardsServiceImpl : public RewardsService,
       GetAllMonthlyReportIdsCallback callback,
       const std::vector<std::string>& ids);
 
+  void OnGetAllContributions(
+      GetAllContributionsCallback callback,
+      ledger::ContributionInfoList contributions);
+
   void OnGetAllPromotions(
       GetAllPromotionsCallback callback,
       base::flat_map<std::string, ledger::PromotionPtr> promotions);
+
+  void OnCompleteReset(SuccessCallback callback, const bool success);
 
 #if defined(OS_ANDROID)
   ledger::Environment GetServerEnvironmentForAndroid();
@@ -704,26 +719,25 @@ class RewardsServiceImpl : public RewardsService,
 #if BUILDFLAG(ENABLE_GREASELION)
   greaselion::GreaselionService* greaselion_service_;  // NOT OWNED
 #endif
-  mojo::AssociatedBinding<bat_ledger::mojom::BatLedgerClient>
-      bat_ledger_client_binding_;
-  bat_ledger::mojom::BatLedgerAssociatedPtr bat_ledger_;
+  mojo::AssociatedReceiver<bat_ledger::mojom::BatLedgerClient>
+      bat_ledger_client_receiver_;
+  mojo::AssociatedRemote<bat_ledger::mojom::BatLedger> bat_ledger_;
   mojo::Remote<bat_ledger::mojom::BatLedgerService> bat_ledger_service_;
   const scoped_refptr<base::SequencedTaskRunner> file_task_runner_;
   const base::FilePath diagnostic_log_path_;
+  base::File diagnostic_log_;
   const base::FilePath ledger_state_path_;
   const base::FilePath publisher_state_path_;
   const base::FilePath publisher_info_db_path_;
   const base::FilePath publisher_list_path_;
-  const base::FilePath rewards_base_path_;
   std::unique_ptr<RewardsDatabase> rewards_database_;
   std::unique_ptr<RewardsNotificationServiceImpl> notification_service_;
   base::ObserverList<RewardsServicePrivateObserver> private_observers_;
   std::unique_ptr<RewardsServiceObserver> extension_observer_;
   std::unique_ptr<RewardsServicePrivateObserver> private_observer_;
 
-  base::OneShotEvent ready_;
+  std::unique_ptr<base::OneShotEvent> ready_;
   base::flat_set<network::SimpleURLLoader*> url_loaders_;
-  std::map<uint32_t, std::unique_ptr<base::OneShotTimer>> timers_;
   std::map<std::string, BitmapFetcherService::RequestId>
       current_media_fetchers_;
   std::unique_ptr<base::OneShotTimer> notification_startup_timer_;
@@ -732,6 +746,8 @@ class RewardsServiceImpl : public RewardsService,
   uint32_t next_timer_id_;
   bool reset_states_;
   bool is_wallet_initialized_ = false;
+  bool ledger_for_testing_ = false;
+  bool resetting_rewards_ = false;
 
   GetTestResponseCallback test_response_callback_;
 

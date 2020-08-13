@@ -5,68 +5,65 @@
 
 package org.chromium.chrome.browser.shields;
 
+import android.animation.Animator;
+import android.animation.Animator.AnimatorListener;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
 import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
-import android.view.Menu;
-import android.view.View;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.Point;
+import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.text.style.ImageSpan;
 import android.text.style.StyleSpan;
-import android.widget.PopupMenu;
-import android.widget.Button;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.view.ContextThemeWrapper;
-import android.graphics.Point;
-import android.graphics.Rect;
-import android.widget.ListPopupWindow;
-import android.widget.PopupWindow;
-import android.graphics.drawable.Drawable;
-import android.view.MenuItem;
+import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.animation.Animator;
-import android.animation.Animator.AnimatorListener;
-import android.animation.AnimatorSet;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.os.Build;
-import android.view.ViewGroup;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.Surface;
-import android.widget.TextView;
-import android.widget.Switch;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.TranslateAnimation;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
-import android.view.Gravity;
-import android.view.MotionEvent;
-import android.widget.LinearLayout;
 import android.widget.ImageView;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.animation.AnimatorListenerAdapter;
-import android.view.animation.TranslateAnimation;
-import android.graphics.Bitmap;
+import android.widget.LinearLayout;
+import android.widget.ListPopupWindow;
+import android.widget.PopupMenu;
+import android.widget.PopupWindow;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.Switch;
+import android.widget.TextView;
 
 import org.chromium.base.SysUtils;
+import org.chromium.base.Log;
 import org.chromium.base.task.AsyncTask;
-import org.chromium.chrome.browser.profiles.Profile;
-import org.chromium.chrome.browser.preferences.website.BraveShieldsContentSettings;
 import org.chromium.chrome.R;
-import org.chromium.chrome.browser.tab.Tab;
-import org.chromium.base.AnimationFrameTimeHistogram;
 import org.chromium.chrome.browser.BraveRewardsHelper;
-import org.chromium.chrome.browser.night_mode.GlobalNightModeStateProviderHolder;
 import org.chromium.chrome.browser.BraveRewardsNativeWorker;
+import org.chromium.chrome.browser.night_mode.GlobalNightModeStateProviderHolder;
+import org.chromium.chrome.browser.preferences.website.BraveShieldsContentSettings;
+import org.chromium.chrome.browser.profiles.Profile;
 import org.chromium.chrome.browser.shields.BraveShieldsMenuObserver;
 import org.chromium.chrome.browser.shields.BraveShieldsUtils;
+import org.chromium.chrome.browser.tab.Tab;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -93,8 +90,6 @@ public class BraveShieldsHandler implements BraveRewardsHelper.LargeIconReadyCal
     private final Context mContext;
     private PopupWindow mPopupWindow;
     private AnimatorSet mMenuItemEnterAnimator;
-    private AnimatorListener mAnimationHistogramRecorder = AnimationFrameTimeHistogram
-            .getAnimatorRecorder("WrenchMenu.OpeningAnimationFrameTimes");
     private BraveShieldsMenuObserver mMenuObserver;
     private View mHardwareButtonMenuAnchor;
     private final Map<Integer, BlockersInfo> mTabsStat =
@@ -184,17 +179,22 @@ public class BraveShieldsHandler implements BraveRewardsHelper.LargeIconReadyCal
         mMenuObserver = menuObserver;
     }
 
-    public void show(View anchorView, String host, String title, int tabId,
-                     Profile profile) {
+    public void show(View anchorView, Tab tab) {
         if (mHardwareButtonMenuAnchor == null) return;
-        mHost = host;
-        mTitle = title;
-        mTabId = tabId;
-        mProfile = profile;
+
+        mHost = tab.getUrlString();
+        mTitle = tab.getUrl().getHost();
+        mTabId = tab.getId();
+        mProfile = Profile.fromWebContents(tab.getWebContents());
 
         mBraveRewardsNativeWorker = BraveRewardsNativeWorker.getInstance();
-        mIconFetcher = new BraveRewardsHelper();
+        mIconFetcher = new BraveRewardsHelper(tab);
+        mPopupWindow = showPopupMenu(anchorView, false);
 
+        updateValues(mTabId);
+    }
+
+    public PopupWindow showPopupMenu(View anchorView, boolean isTooltip) {
         int rotation = ((Activity)mContext).getWindowManager().getDefaultDisplay().getRotation();
         // This fixes the bug where the bottom of the menu starts at the top of
         // the keyboard, instead of overlapping the keyboard as it should.
@@ -239,44 +239,48 @@ public class BraveShieldsHandler implements BraveRewardsHelper.LargeIconReadyCal
         }
 
         LayoutInflater inflater = (LayoutInflater) anchorView.getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        mPopupView = inflater.inflate(R.layout.brave_shields_main_layout, null);
 
-        setUpViews();
+        if (! isTooltip) {
+            mPopupView = inflater.inflate(R.layout.brave_shields_main_layout, null);
+            setUpViews();
+        } else {
+            mPopupView = inflater.inflate(R.layout.brave_shields_tooltip_layout, null);
+        }
 
         //Specify the length and width through constants
-        int width = LinearLayout.LayoutParams.WRAP_CONTENT;
+        int width = (int)((mContext.getResources().getDisplayMetrics().widthPixels) * 0.75);
         int height = LinearLayout.LayoutParams.WRAP_CONTENT;
 
         //Make Inactive Items Outside Of PopupWindow
         boolean focusable = true;
 
         //Create a window with our parameters
-        mPopupWindow = new PopupWindow(mPopupView, width, height, focusable);
-        mPopupWindow.setBackgroundDrawable(new ColorDrawable(Color.WHITE));
+        PopupWindow popupWindow = new PopupWindow(mPopupView, width, height, focusable);
+        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.WHITE));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            mPopupWindow.setElevation(20);
+            popupWindow.setElevation(20);
         }
         // mPopup.setBackgroundDrawable(mContext.getResources().getDrawable(android.R.drawable.picture_frame));
         //Set the location of the window on the screen
-        mPopupWindow.showAsDropDown(anchorView, 0, 0);
-        mPopupWindow.setInputMethodMode(PopupWindow.INPUT_METHOD_NOT_NEEDED);
-        mPopupWindow.setAnimationStyle(R.style.OverflowMenuAnim);
+        popupWindow.showAsDropDown(anchorView, 0, 0);
+        popupWindow.setInputMethodMode(PopupWindow.INPUT_METHOD_NOT_NEEDED);
+        popupWindow.setAnimationStyle(R.style.OverflowMenuAnim);
 
         // Turn off window animations for low end devices, and on Android M, which has built-in menu
         // animations.
         if (SysUtils.isLowEndDevice() || Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            mPopupWindow.setAnimationStyle(0);
+            popupWindow.setAnimationStyle(0);
         }
 
         Rect bgPadding = new Rect();
-        mPopupWindow.getBackground().getPadding(bgPadding);
+        popupWindow.getBackground().getPadding(bgPadding);
 
         int popupWidth = wrapper.getResources().getDimensionPixelSize(R.dimen.menu_width)
                          + bgPadding.left + bgPadding.right;
 
-        mPopupWindow.setWidth(popupWidth);
+        popupWindow.setWidth(popupWidth);
 
-        updateValues(mTabId);
+        return popupWindow;
     }
 
     public void updateHost(String host) {
@@ -290,6 +294,24 @@ public class BraveShieldsHandler implements BraveRewardsHelper.LargeIconReadyCal
         BlockersInfo blockersInfo = mTabsStat.get(tabId);
         updateValues(blockersInfo.mAdsBlocked + blockersInfo.mTrackersBlocked,
                      blockersInfo.mHTTPSUpgrades, blockersInfo.mScriptsBlocked, blockersInfo.mFingerprintsBlocked);
+    }
+
+    public int getAdsBlockedCount(int tabId) {
+        if (!mTabsStat.containsKey(tabId)) {
+            return 0;
+        }
+
+        BlockersInfo blockersInfo = mTabsStat.get(tabId);
+        return blockersInfo.mAdsBlocked;
+    }
+
+    public int getTackersBlockedCount(int tabId) {
+        if (!mTabsStat.containsKey(tabId)) {
+            return 0;
+        }
+
+        BlockersInfo blockersInfo = mTabsStat.get(tabId);
+        return blockersInfo.mTrackersBlocked;
     }
 
     public void updateValues(int adsAndTrackers, int httpsUpgrades, int scriptsBlocked, int fingerprintsBlocked) {
@@ -350,7 +372,7 @@ public class BraveShieldsHandler implements BraveRewardsHelper.LargeIconReadyCal
 
     private void setUpMainLayout() {
         String favIconURL = mBraveRewardsNativeWorker.GetPublisherFavIconURL(mTabId);
-        Tab currentActiveTab = BraveRewardsHelper.currentActiveTab();
+        Tab currentActiveTab = mIconFetcher.getTab();
         String url = currentActiveTab.getUrlString();
         final String favicon_url = (favIconURL.isEmpty()) ? url : favIconURL;
         mIconFetcher.retrieveLargeIcon(favicon_url, this);
@@ -494,6 +516,9 @@ public class BraveShieldsHandler implements BraveRewardsHelper.LargeIconReadyCal
                     } else if (checkedId == R.id.option3) {
                         BraveShieldsContentSettings.setShieldsValue(mProfile, mHost, BraveShieldsContentSettings.RESOURCE_IDENTIFIER_COOKIES, BraveShieldsContentSettings.ALLOW_RESOURCE, false);
                     }
+                    if (null != mMenuObserver) {
+                        mMenuObserver.onMenuTopShieldsChanged(isChecked, false);
+                    }
                 }
             }
         });
@@ -560,6 +585,9 @@ public class BraveShieldsHandler implements BraveRewardsHelper.LargeIconReadyCal
                         BraveShieldsContentSettings.setShieldsValue(mProfile, mHost, BraveShieldsContentSettings.RESOURCE_IDENTIFIER_FINGERPRINTING, BraveShieldsContentSettings.BLOCK_THIRDPARTY_RESOURCE, false);
                     } else if (checkedId == R.id.option3) {
                         BraveShieldsContentSettings.setShieldsValue(mProfile, mHost, BraveShieldsContentSettings.RESOURCE_IDENTIFIER_FINGERPRINTING, BraveShieldsContentSettings.ALLOW_RESOURCE, false);
+                    }
+                    if (null != mMenuObserver) {
+                        mMenuObserver.onMenuTopShieldsChanged(isChecked, false);
                     }
                 }
             }

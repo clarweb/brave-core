@@ -2,9 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+// clang-format off
+// #import {addSingletonGetter, sendWithPromise} from 'chrome://resources/js/cr.m.js';
+// clang-format on
+
 cr.define('settings', function() {
   /** @interface */
-  class BravePrivacyBrowserProxy {
+  /* #export */ class BravePrivacyBrowserProxy {
     /**
      * @return {!Promise<string>}
      */
@@ -22,14 +26,6 @@ cr.define('settings', function() {
      */
     setP3AEnabled(value) {}
     /**
-     * @return {!Promise<string>}
-     */
-    getRemoteDebuggingEnabled() {}
-    /**
-     * @param {boolean} enabled (true/false).
-     */
-    setRemoteDebuggingEnabled(value) {}
-    /**
      * @return {boolean}
      */
     wasPushMessagingEnabledAtStartup() {}
@@ -38,7 +34,7 @@ cr.define('settings', function() {
   /**
    * @implements {settings.BravePrivacyBrowserProxy}
    */
-  class BravePrivacyBrowserProxyImpl {
+  /* #export */ class BravePrivacyBrowserProxyImpl {
     /** @overrides */
     getWebRTCPolicy() {
       return cr.sendWithPromise('getWebRTCPolicy');
@@ -54,14 +50,6 @@ cr.define('settings', function() {
 
     setP3AEnabled(value) {
       chrome.send('setP3AEnabled', [value])
-    }
-
-    getRemoteDebuggingEnabled() {
-      return cr.sendWithPromise('getRemoteDebuggingEnabled');
-    }
-
-    setRemoteDebuggingEnabled(value) {
-      chrome.send('setRemoteDebuggingEnabled', [value])
     }
 
     wasPushMessagingEnabledAtStartup() {

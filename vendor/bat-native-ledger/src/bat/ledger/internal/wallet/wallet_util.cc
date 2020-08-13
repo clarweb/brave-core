@@ -26,15 +26,15 @@ ledger::ExternalWalletPtr ResetWallet(ledger::ExternalWalletPtr wallet) {
     return nullptr;
   }
 
-  wallet->token = "";
-  wallet->address = "";
-  wallet->user_name = "";
-  wallet->one_time_string = "";
+  const auto status = wallet->status;
+  wallet = ledger::ExternalWallet::New();
 
-  if (wallet->status == ledger::WalletStatus::VERIFIED) {
-    wallet->status = ledger::WalletStatus::DISCONNECTED_VERIFIED;
-  } else {
-    wallet->status = ledger::WalletStatus::DISCONNECTED_NOT_VERIFIED;
+  if (status != ledger::WalletStatus::NOT_CONNECTED) {
+    if (status == ledger::WalletStatus::VERIFIED) {
+      wallet->status = ledger::WalletStatus::DISCONNECTED_VERIFIED;
+    } else {
+      wallet->status = ledger::WalletStatus::DISCONNECTED_NOT_VERIFIED;
+    }
   }
 
   return wallet;

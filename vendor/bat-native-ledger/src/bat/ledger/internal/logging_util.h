@@ -14,6 +14,8 @@
 
 namespace ledger {
 
+bool ShouldLogHeader(const std::string& header);
+
 std::string UrlRequestToString(
     const std::string& url,
     const std::vector<std::string>& headers,
@@ -21,7 +23,12 @@ std::string UrlRequestToString(
     const std::string& content_type,
     const UrlMethod method);
 
+// DEPRECATED (use LogUrlResponse)
 std::string UrlResponseToString(
+    const char* func,
+    const ledger::UrlResponse& response);
+
+void LogUrlResponse(
     const char* func,
     const ledger::UrlResponse& response);
 

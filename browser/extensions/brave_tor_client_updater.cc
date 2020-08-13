@@ -12,6 +12,7 @@
 #include "base/files/file_enumerator.h"
 #include "base/files/file_path.h"
 #include "base/files/file_util.h"
+#include "base/logging.h"
 #include "base/task/post_task.h"
 #include "base/task_runner.h"
 #include "base/task_runner_util.h"
@@ -135,12 +136,18 @@ void BraveTorClientUpdater::Register() {
   registered_ = true;
 }
 
+void BraveTorClientUpdater::Unregister() {
+  // We don't call BraveComponent::Unregister here in order to prevent tor
+  // executable component from getting deleted when last tor window closed
+  registered_ = false;
+}
+
 void BraveTorClientUpdater::Cleanup() {
-  // Delete tor binaries if tor is disabled by gpo.
+  // Delete tor binaries if tor is disabled.
   if (tor::TorProfileService::IsTorDisabled()) {
     ProfileManager* profile_manager = g_browser_process->profile_manager();
     base::FilePath tor_component_dir =
-        profile_manager->user_data_dir().AppendASCII(kTorClientComponentId);
+      profile_manager->user_data_dir().AppendASCII(kTorClientComponentId);
     GetTaskRunner()->PostTask(FROM_HERE,
                               base::BindOnce(&DeleteDir, tor_component_dir));
   }

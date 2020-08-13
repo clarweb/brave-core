@@ -4,9 +4,13 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "chrome/browser/ui/webui/settings/settings_localized_strings_provider.h"
-#include "chrome/browser/ui/webui/webui_util.h"
+
 #include "base/stl_util.h"
+#include "base/strings/string16.h"
+#include "base/strings/utf_string_conversions.h"
 #include "brave/browser/ui/webui/settings/brave_privacy_handler.h"
+#include "brave/browser/version_info.h"
+#include "chrome/browser/ui/webui/webui_util.h"
 
 namespace settings {
 void BraveAddLocalizedStrings(content::WebUIDataSource*, Profile*);
@@ -22,8 +26,10 @@ void BraveAddLocalizedStrings(content::WebUIDataSource*, Profile*);
 #define IDS_SETTINGS_EDIT_PERSON IDS_SETTINGS_BRAVE_EDIT_PROFILE
 #undef IDS_SETTINGS_PROFILE_NAME_AND_PICTURE
 #define IDS_SETTINGS_PROFILE_NAME_AND_PICTURE IDS_SETTINGS_BRAVE_EDIT_PROFILE
+#define GetVersionNumber GetBraveVersionNumberForDisplay
 
-#include "../../../../../../chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc"  // NOLINT
+#include "../../../../../../../chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc"
+#undef GetVersionNumber
 
 #include "brave/browser/ui/webui/brave_settings_ui.h"
 namespace settings {
@@ -31,20 +37,23 @@ namespace settings {
 const char kWebRTCLearnMoreURL[] =
     "https://support.brave.com/hc/en-us/articles/"
     "360017989132-How-do-I-change-my-Privacy-Settings-#webrtc";
+const char kBraveBuildInstructionsUrl[] =
+    "https://github.com/brave/brave-browser/wiki";
+const char kBraveLicenseUrl[] = "https://mozilla.org/MPL/2.0/";
+const char kBraveReleaseTagPrefix[] =
+    "https://github.com/brave/brave-browser/releases/tag/v";
 
 void BraveAddCommonStrings(content::WebUIDataSource* html_source,
                            Profile* profile) {
   webui::LocalizedString localized_strings[] = {
     {"importExtensions",
       IDS_SETTINGS_IMPORT_EXTENSIONS_CHECKBOX},
+    {"importPayments",
+      IDS_SETTINGS_IMPORT_PAYMENTS_CHECKBOX},
     {"siteSettingsAutoplay",
       IDS_SETTINGS_SITE_SETTINGS_AUTOPLAY},
     {"siteSettingsCategoryAutoplay",
       IDS_SETTINGS_SITE_SETTINGS_AUTOPLAY},
-    {"siteSettingsAutoplayAsk",
-      IDS_SETTINGS_SITE_SETTINGS_AUTOPLAY_ASK},
-    {"siteSettingsAutoplayAskRecommended",
-      IDS_SETTINGS_SITE_SETTINGS_AUTOPLAY_ASK_RECOMMENDED},
     {"braveGetStartedTitle",
       IDS_SETTINGS_BRAVE_GET_STARTED_TITLE},
     {"braveAdditionalSettingsTitle",
@@ -56,21 +65,21 @@ void BraveAddCommonStrings(content::WebUIDataSource* html_source,
     {"appearanceSettingsLocationBarIsWide",
       IDS_SETTINGS_APPEARANCE_SETTINGS_LOCATION_BAR_IS_WIDE},
     {"appearanceSettingsHideBraveRewardsButtonLabel",
-       IDS_SETTINGS_HIDE_BRAVE_REWARDS_BUTTON_LABEL},
+      IDS_SETTINGS_HIDE_BRAVE_REWARDS_BUTTON_LABEL},
     {"appearanceSettingsHideBraveRewardsButtonDesc",
-       IDS_SETTINGS_HIDE_BRAVE_REWARDS_BUTTON_DESC},
+      IDS_SETTINGS_HIDE_BRAVE_REWARDS_BUTTON_DESC},
     {"appearanceSettingsAlwaysShowBookmarkBarOnNTP",
-       IDS_SETTINGS_ALWAYS_SHOW_BOOKMARK_BAR_ON_NTP},
+      IDS_SETTINGS_ALWAYS_SHOW_BOOKMARK_BAR_ON_NTP},
     {"appearanceSettingsShowAutocompleteInAddressBar",
-       IDS_SETTINGS_APPEARANCE_SETTINGS_SHOW_AUTOCOMPLETE_IN_ADDRESS_BAR},
+      IDS_SETTINGS_APPEARANCE_SETTINGS_SHOW_AUTOCOMPLETE_IN_ADDRESS_BAR},
     {"appearanceSettingsUseTopSiteSuggestions",
-       IDS_SETTINGS_APPEARANCE_SETTINGS_USE_AUTOCOMPLETE_TOP_SITES},
+      IDS_SETTINGS_APPEARANCE_SETTINGS_USE_AUTOCOMPLETE_TOP_SITES},
     {"appearanceSettingsUseBraveSuggestedSiteSuggestions",
-       IDS_SETTINGS_APPEARANCE_SETTINGS_USE_AUTOCOMPLETE_BRAVE_SUGGESTED_SITES},
+      IDS_SETTINGS_APPEARANCE_SETTINGS_USE_AUTOCOMPLETE_BRAVE_SUGGESTED_SITES},
     {"appearanceSettingsGetMoreThemes",
-       IDS_SETTINGS_APPEARANCE_SETTINGS_GET_MORE_THEMES},
+      IDS_SETTINGS_APPEARANCE_SETTINGS_GET_MORE_THEMES},
     {"appearanceBraveDefaultImagesOptionLabel",
-       IDS_SETTINGS_APPEARANCE_SETTINGS_BRAVE_DEFAULT_IMAGES_OPTION_LABEL},
+      IDS_SETTINGS_APPEARANCE_SETTINGS_BRAVE_DEFAULT_IMAGES_OPTION_LABEL},
     {"braveShieldsTitle",
       IDS_SETTINGS_BRAVE_SHIELDS_TITLE},
     {"braveShieldsDefaultsSectionTitle",
@@ -145,8 +154,86 @@ void BraveAddCommonStrings(content::WebUIDataSource* html_source,
       IDS_SETTINGS_WEBRTC_POLICY_DISABLE_NON_PROXIED_UDP},
     {"braveSync",
       IDS_SETTINGS_BRAVE_SYNC_TITLE},
-    {"braveSyncLabel",
-      IDS_SETTINGS_BRAVE_SYNC_LINK_LABEL},
+    {"braveSyncSetupActionLabel",
+      IDS_SETTINGS_BRAVE_SYNC_SETUP_ACTION_LABEL},
+    {"braveSyncSetupTitle",
+      IDS_SETTINGS_BRAVE_SYNC_SETUP_TITLE},
+    {"braveSyncSetupSubtitle",
+      IDS_SETTINGS_BRAVE_SYNC_SETUP_SUBTITLE},
+    {"braveSyncManageActionLabel",
+      IDS_SETTINGS_BRAVE_SYNC_MANAGE_ACTION_LABEL},
+    {"braveSyncWordCount",
+      IDS_SETTINGS_BRAVE_SYNC_WORD_COUNT},
+    {"braveSyncCopied",
+      IDS_SETTINGS_BRAVE_SYNC_COPIED_TEXT},
+    {"braveSyncQRCodeAlt",
+      IDS_SETTINGS_BRAVE_SYNC_QR_IMAGE_ALT},
+    {"braveSyncQRError",
+      IDS_SETTINGS_BRAVE_SYNC_QR_ERROR},
+    {"braveSyncManagerTitle",
+      IDS_SETTINGS_BRAVE_SYNC_MANAGER_TITLE},
+    {"braveSyncSettingsTitle",
+      IDS_SETTINGS_BRAVE_SYNC_SETTINGS_TITLE},
+    {"braveSyncSettingsSubtitle",
+      IDS_SETTINGS_BRAVE_SYNC_SETTINGS_SUBTITLE},
+    {"braveSyncDeviceListTitle",
+      IDS_SETTINGS_BRAVE_SYNC_DEVICE_LIST_TITLE},
+    {"braveSyncDeviceListSubtitle",
+      IDS_SETTINGS_BRAVE_SYNC_DEVICE_LIST_SUBTITLE},
+    {"braveSyncDeviceListNameColumn",
+      IDS_SETTINGS_BRAVE_SYNC_DEVICE_LIST_NAME_COLUMN},
+    {"braveSyncDeviceListNameThisDevice",
+      IDS_SETTINGS_BRAVE_SYNC_DEVICE_LIST_NAME_THIS_DEVICE},
+    {"braveSyncDeviceListLastActiveColumn",
+      IDS_SETTINGS_BRAVE_SYNC_DEVICE_LIST_LAST_ACTIVE_COLUMN},
+    {"braveSyncSetupTitle",
+      IDS_BRAVE_SYNC_SETUP_TITLE},
+    {"braveSyncSetupDesc",
+      IDS_BRAVE_SYNC_SETUP_DESCRIPTION},
+    {"braveSyncStartNewChain",
+      IDS_BRAVE_SYNC_START_NEW_CHAIN_BUTTON},
+    {"braveSyncEnterCode",
+      IDS_BRAVE_SYNC_ENTER_CODE_BUTTON},
+    {"braveSyncChooseDeviceMobileTitle",
+      IDS_BRAVE_SYNC_CHOOSE_DEVICE_MOBILE_TITLE},
+    {"braveSyncChooseDeviceComputerTitle",
+      IDS_BRAVE_SYNC_CHOOSE_DEVICE_COMPUTER_TITLE},
+    {"braveSyncScanCodeTitle",
+      IDS_BRAVE_SYNC_SCAN_CODE_TITLE},
+    {"braveSyncScanCodeDesc1",
+      IDS_BRAVE_SYNC_SCAN_CODE_DESCRIPTION_PARTIAL_1},
+    {"braveSyncScanCodeDesc2",
+      IDS_BRAVE_SYNC_SCAN_CODE_DESCRIPTION_PARTIAL_2},
+    {"braveSyncScanCodeDesc3",
+      IDS_BRAVE_SYNC_SCAN_CODE_DESCRIPTION_PARTIAL_3},
+    {"braveSyncViewCodeTitle",
+      IDS_BRAVE_SYNC_VIEW_CODE_TITLE},
+    {"braveSyncViewCodeDesc1",
+      IDS_BRAVE_SYNC_VIEW_CODE_DESCRIPTION_PARTIAL_1},
+    {"braveSyncViewCodeDesc2",
+      IDS_BRAVE_SYNC_VIEW_CODE_DESCRIPTION_PARTIAL_2},
+    {"braveSyncViewCodeDesc3",
+      IDS_BRAVE_SYNC_VIEW_CODE_DESCRIPTION_PARTIAL_3},
+    {"braveSyncViewCodeQRCodeButton",
+      IDS_BRAVE_SYNC_VIEW_CODE_QR_CODE_BUTTON},
+    {"braveSyncEnterCodeTitle",
+      IDS_BRAVE_SYNC_ENTER_CODE_TITLE},
+    {"braveSyncEnterCodeDesc",
+      IDS_BRAVE_SYNC_ENTER_CODE_DESCRIPTION},
+    {"braveSyncViewCodeButton",
+      IDS_BRAVE_SYNC_VIEW_CODE_BUTTON},
+    {"braveSyncAddDevice",
+      IDS_BRAVE_SYNC_ADD_DEVICE_BUTTON},
+    {"braveSyncChooseDeviceTitle",
+      IDS_BRAVE_SYNC_CHOOSE_DEVICE_TITLE},
+    {"braveSyncChooseDeviceDesc",
+      IDS_BRAVE_SYNC_CHOOSE_DEVICE_DESCRIPTION},
+    {"braveSyncInvalidSyncCodeTitle",
+      IDS_BRAVE_SYNC_INVALID_SYNC_CODE_TITLE},
+    {"braveSyncResetButton",
+      IDS_BRAVE_SYNC_RESET_BUTTON},
+    {"braveSyncResetConfirmation",
+      IDS_BRAVE_SYNC_RESET_CONFIRMATION},
     {"braveHelpTips",
       IDS_SETTINGS_HELP_TIPS},
     {"braveHelpTipsWaybackMachineLabel",
@@ -160,6 +247,7 @@ void BraveAddCommonStrings(content::WebUIDataSource* html_source,
     { "braveNewTabStats", IDS_SETTINGS_NEW_TAB_STATS },
     { "braveNewTabBraveRewards", IDS_SETTINGS_NEW_TAB_BRAVE_REWARDS },
     { "braveNewTabBinance", IDS_SETTINGS_NEW_TAB_BINANCE },
+    { "braveNewTabGemini", IDS_SETTINGS_NEW_TAB_GEMINI },
     { "braveNewTabTogether", IDS_SETTINGS_NEW_TAB_TOGETHER },
     { "braveNewTabTopSites", IDS_SETTINGS_NEW_TAB_TOP_SITES },
     { "braveNewTabClock", IDS_SETTINGS_NEW_TAB_CLOCK },
@@ -200,10 +288,12 @@ void BraveAddCommonStrings(content::WebUIDataSource* html_source,
       IDS_BRAVE_P3A_ENABLE_SETTING},
     {"p3aEnabledDesc",
       IDS_BRAVE_P3A_ENABLE_SETTING_SUBITEM},
-    {"remoteDebuggingEnabledTitle",
-      IDS_SETTINGS_REMOTE_DEBUGGING_TITLE},
     {"siteSettings",
       IDS_SETTINGS_SITE_AND_SHIELDS_SETTINGS},
+    {"resetRewardsData",
+      IDS_SETTINGS_RESET_REWARDS_DATA},
+    {"showFullUrls",
+      IDS_CONTEXT_MENU_SHOW_FULL_URLS},
   };
   AddLocalizedStringsBulk(html_source, localized_strings);
   html_source->AddString("webRTCLearnMoreURL",
@@ -222,10 +312,23 @@ void BraveAddResources(content::WebUIDataSource* html_source,
   BraveSettingsUI::AddResources(html_source, profile);
 }
 
+void BraveAddAboutStrings(content::WebUIDataSource* html_source,
+                          Profile* profile) {
+  base::string16 license = l10n_util::GetStringFUTF16(
+      IDS_BRAVE_VERSION_UI_LICENSE, base::ASCIIToUTF16(kBraveLicenseUrl),
+      base::ASCIIToUTF16(chrome::kChromeUICreditsURL),
+      base::ASCIIToUTF16(kBraveBuildInstructionsUrl),
+      base::ASCIIToUTF16(kBraveReleaseTagPrefix) +
+          base::UTF8ToUTF16(
+              version_info::GetBraveVersionWithoutChromiumMajorVersion()));
+  html_source->AddString("aboutProductLicense", license);
+}
+
 void BraveAddLocalizedStrings(content::WebUIDataSource* html_source,
                               Profile* profile) {
   BraveAddCommonStrings(html_source, profile);
   BraveAddResources(html_source, profile);
+  BraveAddAboutStrings(html_source, profile);
   BravePrivacyHandler::AddLoadTimeData(html_source, profile);
 }
 

@@ -17,6 +17,7 @@
 #include "base/synchronization/lock.h"
 #include "base/values.h"
 #include "brave/components/brave_component_updater/browser/brave_component.h"
+#include "brave/vendor/adblock_rust_ffi/src/wrapper.hpp"
 #include "third_party/blink/public/mojom/loader/resource_load_info.mojom-shared.h"
 #include "url/gurl.h"
 
@@ -39,12 +40,12 @@ class AdBlockRegionalServiceManager {
   explicit AdBlockRegionalServiceManager(BraveComponent::Delegate* delegate);
   ~AdBlockRegionalServiceManager();
 
-  static bool IsSupportedLocale(const std::string& locale);
-  static std::unique_ptr<base::ListValue> GetRegionalLists();
+  std::unique_ptr<base::ListValue> GetRegionalLists();
+
+  void SetRegionalCatalog(std::vector<adblock::FilterList> catalog);
 
   bool IsInitialized() const;
   bool Start();
-  void Stop();
   bool ShouldStartRequest(const GURL& url,
                           blink::mojom::ResourceType resource_type,
                           const std::string& tab_host,
@@ -55,8 +56,8 @@ class AdBlockRegionalServiceManager {
   void AddResources(const std::string& resources);
   void EnableFilterList(const std::string& uuid, bool enabled);
 
-  base::Optional<base::Value> HostnameCosmeticResources(
-          const std::string& hostname);
+  base::Optional<base::Value> UrlCosmeticResources(
+          const std::string& url);
   base::Optional<base::Value> HiddenClassIdSelectors(
           const std::vector<std::string>& classes,
           const std::vector<std::string>& ids,
@@ -73,6 +74,8 @@ class AdBlockRegionalServiceManager {
   base::Lock regional_services_lock_;
   std::map<std::string, std::unique_ptr<AdBlockRegionalService>>
       regional_services_;
+
+  std::vector<adblock::FilterList> regional_catalog_;
 
   DISALLOW_COPY_AND_ASSIGN(AdBlockRegionalServiceManager);
 };

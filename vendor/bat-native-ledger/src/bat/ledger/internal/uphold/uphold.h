@@ -12,6 +12,7 @@
 #include <map>
 #include <memory>
 
+#include "base/timer/timer.h"
 #include "bat/ledger/ledger.h"
 #include "bat/ledger/internal/uphold/uphold_user.h"
 
@@ -35,8 +36,6 @@ class UpholdWallet;
 using FetchBalanceCallback = std::function<void(ledger::Result, double)>;
 using CreateCardCallback =
     std::function<void(ledger::Result, const std::string&)>;
-using CreateAnonAddressCallback =
-    std::function<void(ledger::Result, const std::string&)>;
 
 class Uphold {
  public:
@@ -49,47 +48,29 @@ class Uphold {
   void StartContribution(
       const std::string& contribution_id,
       ledger::ServerPublisherInfoPtr info,
-      double amount,
-      ledger::ExternalWalletPtr wallet,
+      const double amount,
       ledger::ResultCallback callback);
 
-  void FetchBalance(std::map<std::string, ledger::ExternalWalletPtr> wallets,
-                    FetchBalanceCallback callback);
+  void FetchBalance(FetchBalanceCallback callback);
 
   void TransferFunds(
       const double amount,
       const std::string& address,
-      ledger::ExternalWalletPtr wallet,
       ledger::TransactionCallback callback);
 
   void WalletAuthorization(
-    const std::map<std::string, std::string>& args,
-    std::map<std::string, ledger::ExternalWalletPtr> wallets,
-    ledger::ExternalWalletAuthorizationCallback callback);
+      const std::map<std::string, std::string>& args,
+      ledger::ExternalWalletAuthorizationCallback callback);
 
-  void TransferAnonToExternalWallet(
-      ledger::ExternalWalletPtr wallet,
-      ledger::ExternalWalletCallback callback);
+  void GenerateExternalWallet(ledger::ResultCallback callback);
 
-  void GenerateExternalWallet(
-    std::map<std::string, ledger::ExternalWalletPtr> wallets,
-    ledger::ExternalWalletCallback callback);
-
-  void CreateCard(
-      ledger::ExternalWalletPtr wallet,
-      CreateCardCallback callback);
+  void CreateCard(CreateCardCallback callback);
 
   void DisconnectWallet();
 
-  void GetUser(
-    ledger::ExternalWalletPtr wallet,
-    GetUserCallback callback);
+  void GetUser(GetUserCallback callback);
 
-  void CreateAnonAddressIfNecessary(
-      ledger::ExternalWalletPtr wallet,
-      CreateAnonAddressCallback callback);
-
-  void OnTimer(uint32_t timer_id);
+  void CreateAnonAddressIfNecessary(ledger::ResultCallback callback);
 
  private:
   void ContributionCompleted(
@@ -101,33 +82,21 @@ class Uphold {
       ledger::ResultCallback callback);
 
   void OnFetchBalance(
-    FetchBalanceCallback callback,
-    const ledger::UrlResponse& response);
-
-  void OnTransferAnonToExternalWalletCallback(
-    ledger::ExternalWalletCallback callback,
-    const ledger::ExternalWallet& wallet,
-    ledger::Result result);
-
-  void OnDisconectWallet(
-    ledger::Result result,
-    ledger::ExternalWalletPtr wallet);
+      const ledger::UrlResponse& response,
+      FetchBalanceCallback callback);
 
   void SaveTransferFee(ledger::TransferFeePtr transfer_fee);
 
+  void StartTransferFeeTimer(const std::string& fee_id);
+
   void OnTransferFeeCompleted(
-    const ledger::Result result,
-    const std::string& transaction_id,
-    const ledger::TransferFee& transfer_fee);
+      const ledger::Result result,
+      const std::string& transaction_id,
+      const ledger::TransferFee& transfer_fee);
 
-  void TransferFee(
-    const ledger::Result result,
-    ledger::ExternalWalletPtr wallet,
-    const ledger::TransferFee& transfer_fee);
+  void TransferFee(const ledger::TransferFee& transfer_fee);
 
-  void TransferFeeOnTimer(const uint32_t timer_id);
-
-  void SetTimer(uint32_t* timer_id, uint64_t start_timer_in = 0);
+  void OnTransferFeeTimerElapsed(const std::string& id);
 
   std::unique_ptr<UpholdTransfer> transfer_;
   std::unique_ptr<UpholdCard> card_;
@@ -135,6 +104,7 @@ class Uphold {
   std::unique_ptr<UpholdAuthorization> authorization_;
   std::unique_ptr<UpholdWallet> wallet_;
   bat_ledger::LedgerImpl* ledger_;  // NOT OWNED
+  std::map<std::string, base::OneShotTimer> transfer_fee_timers_;
 };
 
 }  // namespace braveledger_uphold

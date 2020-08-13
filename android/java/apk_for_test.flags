@@ -8,7 +8,7 @@
 # needed for checking of existence for bytecode manipulation
 -keepnames class org.chromium.chrome.browser.settings.MainSettings
 
--keep class org.chromium.components.sync.AndroidSyncSettings {
+-keep class org.chromium.chrome.browser.sync.AndroidSyncSettings {
     *** notifyObservers(...);
     *** updateCachedSettings(...);
     *** setChromeSyncEnabled(...);
@@ -33,4 +33,39 @@
 
 -keep class org.chromium.chrome.browser.homepage.HomepageManager {
     *** shouldCloseAppWithZeroTabs(...);
+}
+
+-keep class org.chromium.chrome.browser.ntp.NewTabPageLayout {
+    *** insertSiteSectionView(...);
+    *** getMaxRowsForMostVisitedTiles(...);
+    *** mSiteSectionView;
+}
+
+-keep class org.chromium.chrome.browser.feed.FeedSurfaceCoordinator {
+    *** mActivity;
+    *** mScrollViewForPolicy;
+    *** mNtpHeader;
+    *** mRootView;
+}
+
+-keep class org.chromium.chrome.browser.ntp.NewTabPage {
+    *** mNewTabPageLayout;
+    *** mFeedSurfaceProvider;
+}
+
+-keep class org.chromium.chrome.browser.omnibox.suggestions.editurl.EditUrlSuggestionProcessor {
+    *** mHasClearedOmniboxForFocus;
+}
+
+-keep class org.chromium.chrome.browser.sync.settings.ManageSyncSettings {
+    *** mGoogleActivityControls;
+    *** mSyncEncryption;
+    *** mManageSyncData;
+    *** mSyncPaymentsIntegration;
+}
+
+-keep class org.chromium.chrome.browser.search_engines.settings.SearchEngineAdapter {
+    *** getPermissionsLinkMessage(...);
+    *** getSearchEngineSourceType(...);
+    *** sortAndFilterUnnecessaryTemplateUrl(...);
 }

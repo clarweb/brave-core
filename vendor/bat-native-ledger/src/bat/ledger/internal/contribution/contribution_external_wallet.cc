@@ -16,12 +16,10 @@ namespace braveledger_contribution {
 
 ContributionExternalWallet::ContributionExternalWallet(
     bat_ledger::LedgerImpl* ledger,
-    Contribution* contribution,
     braveledger_uphold::Uphold* uphold) :
     ledger_(ledger),
-    contribution_(contribution),
     uphold_(uphold) {
-  DCHECK(ledger_ && contribution_ && uphold_);
+  DCHECK(ledger_ && uphold_);
 }
 
 ContributionExternalWallet::~ContributionExternalWallet() = default;
@@ -35,21 +33,8 @@ void ContributionExternalWallet::Process(
     return;
   }
 
-  auto wallets_callback = std::bind(
-      &ContributionExternalWallet::OnExternalWallets,
-      this,
-      _1,
-      contribution_id,
-      callback);
+  auto wallets = ledger_->ledger_client()->GetExternalWallets();
 
-  // Check if we have token
-  ledger_->GetExternalWallets(wallets_callback);
-}
-
-void ContributionExternalWallet::OnExternalWallets(
-    std::map<std::string, ledger::ExternalWalletPtr> wallets,
-    const std::string& contribution_id,
-    ledger::ResultCallback callback) {
   if (wallets.empty()) {
     BLOG(0, "No external wallets");
     callback(ledger::Result::LEDGER_ERROR);
@@ -69,8 +54,7 @@ void ContributionExternalWallet::OnExternalWallets(
       _1,
       *wallet,
       callback);
-
-  ledger_->GetContributionInfo(contribution_id, get_callback);
+  ledger_->database()->GetContributionInfo(contribution_id, get_callback);
 }
 
 void ContributionExternalWallet::ContributionInfo(
@@ -96,7 +80,7 @@ void ContributionExternalWallet::ContributionInfo(
   }
 
   if (contribution->type == ledger::RewardsType::AUTO_CONTRIBUTE) {
-    contribution_->SKUAutoContribution(
+    ledger_->contribution()->SKUAutoContribution(
         contribution->contribution_id,
         ledger::ExternalWallet::New(wallet),
         callback);
@@ -116,12 +100,13 @@ void ContributionExternalWallet::ContributionInfo(
           _1,
           contribution->contribution_id,
           publisher->total_amount,
-          wallet,
           contribution->type,
           single_publisher,
           callback);
 
-    ledger_->GetServerPublisherInfo(publisher->publisher_key, get_callback);
+    ledger_->publisher()->GetServerPublisherInfo(
+        publisher->publisher_key,
+        get_callback);
     return;
   }
 
@@ -134,14 +119,13 @@ void ContributionExternalWallet::OnSavePendingContribution(
   if (result != ledger::Result::LEDGER_OK) {
     BLOG(0, "Problem saving pending");
   }
-  ledger_->PendingContributionSaved(result);
+  ledger_->ledger_client()->PendingContributionSaved(result);
 }
 
 void ContributionExternalWallet::OnServerPublisherInfo(
     ledger::ServerPublisherInfoPtr info,
     const std::string& contribution_id,
     const double amount,
-    const ledger::ExternalWallet& wallet,
     const ledger::RewardsType type,
     const bool single_publisher,
     ledger::ResultCallback callback) {
@@ -167,7 +151,9 @@ void ContributionExternalWallet::OnServerPublisherInfo(
     ledger::PendingContributionList list;
     list.push_back(std::move(contribution));
 
-    ledger_->SavePendingContribution(std::move(list), save_callback);
+    ledger_->database()->SavePendingContribution(
+        std::move(list),
+        save_callback);
     callback(ledger::Result::LEDGER_ERROR);
     return;
   }
@@ -182,7 +168,6 @@ void ContributionExternalWallet::OnServerPublisherInfo(
       contribution_id,
       std::move(info),
       amount,
-      ledger::ExternalWallet::New(wallet),
       uphold_callback);
 }
 

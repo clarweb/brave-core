@@ -9,9 +9,8 @@
 <translation id="2445484935443597917">Új profil létrehozása</translation>
 <translation id="2666990579225592931">Vendég módú ablak megnyitása</translation>
 <translation id="120759863357279975"><ph name="EXTENSION_NAME"/> (kiterjesztésazonosító "<ph name="EXTENSION_ID"/>") nem engedélyezett a Brave-ben.</translation>
-<translation id="7450557937477381864">Chrome bezárása</translation>
-<translation id="7008934821596358692">Az importálás befejezéséhez zárja be az összes Chrome ablakot.</translation>
 <translation id="6786747875388722282">Kiterjesztések</translation>
+<translation id="984275831282074731">Fizetési módok</translation>
 <translation id="3699882589215410581">Widevine telepítése és futtatása</translation>
 <translation id="8926389886865778422">Többször ne figyelmeztessen</translation>
 <translation id="4726634924419692905">Kérdezzen rá, amikor egy webhely a Widevine-t akarja telepíteni a számítógépére.</translation>
@@ -22,7 +21,6 @@
 <translation id="8410111618231938546">A Google Widevine egy digitális jogkezelő (DRM - Digital Rights Management) kód, amelyet mi a Brave Software vállalatnál nem birtokolunk és nem vizsgálunk meg. A Google Widevine kódot Google szerverektől töltjük be, nem pedig saját szervereinkről. Csak akkor töltődik be, ha engedélyezi ezt az opciót. Javasoljuk a DRM használatát, de tiszteletben tartjuk a felhasználók döntését és elismerjük, hogy néhány Brave felhasználó olyan szolgáltatásokat szeretne használni, amelyekhez ez szükséges.
 
 Ennek a bővítménynek a telepítésével elfogadja a Google Widevine felhasználási feltételeit. Beleegyezik abba, hogy a Brave nem felelős semmilyen kárért vagy veszteségért, amely a Google Widevine használatával kapcsolatban keletkezik.</translation>
-<translation id="453977518730680921">Média automatikus lejátszása</translation>
 <translation id="410351446219883937">Automatikus lejátszás</translation>
 <translation id="2240268017737062801">Kérdezze meg, amikor egy honlap automatikusan le akar játszani egy médiát</translation>
 <translation id="3371702087847741961">Kérdezze meg, amikor egy honlap automatikusan le akar játszani valamilyen médiát (javasolt)</translation>
@@ -39,11 +37,14 @@ Ennek a bővítménynek a telepítésével elfogadja a Google Widevine felhaszn�
 <translation id="7635711399568194460">Elrejti a Brave Jutalmak gombot a helysávban, amikor a Brave Jutalmak nincs engedélyezve.</translation>
 <translation id="1520361618554057102">Mindig mutassa a könyvjelzőket az új fül oldalon</translation>
 <translation id="5802665280774361839">Mutassa az automatikus kiegészítést a címsorban</translation>
+<translation id="597020512043916976">A legjobb oldalak mutatása az automatikus kiegészítési javaslatokban</translation>
+<translation id="264150068416846820">Brave által javasolt oldalak mutatása az automatikus kiegészítési javaslatokban</translation>
 <translation id="7781069478569868053">Új lap</translation>
 <translation id="2467749191278759605">Brave irányítópult testreszabása</translation>
 <translation id="1717331825806276156">Háttérképek</translation>
 <translation id="1820041496463124489">Szponzorált képek</translation>
 <translation id="8173998484743827990">Brave statisztikák</translation>
+<translation id="5551238871320268996">Brave Together</translation>
 <translation id="6966052266404721769">Binance</translation>
 <translation id="4643117005422448078">Népszerű oldalak</translation>
 <translation id="1776831331757823105">Óra</translation>
@@ -72,9 +73,9 @@ Ennek a bővítménynek a telepítésével elfogadja a Google Widevine felhaszn�
 <translation id="7390783310074170337">Alapértelmezett nézet</translation>
 <translation id="130615081792797568">Egyszerű nézet</translation>
 <translation id="2360360976480535628">Speciális nézet</translation>
-<translation id="5709627087332022422">Webhelyközi nyomkövetők letiltása</translation>
-<translation id="6447842834002726250">Cookie-k</translation>
-<translation id="6522412052085018663">Ujjlenyomatos azonosítás</translation>
+<translation id="2133317862976486547">Követők és hirdetések blokkolása</translation>
+<translation id="4385707520896576447">Sütik blokkolása</translation>
+<translation id="4978786495456601191">Ujjlenyomat-felismerés letiltása</translation>
 <translation id="3570081523466826008">Kapcsolat bővítése HTTPS-re</translation>
 <translation id="4824468494729001999">Parancsfájlok letiltása</translation>
 <translation id="519861640102428255">Megjelenés és kezelés</translation>
@@ -83,12 +84,12 @@ Ennek a bővítménynek a telepítésével elfogadja a Google Widevine felhaszn�
 <translation id="863171915776379000">Facebook belépés és beágyazott bejegyzések engedélyezése</translation>
 <translation id="5165042248369837294">Twitteren beágyazott tweetek engedélyezése</translation>
 <translation id="958971637207126733">LinkedIn beágyazott posztok engedélyezése</translation>
-<translation id="4699812599455071925">Csak a webhelyközi cookie-k letiltása</translation>
-<translation id="5657156137487675418">Összes süti engedélyezése</translation>
-<translation id="6883611015375728278">Összes süti blokkolása</translation>
-<translation id="5963670684159057574">Webhelyközi ujjlenyomat-beállítás tiltása</translation>
-<translation id="769702552748212954">Minden ujjlenyomat-beállítás engedélyezése</translation>
-<translation id="4540198958192073185">Minden ujjlenyomat-leolvasás blokkolása</translation>
+<translation id="4078738236287221428">Agresszív</translation>
+<translation id="7740996059027112821">Szokásos</translation>
+<translation id="4176463684765177261">Kikapcsolva</translation>
+<translation id="5770288601196774623">Csak oldalak között</translation>
+<translation id="3587482841069643663">Mind</translation>
+<translation id="5533533363827555308">Szigorú, a webhelyek összeomolhatnak</translation>
 <translation id="8942080017911802454">WebRTC IP kezelési irányelvek</translation>
 <translation id="6165508094623778733">Tudjon meg többet</translation>
 <translation id="8798099450830957504">Alapértelmezett</translation>
@@ -96,8 +97,47 @@ Ennek a bővítménynek a telepítésével elfogadja a Google Widevine felhaszn�
 <translation id="5825943197137337319">Kizárólag alapértelmezett publikus interfész</translation>
 <translation id="1689062823386843231">Proxy nélküli UDP letiltása</translation>
 <translation id="8502234992433094996">Google Szolgáltatások használata a Push üzenetküldéshez</translation>
-<translation id="3888068426966679906">Távoli hibakeresés</translation>
-<translation id="6645631466045614531">Szinkronizálás elérési útja</translation>
+<translation id="5565355416171743213">Szinkronizálás használatának indítása</translation>
+<translation id="4332558599726753990">Szinkronizálási beállítások</translation>
+<translation id="2187778349654214731">A kezdéshez minden szinkronizálni kívánt eszközön telepítve kell legyen a Brave. Ha ez megvan, biztonságosan csatolja össze őket egy szinkronizálási kóddal.</translation>
+<translation id="7530575064080939974">Kezelje szinkronizált készülékeit</translation>
+<translation id="7575156386943878014">Szinkronizáláskezelő</translation>
+<translation id="1755198127524719638">Szinkronizálási beállítások</translation>
+<translation id="7558480201297099157">Kezeld, hogy mely információkat  szeretnél szinkronizálni az eszközök között. Ezek a beállítások csak erre az eszközre vonatkoznak.</translation>
+<translation id="7731928563672901833">Készülékek listája</translation>
+<translation id="28332161031213248">Az alábbi készülékek listáján megtalálható szinkronláncod minden készüléke. Minden készülék kezelhető minden másik készülékről.</translation>
+<translation id="1313162974556054106">Készülék neve</translation>
+<translation id="923757506389336140"><ph name="DEVICE_NAME"/> (Ez a készülék)</translation>
+<translation id="3686835020221422649">Utoljára aktív</translation>
+<translation id="2569646144216067185">Szavak száma: <ph name="WORD_COUNT"/></translation>
+<translation id="7885157704277298658">Kimásolva!</translation>
+<translation id="8802630444265810662">Egy mobilkészülékkel be kell olvasni egy QR-kódot a szinkronizálási kód elküldéséhez.</translation>
+<translation id="6221331245829088299">Hiba történt a QR-kód megjelenítésekor. Frissítsen majd próbálja újra.</translation>
+<translation id="298546024891487702">A kezdéshez telepítsd minden szinkronizálni kívánt készülékre a Brave-et. Az összeláncolásukhoz indíts egy szinkronláncot, amellyel minden készülékedet biztonságosan összeláncolhatod.</translation>
+<translation id="6200528822592747640">Új szinkronlác indítása</translation>
+<translation id="5184726904895809379">Rendelkezek szinkronizálási kóddal</translation>
+<translation id="8780295742023331191">Szinkronizálási kódok megtekintése</translation>
+<translation id="9017050385815017931">Telefon/Tablet</translation>
+<translation id="1736420071277903564">Számítógép</translation>
+<translation id="3407602902101449803">Szinkronlánc QR-kód</translation>
+<translation id="8369686073965491869">Mobilkészülékeden tallózz a Brave Szinkronizáláshoz a Beállítások menüben, és kattints a gombra.</translation>
+<translation id="6527776448555649991">“Szinkronizálási kód szkennelése”.</translation>
+<translation id="1400862780574843709">Használd kamerádat az alábbi QR-kód beolvasására.</translation>
+<translation id="5086223971958279691">Szinkronlánckód</translation>
+<translation id="2899261497479389619">Célszámítógépeden tallózz a Brave Szinkronizáláshoz a beállításokban, és kattints a gombra.</translation>
+<translation id="4827439149833241990">“Rendelkezek szinkronizálási kóddal”.</translation>
+<translation id="24067401253841795">Írd be a lentebbi Sync lánckód szavakat. Kezeld úgy ezt a kódot, mintha jelszó lenne. Ha valaki megszerzi ezt, akkor elolvashatja és módosíthatja a szinkronizált adataidat.</translation>
+<translation id="3034163433136515805">QR-kód megtekintése</translation>
+<translation id="5373825572723282843">Szinkronizációs kód megadása</translation>
+<translation id="5734745018569675530">Írd be a kapott szinkronizálásilánc-kódszavakat az alábbi űrlapon.</translation>
+<translation id="1061533051865606843">Új készülék hozzáadása</translation>
+<translation id="5093410893656857925">Válaszd ki a készülék típusát</translation>
+<translation id="4581190919849683048">Milyen típusú készüléket szeretne szinkronizálni?</translation>
+<translation id="4112587618563511470">Érvénytelen szinkronizálási kód. Ellenőrizze, majd próbálja újra.</translation>
+<translation id="2339730291919608488">Szinkronizációs lánc elhagyása</translation>
+<translation id="115699408012835975">Ha újraállítja a Syncet, a szinkronizáláshoz újra meg kell adnia egy szinkronizálási kódot egy másik készülékről. Biztosan folytatni szeretné?</translation>
+<translation id="3396347744975515056">A Brave Sync frissült, és be kell állítani</translation>
+<translation id="7473245612074035141">Beállítás indítása</translation>
 <translation id="6696935187608454456">Segítség</translation>
 <translation id="2775956301559569472">Wayback Machine megjelenítése 404-es oldalakon</translation>
 <translation id="1807246157184219062">Világos</translation>
@@ -110,6 +150,7 @@ Ennek a bővítménynek a telepítésével elfogadja a Google Widevine felhaszn�
 <translation id="7701040980221191251">Nincs</translation>
 <translation id="1085027414516521238">MetaMask</translation>
 <translation id="3905324891414560921">Web3-szolgáltató a Dappok használatához</translation>
+<translation id="5913089932885076110">Crypto Wallets betöltése indításkor</translation>
 <translation id="6554397389149987360">Hangouts komponenseket használ, hogy lehetővé tegye a képernyőmegosztást és más funkciókat a böngészőben.</translation>
 <translation id="1765684547504191670">Média-útválasztó komponens használatával engedélyezi a Chromecastot a böngészőben.</translation>
 <translation id="9156965752763025780">Módosításai a Brave újraindítása után lépnek érvénybe.</translation>
@@ -171,10 +212,13 @@ Ennek a bővítménynek a telepítésével elfogadja a Google Widevine felhaszn�
 <translation id="6469509880167172749">Teljes mértékben anonim termékanalízis automatikus küldése a Brave-hez</translation>
 <translation id="7090566321964540749">Ez az anonimizált adat mindösszesen azt teszi lehetővé, hogy a Brave megbecsülhesse egyes funkciók összesített használatát.</translation>
 <translation id="9111960429693394744">A Brave kriptotárcáit vagy a MetaMaskot szeretné használni a Dappokhoz?</translation>
+<translation id="8721775358057000783">Szeretnéd a Crypto Wallets indítását web3 támogatáshoz ezen az oldalon?</translation>
 <translation id="7583735190612229830">Állítsa be, hogy a Crypto Wallets együttműködjön ezzel és más hasonló alkalmazásokkal.</translation>
-<translation id="8337117349965899723">Használja a Crypto Walletset</translation>
+<translation id="4823406846571523661">Crypto Wallets beállítása</translation>
 <translation id="5756155765711979898">Használja a MetaMaskot</translation>
 <translation id="6754134632841262799">BEÁLLÍTÁS</translation>
+<translation id="8199661191594897555">Crypto Wallet indítása és újratöltés</translation>
+<translation id="8428213095426709021">Beállítások</translation>
 <translation id="4552520379838695057">Elnézést, ez az oldal hiányzik.</translation>
 <translation id="2609895996619941644">Meg szeretné tekinteni, hogy van-e mentett verziója a Wayback Machine-nek?</translation>
 <translation id="8053093028263274061">Elnézést, de nincs mentett verzió</translation>
@@ -185,8 +229,10 @@ Ennek a bővítménynek a telepítésével elfogadja a Google Widevine felhaszn�
 <translation id="2336228925368920074">Összes lap hozzáadása a könyvjelzőkhöz...</translation>
 <translation id="796831669370432378">Könyvjelző hozzáadásához kattintson a címsorban szereplő könyvjelző gombra</translation>
 <translation id="4989337484121655457">Teljes körű lemezhozzáférés szükséges</translation>
-<translation id="8025559074845816210">A Brave-nek teljes lemezhozzáférésre van szüksége a Safari-könyvjelzők importálásához.</translation>
+<translation id="5501596373144334003">A könyvjelzők és előzmények importálásához Safariból a Brave-nek teljes lemezhozzáférésre van szüksége.</translation>
 <translation id="8515328844674404333">Olvassa el, hogyan engedélyezheti a teljes lemezhozzáférést a Rendszerbeállításokban.</translation>
 <translation id="6414878884710400018">Rendszerbeállítások megnyitása</translation>
 <translation id="5570470519803062774">Webhely és pajzsok beállításai</translation>
+<translation id="8487693399751278191">Importáld a könyvjelzőket...</translation>
+<translation id="2557899542277210112">A gyors eléréshez, tedd könyvjelzőidet ide, a könyvjelzősávba.</translation>
 </translationbundle>

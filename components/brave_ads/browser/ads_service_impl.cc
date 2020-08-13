@@ -8,8 +8,13 @@
 #include <limits>
 #include <utility>
 
+#include "base/bind.h"
 #include "base/command_line.h"
+#include "base/containers/flat_map.h"
+#include "base/files/file_path.h"
 #include "base/files/file_util.h"
+#include "base/path_service.h"
+#include "chrome/common/chrome_paths.h"
 #include "base/files/important_file_writer.h"
 #include "base/guid.h"
 #include "base/logging.h"
@@ -24,22 +29,28 @@
 #include "bat/ads/ads.h"
 #include "bat/ads/ads_history.h"
 #include "bat/ads/ad_notification_info.h"
+#include "bat/ads/mojom.h"
 #include "bat/ads/resources/grit/bat_ads_resources.h"
+#include "bat/ads/statement_info.h"
+#include "brave/browser/profiles/profile_util.h"
+#include "brave/common/brave_channel_info.h"
 #include "brave/components/brave_ads/browser/ad_notification.h"
 #include "brave/components/brave_ads/browser/ads_notification_handler.h"
-#include "brave/components/brave_ads/browser/bundle_state_database.h"
+#include "brave/components/brave_ads/browser/ads_p2a.h"
 #include "brave/components/brave_ads/common/pref_names.h"
 #include "brave/components/brave_ads/common/switches.h"
 #include "brave/components/brave_rewards/browser/rewards_notification_service.h"
 #include "brave/components/brave_rewards/browser/rewards_p3a.h"
 #include "brave/components/brave_rewards/browser/rewards_service.h"
 #include "brave/components/l10n/browser/locale_helper.h"
+#include "brave/components/l10n/common/locale_util.h"
 #include "brave/browser/brave_rewards/rewards_service_factory.h"
 #include "brave/components/brave_rewards/common/pref_names.h"
 #include "brave/components/services/bat_ads/public/cpp/ads_client_mojo_bridge.h"
 #include "brave/components/services/bat_ads/public/interfaces/bat_ads.mojom.h"
 #include "brave/components/brave_ads/browser/notification_helper.h"
 #include "chrome/browser/browser_process.h"
+#include "brave/browser/brave_browser_process_impl.h"
 #include "chrome/browser/notifications/notification_display_service.h"
 #include "chrome/browser/profiles/profile_manager.h"
 #include "chrome/browser/profiles/profile.h"
@@ -90,8 +101,7 @@ const unsigned int kRetriesCountOnNetworkChange = 1;
 namespace {
 
 static std::map<std::string, int> g_schema_resource_ids = {
-  {ads::_catalog_schema_resource_name, IDR_ADS_CATALOG_SCHEMA},
-  {ads::_bundle_schema_resource_name, IDR_ADS_BUNDLE_SCHEMA},
+  {ads::_catalog_schema_resource_id, IDR_ADS_CATALOG_SCHEMA}
 };
 
 int GetSchemaResourceId(
@@ -105,43 +115,19 @@ int GetSchemaResourceId(
   return 0;
 }
 
-static std::map<std::string, int> g_user_model_resource_ids = {
-  {"en", IDR_ADS_USER_MODEL_EN},
-  {"de", IDR_ADS_USER_MODEL_DE},
-  {"fr", IDR_ADS_USER_MODEL_FR},
-};
-
-int GetUserModelResourceId(
-    const std::string& locale) {
-  if (g_user_model_resource_ids.find(locale) !=
-      g_user_model_resource_ids.end()) {
-    return g_user_model_resource_ids[locale];
-  }
-
-  NOTREACHED();
-
-  return 0;
-}
-
 std::string URLMethodToRequestType(
-    ads::URLRequestMethod method) {
+    ads::UrlRequestMethod method) {
   switch (method) {
-    case ads::URLRequestMethod::GET: {
+    case ads::UrlRequestMethod::GET: {
       return "GET";
     }
 
-    case ads::URLRequestMethod::POST: {
+    case ads::UrlRequestMethod::POST: {
       return "POST";
     }
 
-    case ads::URLRequestMethod::PUT: {
+    case ads::UrlRequestMethod::PUT: {
       return "PUT";
-    }
-
-    default: {
-      NOTREACHED();
-
-      return "GET";
     }
   }
 }
@@ -177,32 +163,6 @@ bool EnsureBaseDirectoryExistsOnFileTaskRunner(
   return base::CreateDirectory(path);
 }
 
-ads::CreativeAdNotificationList GetCreativeAdNotificationsOnFileTaskRunner(
-    const std::vector<std::string>& categories,
-    BundleStateDatabase* backend) {
-  ads::CreativeAdNotificationList ads;
-
-  if (!backend) {
-    return ads;
-  }
-
-  backend->GetCreativeAdNotifications(categories, &ads);
-  return ads;
-}
-
-ads::AdConversionList GetAdConversionsOnFileTaskRunner(
-    BundleStateDatabase* backend) {
-  ads::AdConversionList ad_conversions;
-
-  if (!backend) {
-    return ad_conversions;
-  }
-
-  backend->GetAdConversions(&ad_conversions);
-
-  return ad_conversions;
-}
-
 bool ResetOnFileTaskRunner(const base::FilePath& path) {
   bool recursive;
 
@@ -214,15 +174,6 @@ bool ResetOnFileTaskRunner(const base::FilePath& path) {
   }
 
   return base::DeleteFile(path, recursive);
-}
-
-bool SaveBundleStateOnFileTaskRunner(
-    std::unique_ptr<ads::BundleState> bundle_state,
-    BundleStateDatabase* backend) {
-  if (backend && backend->SaveBundleState(*bundle_state))
-    return true;
-
-  return false;
 }
 
 net::NetworkTrafficAnnotationTag GetNetworkTrafficAnnotationTag() {
@@ -259,8 +210,6 @@ AdsServiceImpl::AdsServiceImpl(Profile* profile) :
             base::TaskShutdownBehavior::BLOCK_SHUTDOWN})),
     base_path_(profile_->GetPath().AppendASCII("ads_service")),
     last_idle_state_(ui::IdleState::IDLE_STATE_ACTIVE),
-    bundle_state_backend_(new BundleStateDatabase(
-        base_path_.AppendASCII("bundle_state"))),
     display_service_(NotificationDisplayService::GetForProfile(profile_)),
     rewards_service_(brave_rewards::RewardsServiceFactory::GetForProfile(
         profile_)),
@@ -269,27 +218,21 @@ AdsServiceImpl::AdsServiceImpl(Profile* profile) :
 
   MigratePrefs();
 
-  profile_pref_change_registrar_.Init(profile_->GetPrefs());
-
-  profile_pref_change_registrar_.Add(prefs::kEnabled,
-      base::Bind(&AdsServiceImpl::OnPrefsChanged, base::Unretained(this)));
-
-  profile_pref_change_registrar_.Add(brave_rewards::prefs::kBraveRewardsEnabled,
-      base::Bind(&AdsServiceImpl::OnPrefsChanged, base::Unretained(this)));
-
-  profile_pref_change_registrar_.Add(prefs::kIdleThreshold,
-      base::Bind(&AdsServiceImpl::OnPrefsChanged, base::Unretained(this)));
-
-#if !defined(OS_ANDROID)
-  // TODO(tmancey): Refactor on-boarding to be platform agnostic
-  MaybeShowOnboarding();
-#endif
-
-  MaybeStart(false);
+  MaybeInitialize();
 }
 
 AdsServiceImpl::~AdsServiceImpl() {
-  file_task_runner_->DeleteSoon(FROM_HERE, bundle_state_backend_.release());
+  file_task_runner_->DeleteSoon(FROM_HERE, database_.release());
+  g_brave_browser_process->user_model_file_service()->RemoveObserver(this);
+}
+
+void AdsServiceImpl::OnUserModelUpdated(
+    const std::string& id) {
+  if (!connected()) {
+    return;
+  }
+
+  bat_ads_->OnUserModelUpdated(id);
 }
 
 bool AdsServiceImpl::IsSupportedLocale() const {
@@ -303,16 +246,17 @@ bool AdsServiceImpl::IsNewlySupportedLocale() {
   }
 
   const int schema_version =
-      GetIntegerPref(prefs::kSupportedRegionsSchemaVersion);
-  if (schema_version != prefs::kSupportedRegionsSchemaVersionNumber) {
-    SetIntegerPref(prefs::kSupportedRegionsLastSchemaVersion, schema_version);
+      GetIntegerPref(prefs::kSupportedCountryCodesSchemaVersion);
+  if (schema_version != prefs::kSupportedCountryCodesSchemaVersionNumber) {
+    SetIntegerPref(prefs::kSupportedCountryCodesLastSchemaVersion,
+        schema_version);
 
-    SetIntegerPref(prefs::kSupportedRegionsSchemaVersion,
-        prefs::kSupportedRegionsSchemaVersionNumber);
+    SetIntegerPref(prefs::kSupportedCountryCodesSchemaVersion,
+        prefs::kSupportedCountryCodesSchemaVersionNumber);
   }
 
   const int last_schema_version =
-      GetIntegerPref(prefs::kSupportedRegionsLastSchemaVersion);
+      GetIntegerPref(prefs::kSupportedCountryCodesLastSchemaVersion);
 
   const std::string locale = GetLocale();
   return ads::IsNewlySupportedLocale(locale, last_schema_version);
@@ -334,13 +278,33 @@ void AdsServiceImpl::SetAdsPerHour(
   SetUint64Pref(prefs::kAdsPerHour, ads_per_hour);
 }
 
-void AdsServiceImpl::SetConfirmationsIsReady(
-    const bool is_ready) {
+void AdsServiceImpl::SetAllowAdsSubdivisionTargeting(
+    const bool should_allow) {
+  SetBooleanPref(prefs::kShouldAllowAdsSubdivisionTargeting, should_allow);
+}
+
+void AdsServiceImpl::SetAdsSubdivisionTargetingCode(
+    const std::string& subdivision_targeting_code) {
+  const auto last_subdivision_targeting_code = GetAdsSubdivisionTargetingCode();
+
+  SetStringPref(prefs::kAdsSubdivisionTargetingCode,
+      subdivision_targeting_code);
+
+  if (last_subdivision_targeting_code == subdivision_targeting_code) {
+    return;
+  }
+
   if (!connected()) {
     return;
   }
 
-  bat_ads_->SetConfirmationsIsReady(is_ready);
+  bat_ads_->OnAdsSubdivisionTargetingCodeHasChanged();
+}
+
+void AdsServiceImpl::SetAutomaticallyDetectedAdsSubdivisionTargetingCode(
+    const std::string& subdivision_targeting_code) {
+  SetStringPref(prefs::kAutomaticallyDetectedAdsSubdivisionTargetingCode,
+      subdivision_targeting_code);
 }
 
 void AdsServiceImpl::ChangeLocale(
@@ -349,17 +313,21 @@ void AdsServiceImpl::ChangeLocale(
     return;
   }
 
+  RegisterUserModelComponentsForLocale(locale);
+
   bat_ads_->ChangeLocale(locale);
 }
 
 void AdsServiceImpl::OnPageLoaded(
-    const std::string& url,
+    const SessionID& tab_id,
+    const GURL& original_url,
+    const GURL& url,
     const std::string& content) {
   if (!connected()) {
     return;
   }
 
-  bat_ads_->OnPageLoaded(url, content);
+  bat_ads_->OnPageLoaded(tab_id.id(), original_url.spec(), url.spec(), content);
 }
 
 void AdsServiceImpl::OnMediaStart(
@@ -383,13 +351,17 @@ void AdsServiceImpl::OnMediaStop(
 void AdsServiceImpl::OnTabUpdated(
     const SessionID& tab_id,
     const GURL& url,
-    const bool is_active) {
+    const bool is_active,
+    const bool is_browser_active) {
   if (!connected()) {
     return;
   }
 
+  const bool is_incognito = profile_->IsOffTheRecord() ||
+      brave::IsTorProfile(profile_);
+
   bat_ads_->OnTabUpdated(tab_id.id(), url.spec(), is_active,
-      profile_->IsOffTheRecord());
+      is_browser_active, is_incognito);
 }
 
 void AdsServiceImpl::OnTabClosed(
@@ -399,6 +371,28 @@ void AdsServiceImpl::OnTabClosed(
   }
 
   bat_ads_->OnTabClosed(tab_id.id());
+}
+
+void AdsServiceImpl::OnWalletUpdated() {
+  if (!connected()) {
+    return;
+  }
+
+  const std::string payment_id =
+      profile_->GetPrefs()->GetString(brave_rewards::prefs::kStatePaymentId);
+  const std::string recovery_seed_base64 =
+      profile_->GetPrefs()->GetString(brave_rewards::prefs::kStateRecoverySeed);
+
+  bat_ads_->OnWalletUpdated(payment_id, recovery_seed_base64);
+}
+
+void AdsServiceImpl::UpdateAdRewards(
+      const bool should_reconcile) {
+  if (!connected()) {
+    return;
+  }
+
+  bat_ads_->UpdateAdRewards(should_reconcile);
 }
 
 void AdsServiceImpl::GetAdsHistory(
@@ -414,11 +408,26 @@ void AdsServiceImpl::GetAdsHistory(
           std::move(callback)));
 }
 
+void AdsServiceImpl::GetTransactionHistory(
+    GetTransactionHistoryCallback callback) {
+  if (!connected()) {
+    return;
+  }
+
+  bat_ads_->GetTransactionHistory(
+      base::BindOnce(&AdsServiceImpl::OnGetTransactionHistory,
+          AsWeakPtr(), std::move(callback)));
+}
+
 void AdsServiceImpl::ToggleAdThumbUp(
     const std::string& creative_instance_id,
     const std::string& creative_set_id,
     const int action,
     OnToggleAdThumbUpCallback callback) {
+  if (!connected()) {
+    return;
+  }
+
   bat_ads_->ToggleAdThumbUp(creative_instance_id, creative_set_id, action,
       base::BindOnce(&AdsServiceImpl::OnToggleAdThumbUp, AsWeakPtr(),
           std::move(callback)));
@@ -429,6 +438,10 @@ void AdsServiceImpl::ToggleAdThumbDown(
     const std::string& creative_set_id,
     const int action,
     OnToggleAdThumbDownCallback callback) {
+  if (!connected()) {
+    return;
+  }
+
   bat_ads_->ToggleAdThumbDown(creative_instance_id, creative_set_id, action,
       base::BindOnce(&AdsServiceImpl::OnToggleAdThumbDown, AsWeakPtr(),
           std::move(callback)));
@@ -438,6 +451,10 @@ void AdsServiceImpl::ToggleAdOptInAction(
     const std::string& category,
     const int action,
     OnToggleAdOptInActionCallback callback) {
+  if (!connected()) {
+    return;
+  }
+
   bat_ads_->ToggleAdOptInAction(category, action,
       base::BindOnce(&AdsServiceImpl::OnToggleAdOptInAction, AsWeakPtr(),
           std::move(callback)));
@@ -447,6 +464,10 @@ void AdsServiceImpl::ToggleAdOptOutAction(
     const std::string& category,
     const int action,
     OnToggleAdOptOutActionCallback callback) {
+  if (!connected()) {
+    return;
+  }
+
   bat_ads_->ToggleAdOptOutAction(category, action,
       base::BindOnce(&AdsServiceImpl::OnToggleAdOptOutAction, AsWeakPtr(),
           std::move(callback)));
@@ -457,6 +478,10 @@ void AdsServiceImpl::ToggleSaveAd(
     const std::string& creative_set_id,
     const bool saved,
     OnToggleSaveAdCallback callback) {
+  if (!connected()) {
+    return;
+  }
+
   bat_ads_->ToggleSaveAd(creative_instance_id, creative_set_id, saved,
       base::BindOnce(&AdsServiceImpl::OnToggleSaveAd, AsWeakPtr(),
           std::move(callback)));
@@ -467,6 +492,10 @@ void AdsServiceImpl::ToggleFlagAd(
     const std::string& creative_set_id,
     const bool flagged,
     OnToggleFlagAdCallback callback) {
+  if (!connected()) {
+    return;
+  }
+
   bat_ads_->ToggleFlagAd(creative_instance_id, creative_set_id, flagged,
       base::BindOnce(&AdsServiceImpl::OnToggleFlagAd, AsWeakPtr(),
           std::move(callback)));
@@ -493,13 +522,27 @@ uint64_t AdsServiceImpl::GetAdsPerDay() const {
   return GetUint64Pref(prefs::kAdsPerDay);
 }
 
+bool AdsServiceImpl::ShouldAllowAdsSubdivisionTargeting() const {
+  return GetBooleanPref(prefs::kShouldAllowAdsSubdivisionTargeting);
+}
+
+std::string AdsServiceImpl::GetAdsSubdivisionTargetingCode() const {
+  return GetStringPref(prefs::kAdsSubdivisionTargetingCode);
+}
+
+std::string AdsServiceImpl::
+GetAutomaticallyDetectedAdsSubdivisionTargetingCode() const {
+  return GetStringPref(
+      prefs::kAutomaticallyDetectedAdsSubdivisionTargetingCode);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 void AdsServiceImpl::Shutdown() {
   BackgroundHelper::GetInstance()->RemoveObserver(this);
 
-  for (auto* const loader : url_loaders_) {
-    delete loader;
+  for (auto* const url_loader : url_loaders_) {
+    delete url_loader;
   }
   url_loaders_.clear();
 
@@ -514,33 +557,125 @@ void AdsServiceImpl::Shutdown() {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+bool MigrateConfirmationsStateOnFileTaskRunner(
+    const base::FilePath& path) {
+  const base::FilePath rewards_service_base_path =
+      path.AppendASCII("rewards_service");
+
+  const base::FilePath legacy_confirmations_state_path =
+      rewards_service_base_path.AppendASCII("confirmations.json");
+
+  if (base::PathExists(legacy_confirmations_state_path)) {
+    base::FilePath confirmations_state_path =
+        path.AppendASCII("ads_service").AppendASCII("confirmations.json");
+
+    VLOG(1) << "Migrating " << legacy_confirmations_state_path.value()
+        << " to " << confirmations_state_path.value();
+
+    if (!base::Move(legacy_confirmations_state_path,
+        confirmations_state_path)) {
+      return false;
+    }
+  }
+
+  if (base::PathExists(rewards_service_base_path)) {
+    VLOG(1) << "Deleting " << rewards_service_base_path.value();
+
+    if (!base::DeleteFile(rewards_service_base_path, /* recursive */ false)) {
+      VLOG(0) << "Failed to delete " << rewards_service_base_path.value();
+    }
+  }
+
+  return true;
+}
+
+void AdsServiceImpl::MaybeInitialize() {
+  const base::FilePath path = profile_->GetPath();
+
+  base::PostTaskAndReplyWithResult(
+      file_task_runner_.get(), FROM_HERE,
+      base::BindOnce(&MigrateConfirmationsStateOnFileTaskRunner, path),
+      base::BindOnce(&AdsServiceImpl::OnMigrateConfirmationsState,
+          AsWeakPtr()));
+}
+
+void AdsServiceImpl::OnMigrateConfirmationsState(
+    const bool success) {
+  if (!success) {
+    VLOG(0) << "Failed to migrate confirmations state";
+    return;
+  }
+
+  VLOG(1) << "Successfully migrated confirmations state";
+
+  Initialize();
+}
+
+void AdsServiceImpl::Initialize() {
+  profile_pref_change_registrar_.Init(profile_->GetPrefs());
+
+  profile_pref_change_registrar_.Add(prefs::kEnabled,
+      base::Bind(&AdsServiceImpl::OnPrefsChanged, base::Unretained(this)));
+
+  profile_pref_change_registrar_.Add(brave_rewards::prefs::kBraveRewardsEnabled,
+      base::Bind(&AdsServiceImpl::OnPrefsChanged, base::Unretained(this)));
+
+  profile_pref_change_registrar_.Add(prefs::kIdleThreshold,
+      base::Bind(&AdsServiceImpl::OnPrefsChanged, base::Unretained(this)));
+
+  profile_pref_change_registrar_.Add(brave_rewards::prefs::kStatePaymentId,
+      base::Bind(&AdsServiceImpl::OnPrefsChanged, base::Unretained(this)));
+
+  profile_pref_change_registrar_.Add(brave_rewards::prefs::kStateRecoverySeed,
+      base::Bind(&AdsServiceImpl::OnPrefsChanged, base::Unretained(this)));
+
+#if !defined(OS_ANDROID)
+  // TODO(tmancey): Refactor on-boarding to be platform agnostic
+  MaybeShowOnboarding();
+#endif
+
+  g_brave_browser_process->user_model_file_service()->AddObserver(this);
+
+  MaybeStart(false);
+}
+
 void AdsServiceImpl::OnCreate() {
   if (!connected()) {
     return;
   }
 
-  bat_ads_->Initialize(base::BindOnce(&AdsServiceImpl::OnInitialize,
-      AsWeakPtr()));
+  auto callback = base::BindOnce(&AdsServiceImpl::OnInitialize, AsWeakPtr());
+  bat_ads_->Initialize(base::BindOnce(std::move(callback)));
 }
 
 void AdsServiceImpl::OnInitialize(
     const int32_t result) {
   if (result != ads::Result::SUCCESS) {
     VLOG(0) << "Failed to initialize ads";
+
     is_initialized_ = false;
-  } else {
-    is_initialized_ = true;
-
-    SetAdsServiceForNotificationHandler();
-
-    MaybeViewAdNotification();
-
-    StartCheckIdleStateTimer();
+    return;
   }
+
+  is_initialized_ = true;
+
+  SetAdsServiceForNotificationHandler();
+
+  MaybeViewAdNotification();
+
+  StartCheckIdleStateTimer();
 }
 
 void AdsServiceImpl::ShutdownBatAds() {
+  if (!connected()) {
+    return;
+  }
+
   VLOG(1) << "Shutting down ads";
+
+  const bool success = file_task_runner_->DeleteSoon(FROM_HERE,
+      database_.release());
+  VLOG_IF(1, !success) << "Failed to release database";
 
   bat_ads_->Shutdown(base::BindOnce(&AdsServiceImpl::OnShutdownBatAds,
       AsWeakPtr()));
@@ -579,6 +714,7 @@ bool AdsServiceImpl::StartService() {
   }
 
   SetEnvironment();
+  SetBuildChannel();
   UpdateIsDebugFlag();
 
   return true;
@@ -592,6 +728,11 @@ void AdsServiceImpl::MaybeStart(
     return;
   }
 
+  if (!IsEnabled()) {
+    Stop();
+    return;
+  }
+
   if (should_restart) {
     VLOG(1) << "Restarting ads service";
     Shutdown();
@@ -602,16 +743,12 @@ void AdsServiceImpl::MaybeStart(
     return;
   }
 
-  if (IsEnabled()) {
-    if (should_restart) {
-      base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(FROM_HERE,
-          base::BindOnce(&AdsServiceImpl::Start, AsWeakPtr()),
-          base::TimeDelta::FromSeconds(1));
-    } else {
-      Start();
-    }
+  if (should_restart) {
+    base::ThreadTaskRunnerHandle::Get()->PostDelayedTask(FROM_HERE,
+        base::BindOnce(&AdsServiceImpl::Start, AsWeakPtr()),
+        base::TimeDelta::FromSeconds(1));
   } else {
-    Stop();
+    Start();
   }
 }
 
@@ -620,18 +757,51 @@ void AdsServiceImpl::Start() {
 }
 
 void AdsServiceImpl::Stop() {
-  if (!connected()) {
-    return;
-  }
-
   ShutdownBatAds();
 }
 
-void AdsServiceImpl::ResetAllState() {
+void AdsServiceImpl::ResetState() {
+  VLOG(1) << "Resetting ads state";
+
+  profile_->GetPrefs()->ClearPrefsWithPrefixSilently("brave.brave_ads");
+
   base::PostTaskAndReplyWithResult(
       file_task_runner_.get(), FROM_HERE,
       base::BindOnce(&ResetOnFileTaskRunner, base_path_),
       base::BindOnce(&AdsServiceImpl::OnResetAllState, AsWeakPtr()));
+}
+
+void AdsServiceImpl::ResetAllState(
+    const bool should_shutdown) {
+  if (!should_shutdown || !connected()) {
+    ResetState();
+    return;
+  }
+
+  VLOG(1) << "Shutting down and resetting ads state";
+
+  const bool success = file_task_runner_->DeleteSoon(FROM_HERE,
+      database_.release());
+  VLOG_IF(1, !success) << "Failed to release database";
+
+  bat_ads_->Shutdown(base::BindOnce(&AdsServiceImpl::OnShutdownAndResetBatAds,
+      AsWeakPtr()));
+}
+
+void AdsServiceImpl::OnShutdownAndResetBatAds(
+    const int32_t result) {
+  DCHECK(is_initialized_);
+
+  if (result != ads::Result::SUCCESS) {
+    VLOG(0) << "Failed to shutdown and reset ads state";
+    return;
+  }
+
+  Shutdown();
+
+  VLOG(1) << "Successfully shutdown ads";
+
+  ResetState();
 }
 
 void AdsServiceImpl::OnResetAllState(
@@ -666,6 +836,14 @@ void AdsServiceImpl::OnEnsureBaseDirectoryExists(
       bat_ads_.BindNewEndpointAndPassReceiver(),
       base::BindOnce(&AdsServiceImpl::OnCreate, AsWeakPtr()));
 
+  database_ = std::make_unique<ads::Database>(
+      base_path_.AppendASCII("database.sqlite"));
+
+  OnWalletUpdated();
+
+  const std::string locale = GetLocale();
+  RegisterUserModelComponentsForLocale(locale);
+
   MaybeShowMyFirstAdNotification();
 }
 
@@ -695,6 +873,15 @@ void AdsServiceImpl::SetEnvironment() {
 #endif
 
   bat_ads_service_->SetEnvironment(environment, base::NullCallback());
+}
+
+void AdsServiceImpl::SetBuildChannel() {
+  ads::BuildChannelPtr build_channel = ads::BuildChannel::New();
+  build_channel->name = brave::GetChannelName();
+  build_channel->is_release = build_channel->name == "release" ? true : false;
+
+  bat_ads_service_->SetBuildChannel(std::move(build_channel),
+      base::NullCallback());
 }
 
 void AdsServiceImpl::UpdateIsDebugFlag() {
@@ -813,10 +1000,14 @@ void AdsServiceImpl::OnViewAdNotification(
   ads::AdNotificationInfo notification;
   notification.FromJson(json);
 
+  OpenNewTabWithUrl(notification.target_url);
+
+  if (!connected()) {
+    return;
+  }
+
   bat_ads_->OnAdNotificationEvent(notification.uuid,
       ads::AdNotificationEventType::kClicked);
-
-  OpenNewTabWithUrl(notification.target_url);
 }
 
 void AdsServiceImpl::RetryViewingAdNotification(
@@ -841,6 +1032,10 @@ void AdsServiceImpl::ClearAdsServiceForNotificationHandler() {
 
 void AdsServiceImpl::OpenNewTabWithUrl(
     const std::string& url) {
+  if (g_brave_browser_process->IsShuttingDown()) {
+    return;
+  }
+
   GURL gurl(url);
   if (!gurl.is_valid()) {
     VLOG(0) << "Failed to open new tab due to invalid URL: " << url;
@@ -881,25 +1076,51 @@ void AdsServiceImpl::NotificationTimedOut(
   OnClose(profile_, GURL(), uuid, false, base::OnceClosure());
 }
 
-void AdsServiceImpl::OnURLLoaderComplete(
-    network::SimpleURLLoader* loader,
-    ads::URLRequestCallback callback,
+void AdsServiceImpl::RegisterUserModelComponentsForLocale(
+    const std::string& locale) {
+  g_brave_browser_process->user_model_file_service()->
+      RegisterComponentsForLocale(locale);
+}
+
+void AdsServiceImpl::OnURLRequestStarted(
+    const GURL& final_url,
+    const network::mojom::URLResponseHead& response_head) {
+  VLOG(6) << "URL request started for " << final_url.PathForRequest();
+
+  if (response_head.headers->response_code() == -1) {
+    VLOG(6) << "Response headers are malformed!!";
+    return;
+  }
+}
+
+void AdsServiceImpl::OnURLRequestComplete(
+    network::SimpleURLLoader* url_loader,
+    ads::UrlRequestCallback callback,
     const std::unique_ptr<std::string> response_body) {
-  DCHECK(url_loaders_.find(loader) != url_loaders_.end());
-  url_loaders_.erase(loader);
+  DCHECK(url_loaders_.find(url_loader) != url_loaders_.end());
+  url_loaders_.erase(url_loader);
+
+  VLOG(6) << "URL request complete for "
+      << url_loader->GetFinalURL().PathForRequest();
 
   if (!connected()) {
     return;
   }
 
-  auto response_code = -1;
+  int response_code = -1;
 
-  std::map<std::string, std::string> headers;
+  base::flat_map<std::string, std::string> headers;
 
-  if (loader->ResponseInfo() && loader->ResponseInfo()->headers) {
-    response_code = loader->ResponseInfo()->headers->response_code();
+  if (!url_loader->ResponseInfo()) {
+    VLOG(6) << "ResponseInfo was never received";
+  } else if (!url_loader->ResponseInfo()->headers) {
+    VLOG(6) << "Failed to obtain headers from the network stack";
+  } else {
+    response_code = url_loader->ResponseInfo()->headers->response_code();
 
-    auto headers_list = loader->ResponseInfo()->headers;
+    scoped_refptr<net::HttpResponseHeaders> headers_list =
+        url_loader->ResponseInfo()->headers;
+
     if (headers_list) {
       size_t iter = 0;
       std::string key;
@@ -912,37 +1133,17 @@ void AdsServiceImpl::OnURLLoaderComplete(
     }
   }
 
-  callback(response_code, response_body ? *response_body : "", headers);
+  ads::UrlResponse url_response;
+  url_response.url = url_loader->GetFinalURL().spec();
+  url_response.status_code = response_code;
+  url_response.body = response_body ? *response_body : "";
+  url_response.headers = headers;
+
+  callback(url_response);
 }
 
 bool AdsServiceImpl::CanShowBackgroundNotifications() const {
   return NotificationHelper::GetInstance()->CanShowBackgroundNotifications();
-}
-
-void AdsServiceImpl::OnGetCreativeAdNotifications(
-    const ads::GetCreativeAdNotificationsCallback& callback,
-    const std::vector<std::string>& categories,
-    const ads::CreativeAdNotificationList& ads) {
-  if (!connected()) {
-    return;
-  }
-
-  auto result = ads.empty() ? ads::Result::FAILED : ads::Result::SUCCESS;
-
-  callback(result, categories, ads);
-}
-
-void AdsServiceImpl::OnGetAdConversions(
-    const ads::GetAdConversionsCallback& callback,
-    const ads::AdConversionList& ad_conversions) {
-  if (!connected()) {
-    return;
-  }
-
-  const auto result = ad_conversions.empty() ?
-      ads::Result::FAILED : ads::Result::SUCCESS;
-
-  callback(result, ad_conversions);
 }
 
 void AdsServiceImpl::OnGetAdsHistory(
@@ -960,7 +1161,10 @@ void AdsServiceImpl::OnGetAdsHistory(
         base::Value(entry.ad_content.creative_instance_id));
     ad_content_dictionary.SetKey("creativeSetId",
         base::Value(entry.ad_content.creative_set_id));
-    ad_content_dictionary.SetKey("brand", base::Value(entry.ad_content.brand));
+    ad_content_dictionary.SetKey("campaignId",
+        base::Value(entry.ad_content.campaign_id));
+    ad_content_dictionary.SetKey("brand",
+        base::Value(entry.ad_content.brand));
     ad_content_dictionary.SetKey("brandInfo",
         base::Value(entry.ad_content.brand_info));
     ad_content_dictionary.SetKey("brandLogo",
@@ -1007,6 +1211,17 @@ void AdsServiceImpl::OnGetAdsHistory(
   }
 
   std::move(callback).Run(list);
+}
+
+void AdsServiceImpl::OnGetTransactionHistory(
+    GetTransactionHistoryCallback callback,
+    const std::string& json) {
+  ads::StatementInfo statement;
+  statement.FromJson(json);
+
+  std::move(callback).Run(statement.estimated_pending_rewards,
+      statement.next_payment_date_in_seconds,
+          statement.ad_notifications_received_this_month);
 }
 
 void AdsServiceImpl::OnRemoveAllHistory(
@@ -1061,16 +1276,6 @@ void AdsServiceImpl::OnToggleFlagAd(
   std::move(callback).Run(creative_instance_id, flagged);
 }
 
-void AdsServiceImpl::OnSaveBundleState(
-    const ads::ResultCallback& callback,
-    const bool success) {
-  if (!connected()) {
-    return;
-  }
-
-  callback(success ? ads::Result::SUCCESS : ads::Result::FAILED);
-}
-
 void AdsServiceImpl::OnLoaded(
     const ads::LoadCallback& callback,
     const std::string& value) {
@@ -1085,16 +1290,6 @@ void AdsServiceImpl::OnLoaded(
 }
 
 void AdsServiceImpl::OnSaved(
-    const ads::ResultCallback& callback,
-    const bool success) {
-  if (!connected()) {
-    return;
-  }
-
-  callback(success ? ads::Result::SUCCESS : ads::Result::FAILED);
-}
-
-void AdsServiceImpl::OnReset(
     const ads::ResultCallback& callback,
     const bool success) {
   if (!connected()) {
@@ -1213,15 +1408,15 @@ void AdsServiceImpl::MigratePrefsVersion1To2() {
 
 void AdsServiceImpl::MigratePrefsVersion2To3() {
   const auto locale = GetLocale();
-  const auto region = ads::GetRegionCode(locale);
+  const auto country_code = brave_l10n::GetCountryCode(locale);
 
   // Disable ads if upgrading from a pre brave ads build due to a bug where ads
   // were always enabled
   DisableAdsIfUpgradingFromPreBraveAdsBuild();
 
-  // Disable ads for unsupported legacy regions due to a bug where ads were
-  // enabled even if the users region was not supported
-  const std::vector<std::string> legacy_regions = {
+  // Disable ads for unsupported legacy country_codes due to a bug where ads
+  // were enabled even if the users country code was not supported
+  const std::vector<std::string> legacy_country_codes = {
     "US",  // United States of America
     "CA",  // Canada
     "GB",  // United Kingdom (Great Britain and Northern Ireland)
@@ -1229,25 +1424,25 @@ void AdsServiceImpl::MigratePrefsVersion2To3() {
     "FR"   // France
   };
 
-  DisableAdsForUnsupportedRegions(region, legacy_regions);
+  DisableAdsForUnsupportedCountryCodes(country_code, legacy_country_codes);
 
-  // On-board users for newly supported regions
-  const std::vector<std::string> new_regions = {
+  // On-board users for newly supported country_codes
+  const std::vector<std::string> new_country_codes = {
     "AU",  // Australia
     "NZ",  // New Zealand
     "IE"   // Ireland
   };
 
-  MayBeShowOnboardingForSupportedRegion(region, new_regions);
+  MayBeShowOnboardingForSupportedCountryCode(country_code, new_country_codes);
 }
 
 void AdsServiceImpl::MigratePrefsVersion3To4() {
   const auto locale = GetLocale();
-  const auto region = ads::GetRegionCode(locale);
+  const auto country_code = brave_l10n::GetCountryCode(locale);
 
-  // Disable ads for unsupported legacy regions due to a bug where ads were
-  // enabled even if the users region was not supported
-  const std::vector<std::string> legacy_regions = {
+  // Disable ads for unsupported legacy country codes due to a bug where ads
+  // were enabled even if the users country code was not supported
+  const std::vector<std::string> legacy_country_codes = {
     "US",  // United States of America
     "CA",  // Canada
     "GB",  // United Kingdom (Great Britain and Northern Ireland)
@@ -1258,10 +1453,10 @@ void AdsServiceImpl::MigratePrefsVersion3To4() {
     "IE"   // Ireland
   };
 
-  DisableAdsForUnsupportedRegions(region, legacy_regions);
+  DisableAdsForUnsupportedCountryCodes(country_code, legacy_country_codes);
 
-  // On-board users for newly supported regions
-  const std::vector<std::string> new_regions = {
+  // On-board users for newly supported country codes
+  const std::vector<std::string> new_country_codes = {
     "AR",  // Argentina
     "AT",  // Austria
     "BR",  // Brazil
@@ -1286,16 +1481,16 @@ void AdsServiceImpl::MigratePrefsVersion3To4() {
     "ZA"   // South Africa
   };
 
-  MayBeShowOnboardingForSupportedRegion(region, new_regions);
+  MayBeShowOnboardingForSupportedCountryCode(country_code, new_country_codes);
 }
 
 void AdsServiceImpl::MigratePrefsVersion4To5() {
   const auto locale = GetLocale();
-  const auto region = ads::GetRegionCode(locale);
+  const auto country_code = brave_l10n::GetCountryCode(locale);
 
-  // Disable ads for unsupported legacy regions due to a bug where ads were
-  // enabled even if the users region was not supported
-  const std::vector<std::string> legacy_regions = {
+  // Disable ads for unsupported legacy country codes due to a bug where ads
+  // were enabled even if the users country code was not supported
+  const std::vector<std::string> legacy_country_codes = {
     "US",  // United States of America
     "CA",  // Canada
     "GB",  // United Kingdom (Great Britain and Northern Ireland)
@@ -1328,14 +1523,14 @@ void AdsServiceImpl::MigratePrefsVersion4To5() {
     "ZA"   // South Africa
   };
 
-  DisableAdsForUnsupportedRegions(region, legacy_regions);
+  DisableAdsForUnsupportedCountryCodes(country_code, legacy_country_codes);
 
-  // On-board users for newly supported regions
-  const std::vector<std::string> new_regions = {
+  // On-board users for newly supported country codes
+  const std::vector<std::string> new_country_codes = {
     "KY"   // Cayman Islands
   };
 
-  MayBeShowOnboardingForSupportedRegion(region, new_regions);
+  MayBeShowOnboardingForSupportedCountryCode(country_code, new_country_codes);
 }
 
 void AdsServiceImpl::MigratePrefsVersion5To6() {
@@ -1346,13 +1541,13 @@ void AdsServiceImpl::MigratePrefsVersion5To6() {
 }
 
 void AdsServiceImpl::MigratePrefsVersion6To7() {
-  // Disable ads for newly supported regions due to a bug where ads were enabled
-  // even if the users region was not supported
+  // Disable ads for newly supported country codes due to a bug where ads were
+  // enabled even if the users country code was not supported
 
   const auto locale = GetLocale();
-  const auto region = ads::GetRegionCode(locale);
+  const auto country_code = brave_l10n::GetCountryCode(locale);
 
-  const std::vector<std::string> legacy_regions = {
+  const std::vector<std::string> legacy_country_codes = {
     "US",  // United States of America
     "CA",  // Canada
     "GB",  // United Kingdom (Great Britain and Northern Ireland)
@@ -1386,20 +1581,20 @@ void AdsServiceImpl::MigratePrefsVersion6To7() {
     "KY"   // Cayman Islands
   };
 
-  const bool is_a_legacy_region = std::find(legacy_regions.begin(),
-      legacy_regions.end(), region) != legacy_regions.end();
+  const bool is_a_legacy_country_code = std::find(legacy_country_codes.begin(),
+      legacy_country_codes.end(), country_code) != legacy_country_codes.end();
 
-  if (is_a_legacy_region) {
-    // Do not disable Brave Ads for legacy regions introduced before version
-    // 1.3.x
+  if (is_a_legacy_country_code) {
+    // Do not disable Brave Ads for legacy country codes introduced before
+    // version 1.3.x
     return;
   }
 
   const int last_schema_version =
-      GetIntegerPref(prefs::kSupportedRegionsLastSchemaVersion);
+      GetIntegerPref(prefs::kSupportedCountryCodesLastSchemaVersion);
 
   if (last_schema_version >= 4) {
-    // Do not disable Brave Ads if |prefs::kSupportedRegionsLastSchemaVersion|
+    // Do not disable Brave Ads if |kSupportedCountryCodesLastSchemaVersion|
     // is newer than or equal to schema version 4. This can occur if a user is
     // upgrading from an older version of 1.3.x or above
     return;
@@ -1443,26 +1638,26 @@ void AdsServiceImpl::DisableAdsIfUpgradingFromPreBraveAdsBuild() {
   SetEnabled(false);
 }
 
-void AdsServiceImpl::DisableAdsForUnsupportedRegions(
-    const std::string& region,
-    const std::vector<std::string>& supported_regions) {
-  if (std::find(supported_regions.begin(), supported_regions.end(), region)
-      != supported_regions.end()) {
+void AdsServiceImpl::DisableAdsForUnsupportedCountryCodes(
+    const std::string& country_code,
+    const std::vector<std::string>& supported_country_codes) {
+  if (std::find(supported_country_codes.begin(), supported_country_codes.end(),
+      country_code) != supported_country_codes.end()) {
     return;
   }
 
   SetEnabled(false);
 }
 
-void AdsServiceImpl::MayBeShowOnboardingForSupportedRegion(
-    const std::string& region,
-    const std::vector<std::string>& supported_regions) {
+void AdsServiceImpl::MayBeShowOnboardingForSupportedCountryCode(
+    const std::string& country_code,
+    const std::vector<std::string>& supported_country_codes) {
   if (IsEnabled()) {
     return;
   }
 
-  if (std::find(supported_regions.begin(), supported_regions.end(), region)
-      == supported_regions.end()) {
+  if (std::find(supported_country_codes.begin(), supported_country_codes.end(),
+      country_code) == supported_country_codes.end()) {
     return;
   }
 
@@ -1689,23 +1884,6 @@ std::string AdsServiceImpl::GetStringPref(
   return value;
 }
 
-void AdsServiceImpl::ResetTheWholeState(
-    const base::Callback<void(bool)>& callback) {
-  SetEnabled(false);
-  base::PostTaskAndReplyWithResult(
-      file_task_runner_.get(), FROM_HERE,
-      base::BindOnce(&ResetOnFileTaskRunner,
-                     base_path_),
-      base::BindOnce(&AdsServiceImpl::OnResetTheWholeState,
-                     AsWeakPtr(), std::move(callback)));
-}
-
-void AdsServiceImpl::OnResetTheWholeState(
-    base::Callback<void(bool)> callback,
-    bool success) {
-  callback.Run(success);
-}
-
 void AdsServiceImpl::SetStringPref(
     const std::string& path,
     const std::string& value) {
@@ -1778,6 +1956,10 @@ void AdsServiceImpl::OnPrefsChanged(
 
       MaybeStart(false);
     } else {
+      // Record "special value" to prevent sending this week's data to P2A
+      // server. Matches INT_MAX - 1 for |kSuspendedMetricValue| in
+      // |brave_p3a_service.cc|
+      brave_ads::EmitConfirmationsCountMetric(INT_MAX);
       Stop();
     }
 
@@ -1785,40 +1967,17 @@ void AdsServiceImpl::OnPrefsChanged(
     brave_rewards::UpdateAdsP3AOnPreferenceChange(profile_->GetPrefs(), pref);
   } else if (pref == prefs::kIdleThreshold) {
     StartCheckIdleStateTimer();
+  } else if (pref == brave_rewards::prefs::kStatePaymentId ||
+      pref == brave_rewards::prefs::kStateRecoverySeed) {
+    OnWalletUpdated();
   }
 }
 
 bool AdsServiceImpl::connected() {
-  return bat_ads_.is_bound();
+  return bat_ads_.is_bound() && !g_browser_process->IsShuttingDown();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
-void AdsServiceImpl::GetClientInfo(ads::ClientInfo* client_info) const {
-#if defined(OS_MACOSX)
-  client_info->platform = ads::ClientInfoPlatformType::MACOS;
-#elif defined(OS_WIN)
-  client_info->platform = ads::ClientInfoPlatformType::WINDOWS;
-#elif defined(OS_LINUX)
-  client_info->platform = ads::ClientInfoPlatformType::LINUX;
-#elif defined(OS_ANDROID)
-  client_info->platform = ads::ClientInfoPlatformType::ANDROID_OS;
-#else
-  NOTREACHED();
-  client_info->platform = ads::ClientInfoPlatformType::UNKNOWN;
-#endif
-}
-
-std::string AdsServiceImpl::GetLocale() const {
-  return brave_l10n::LocaleHelper::GetInstance()->GetLocale();
-}
-
-const std::string AdsServiceImpl::GetCountryCode() const {
-  const std::string locale = GetLocale();
-  const std::string country_code =
-      brave_l10n::LocaleHelper::GetInstance()->GetCountryCode(locale);
-  return country_code;
-}
 
 bool AdsServiceImpl::IsNetworkConnectionAvailable() const {
   return !net::NetworkChangeNotifier::IsOffline();
@@ -1829,22 +1988,16 @@ void AdsServiceImpl::SetIdleThreshold(const int threshold) {
 }
 
 bool AdsServiceImpl::IsForeground() const {
-  Profile* profile = ProfileManager::GetActiveUserProfile();
-  if (!profile_->IsSameProfile(profile)) {
+  Profile* profile = ProfileManager::GetLastUsedProfile();
+  if (profile_ != profile) {
     return false;
   }
 
   return BackgroundHelper::GetInstance()->IsForeground();
 }
 
-std::vector<std::string> AdsServiceImpl::GetUserModelLanguages() const {
-  std::vector<std::string> languages;
-
-  for (const auto& user_model_resource_id : g_user_model_resource_ids) {
-    languages.push_back(user_model_resource_id.first);
-  }
-
-  return languages;
+std::string AdsServiceImpl::GetLocale() const {
+  return brave_l10n::LocaleHelper::GetInstance()->GetLocale();
 }
 
 std::string AdsServiceImpl::LoadDataResourceAndDecompressIfNeeded(
@@ -1859,14 +2012,6 @@ std::string AdsServiceImpl::LoadDataResourceAndDecompressIfNeeded(
   }
 
   return data_resource;
-}
-
-void AdsServiceImpl::LoadUserModelForLanguage(
-    const std::string& language,
-    ads::LoadCallback callback) const {
-  const auto resource_id = GetUserModelResourceId(language);
-  const auto user_model = LoadDataResourceAndDecompressIfNeeded(resource_id);
-  callback(ads::Result::SUCCESS, user_model);
 }
 
 void AdsServiceImpl::ShowNotification(
@@ -1925,61 +2070,43 @@ void AdsServiceImpl::CloseNotification(
   display_service_->Close(NotificationHandler::Type::BRAVE_ADS, uuid);
 }
 
-void AdsServiceImpl::SetCatalogIssuers(
-    const std::unique_ptr<ads::IssuersInfo> info) {
-  rewards_service_->SetCatalogIssuers(info->ToJson());
-}
-
-void AdsServiceImpl::ConfirmAd(
-    const ads::AdInfo& info,
-    const ads::ConfirmationType confirmation_type) {
-  rewards_service_->ConfirmAd(info.ToJson(), confirmation_type);
-}
-
-void AdsServiceImpl::ConfirmAction(
-    const std::string& creative_instance_id,
-    const std::string& creative_set_id,
-    const ads::ConfirmationType confirmation_type) {
-  rewards_service_->ConfirmAction(creative_instance_id, creative_set_id,
-      confirmation_type);
-}
-
-void AdsServiceImpl::URLRequest(
-      const std::string& url,
-      const std::vector<std::string>& headers,
-      const std::string& content,
-      const std::string& content_type,
-      const ads::URLRequestMethod method,
-      ads::URLRequestCallback callback) {
-  auto request = std::make_unique<network::ResourceRequest>();
-  request->url = GURL(url);
-  request->method = URLMethodToRequestType(method);
-  request->credentials_mode = network::mojom::CredentialsMode::kOmit;
-  for (const auto& header : headers) {
-    request->headers.AddHeaderFromString(header);
+void AdsServiceImpl::UrlRequest(
+      ads::UrlRequestPtr url_request,
+      ads::UrlRequestCallback callback) {
+  auto resource_request = std::make_unique<network::ResourceRequest>();
+  resource_request->url = GURL(url_request->url);
+  resource_request->method = URLMethodToRequestType(url_request->method);
+  resource_request->credentials_mode = network::mojom::CredentialsMode::kOmit;
+  for (const auto& header : url_request->headers) {
+    resource_request->headers.AddHeaderFromString(header);
   }
 
-  auto* url_loader = network::SimpleURLLoader::Create(std::move(request),
-      GetNetworkTrafficAnnotationTag()).release();
+  network::SimpleURLLoader* url_loader =
+      network::SimpleURLLoader::Create(std::move(resource_request),
+          GetNetworkTrafficAnnotationTag()).release();
 
-  if (!content.empty()) {
-    url_loader->AttachStringForUpload(content, content_type);
+  if (!url_request->content.empty()) {
+    url_loader->AttachStringForUpload(url_request->content,
+        url_request->content_type);
   }
+
+  url_loader->SetOnResponseStartedCallback(base::BindOnce(
+      &AdsServiceImpl::OnURLRequestStarted, base::Unretained(this)));
 
   url_loader->SetRetryOptions(kRetriesCountOnNetworkChange,
       network::SimpleURLLoader::RetryMode::RETRY_ON_NETWORK_CHANGE);
 
+  url_loader->SetAllowHttpErrorResults(true);
+
   url_loaders_.insert(url_loader);
 
-  auto* default_storage_partition =
-      content::BrowserContext::GetDefaultStoragePartition(profile_);
-
-  auto* url_loader_factory =
-      default_storage_partition->GetURLLoaderFactoryForBrowserProcess().get();
+  scoped_refptr<network::SharedURLLoaderFactory> url_loader_factory =
+      content::BrowserContext::GetDefaultStoragePartition(profile_)
+          ->GetURLLoaderFactoryForBrowserProcess();
 
   url_loader->DownloadToStringOfUnboundedSizeUntilCrashAndDie(
-      url_loader_factory, base::BindOnce(&AdsServiceImpl::OnURLLoaderComplete,
-          base::Unretained(this), url_loader, callback));
+      url_loader_factory.get(), base::BindOnce(&AdsServiceImpl::
+          OnURLRequestComplete, base::Unretained(this), url_loader, callback));
 }
 
 void AdsServiceImpl::Save(
@@ -2000,60 +2127,76 @@ void AdsServiceImpl::Save(
   writer.WriteNow(std::make_unique<std::string>(value));
 }
 
+void AdsServiceImpl::LoadUserModelForId(
+    const std::string& id,
+    ads::LoadCallback callback) {
+  const base::Optional<base::FilePath> path =
+      g_brave_browser_process->user_model_file_service()->GetPathForId(id);
+
+  if (!path) {
+    callback(ads::Result::FAILED, "");
+    return;
+  }
+
+  VLOG(1) << "Loading user model from " << path.value();
+
+  base::PostTaskAndReplyWithResult(file_task_runner_.get(), FROM_HERE,
+      base::BindOnce(&LoadOnFileTaskRunner, path.value()),
+      base::BindOnce(&AdsServiceImpl::OnLoaded, AsWeakPtr(),
+          std::move(callback)));
+}
+
 void AdsServiceImpl::Load(
     const std::string& name,
     ads::LoadCallback callback) {
   base::PostTaskAndReplyWithResult(file_task_runner_.get(), FROM_HERE,
       base::BindOnce(&LoadOnFileTaskRunner, base_path_.AppendASCII(name)),
       base::BindOnce(&AdsServiceImpl::OnLoaded,
-                     AsWeakPtr(),
-                     std::move(callback)));
-}
-
-void AdsServiceImpl::Reset(
-    const std::string& name,
-    ads::ResultCallback callback) {
-  base::PostTaskAndReplyWithResult(file_task_runner_.get(), FROM_HERE,
-      base::BindOnce(&ResetOnFileTaskRunner, base_path_.AppendASCII(name)),
-      base::BindOnce(&AdsServiceImpl::OnReset,
           AsWeakPtr(), std::move(callback)));
 }
 
-std::string AdsServiceImpl::LoadJsonSchema(
-    const std::string& name) {
-  const auto resource_id = GetSchemaResourceId(name);
+std::string AdsServiceImpl::LoadResourceForId(
+    const std::string& id) {
+  const auto resource_id = GetSchemaResourceId(id);
   return LoadDataResourceAndDecompressIfNeeded(resource_id);
 }
 
-void AdsServiceImpl::SaveBundleState(
-    std::unique_ptr<ads::BundleState> bundle_state,
-    ads::ResultCallback callback) {
-  base::PostTaskAndReplyWithResult(file_task_runner_.get(), FROM_HERE,
-      base::BindOnce(&SaveBundleStateOnFileTaskRunner,
-                    base::Passed(std::move(bundle_state)),
-                    bundle_state_backend_.get()),
-      base::BindOnce(&AdsServiceImpl::OnSaveBundleState,
-                     AsWeakPtr(),
-                     callback));
+ads::DBCommandResponsePtr RunDBTransactionOnFileTaskRunner(
+    ads::DBTransactionPtr transaction,
+    ads::Database* database) {
+  DCHECK(database);
+
+  auto response = ads::DBCommandResponse::New();
+
+  if (!database) {
+    response->status = ads::DBCommandResponse::Status::RESPONSE_ERROR;
+  } else {
+    database->RunTransaction(std::move(transaction), response.get());
+  }
+
+  return response;
 }
 
-void AdsServiceImpl::GetCreativeAdNotifications(
-    const std::vector<std::string>& categories,
-    ads::GetCreativeAdNotificationsCallback callback) {
+void AdsServiceImpl::RunDBTransaction(
+    ads::DBTransactionPtr transaction,
+    ads::RunDBTransactionCallback callback) {
   base::PostTaskAndReplyWithResult(file_task_runner_.get(), FROM_HERE,
-      base::BindOnce(&GetCreativeAdNotificationsOnFileTaskRunner,
-          categories, bundle_state_backend_.get()),
-      base::BindOnce(&AdsServiceImpl::OnGetCreativeAdNotifications,
-          AsWeakPtr(), std::move(callback), categories));
-}
-
-void AdsServiceImpl::GetAdConversions(
-    ads::GetAdConversionsCallback callback) {
-  base::PostTaskAndReplyWithResult(file_task_runner_.get(), FROM_HERE,
-      base::BindOnce(&GetAdConversionsOnFileTaskRunner,
-          bundle_state_backend_.get()),
-      base::BindOnce(&AdsServiceImpl::OnGetAdConversions, AsWeakPtr(),
+      base::BindOnce(&RunDBTransactionOnFileTaskRunner,
+          base::Passed(std::move(transaction)), database_.get()),
+      base::BindOnce(&AdsServiceImpl::OnRunDBTransaction, AsWeakPtr(),
           std::move(callback)));
+}
+
+void AdsServiceImpl::OnRunDBTransaction(
+    ads::RunDBTransactionCallback callback,
+    ads::DBCommandResponsePtr response) {
+  callback(std::move(response));
+}
+
+void AdsServiceImpl::OnAdRewardsChanged() {
+  for (AdsServiceObserver& observer : observers_) {
+    observer.OnAdRewardsChanged();
+  }
 }
 
 void AdsServiceImpl::DiagnosticLog(

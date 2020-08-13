@@ -55,6 +55,18 @@
     "message": "Cross-site trackers geblokkeerd",
     "description": "Message for the scripts blocked row label"
   },
+  "aggressiveAdsTrackersBlocking": {
+    "message": "Trackers & advertenties geblokkeerd (agressief)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with aggressive heuristics"
+  },
+  "standardAdsTrackersBlocking": {
+    "message": "Trackers & advertenties geblokkeerd (standaard)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with standard heuristics"
+  },
+  "allowAdsTrackers": {
+    "message": "Laat alle trackers & advertenties toe",
+    "description": "Message for the option in the ads and trackers blocking select field to allow all ads and trackers"
+  },
   "connectionsUpgradedHTTPS": {
     "message": "Verbindingen geüpgraded naar HTTPS",
     "description": "Message for the connections upgraded row label and for the main blocked resources text when there is more than one connection upgraded (plural) and no other ads/trackers blocked"
@@ -79,16 +91,16 @@
     "message": "Alle cookies zijn toegestaan.",
     "description": "Message for the option in the cookies select field to allow all cookies"
   },
-  "thirdPartyFingerprintingBlocked": {
-    "message": "Vingerafdruk tussen sites geblokkeerd",
+  "standardFingerprinting": {
+    "message": "Vingerafdrukken geblokkeerd (standaard)",
     "description": "Message for the option in the fingerprinting select field to block all 3rd party recognition attempts"
   },
-  "allFingerprintingBlocked": {
-    "message": "Vingerafdrukpogingen geblokkeerd",
+  "strictFingerprinting": {
+    "message": "Vingerafdrukken geblokkeerd (strikt, kan websites doen stukgaan)",
     "description": "Message for the option in the fingerprinting select field to block all fingerprinting attempts"
   },
-  "allFingerprintingAllowed": {
-    "message": "Alle vingerafdrukpogingen zijn toegestaan",
+  "allowAllFingerprinting": {
+    "message": "Sta alle vingerafdrukken toe",
     "description": "Message for the option in the fingerprinting select field to allow all fingerprinting attempts"
   },
   "deviceRecognitionAttempts": {

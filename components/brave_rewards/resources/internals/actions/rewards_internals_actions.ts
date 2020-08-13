@@ -28,6 +28,13 @@ export const onBalance = (balance: RewardsInternals.Balance) =>
     balance
   })
 
+export const getContributions = () => action(types.GET_CONTRIBUTIONS)
+
+export const onContributions = (contributions: RewardsInternals.ContributionInfo[]) =>
+  action(types.ON_CONTRIBUTIONS, {
+    contributions
+  })
+
 export const getPromotions = () => action(types.GET_PROMOTIONS)
 
 export const onPromotions = (promotions: RewardsInternals.Promotion[]) =>
@@ -52,3 +59,12 @@ export const onGetFullLog = (log: string) =>
 export const clearLog = () => action(types.CLEAR_LOG)
 
 export const downloadCompleted = () => action(types.DOWNLOAD_COMPLETED)
+
+export const getExternalWallet = (type: RewardsInternals.WalletType) => action(types.GET_EXTERNAL_WALLET, {
+  type
+})
+
+export const onExternalWallet = (result: number, wallet: RewardsInternals.ExternalWallet) => action(types.ON_EXTERNAL_WALLET, {
+  result,
+  wallet
+})

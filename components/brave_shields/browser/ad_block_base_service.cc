@@ -110,10 +110,6 @@ AdBlockBaseService::AdBlockBaseService(BraveComponent::Delegate* delegate)
       weak_factory_(this) {}
 
 AdBlockBaseService::~AdBlockBaseService() {
-  Cleanup();
-}
-
-void AdBlockBaseService::Cleanup() {
   GetTaskRunner()->DeleteSoon(FROM_HERE, ad_block_client_.release());
 }
 
@@ -197,20 +193,19 @@ bool AdBlockBaseService::TagExists(const std::string& tag) {
   return std::find(tags_.begin(), tags_.end(), tag) != tags_.end();
 }
 
-base::Optional<base::Value> AdBlockBaseService::HostnameCosmeticResources(
-        const std::string& hostname) {
-  return base::JSONReader::Read(
-          this->ad_block_client_->hostnameCosmeticResources(hostname));
+base::Optional<base::Value> AdBlockBaseService::UrlCosmeticResources(
+        const std::string& url) {
+  DCHECK(GetTaskRunner()->RunsTasksInCurrentSequence());
+  return base::JSONReader::Read(ad_block_client_->urlCosmeticResources(url));
 }
 
 base::Optional<base::Value> AdBlockBaseService::HiddenClassIdSelectors(
         const std::vector<std::string>& classes,
         const std::vector<std::string>& ids,
         const std::vector<std::string>& exceptions) {
+  DCHECK(GetTaskRunner()->RunsTasksInCurrentSequence());
   return base::JSONReader::Read(
-          this->ad_block_client_->hiddenClassIdSelectors(classes,
-                                                         ids,
-                                                         exceptions));
+      ad_block_client_->hiddenClassIdSelectors(classes, ids, exceptions));
 }
 
 void AdBlockBaseService::GetDATFileData(const base::FilePath& dat_file_path) {

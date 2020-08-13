@@ -5,12 +5,14 @@
 
 #include "bat/ads/internal/url_util.h"
 
+#include "base/strings/string_split.h"
 #include "base/strings/string_util.h"
 #include "base/strings/stringprintf.h"
 #include "net/base/registry_controlled_domains/registry_controlled_domain.h"
 #include "third_party/re2/src/re2/re2.h"
 #include "url/gurl.h"
 #include "url/url_constants.h"
+#include "bat/ads/internal/logging.h"
 
 namespace ads {
 
@@ -27,6 +29,13 @@ bool UrlMatchesPattern(
   return RE2::FullMatch(url, quoted_pattern);
 }
 
+bool UrlHasScheme(
+    const std::string& url) {
+  DCHECK(!url.empty());
+
+  return GURL(url).SchemeIsHTTPOrHTTPS();
+}
+
 bool SameSite(
       const std::string& url1,
       const std::string& url2) {
@@ -34,21 +43,26 @@ bool SameSite(
       GURL(url2), net::registry_controlled_domains::INCLUDE_PRIVATE_REGISTRIES);
 }
 
-std::string GetUrlMethodName(
-    const URLRequestMethod method) {
-  switch (method) {
-    case GET: {
-      return "GET";
+std::map<std::string, std::string> HeadersToMap(
+    const std::vector<std::string>& headers) {
+  std::map<std::string, std::string> normalized_headers;
+
+  for (const auto& header : headers) {
+    const std::vector<std::string> components = base::SplitString(header,
+        ":", base::TRIM_WHITESPACE, base::SPLIT_WANT_ALL);
+
+    if (components.size() != 2) {
+      NOTREACHED();
+      continue;
     }
 
-    case PUT: {
-      return "PUT";
-    }
+    const std::string key = components.at(0);
+    const std::string value = components.at(1);
 
-    case POST: {
-      return "POST";
-    }
+    normalized_headers[key] = value;
   }
+
+  return normalized_headers;
 }
 
 }  // namespace ads

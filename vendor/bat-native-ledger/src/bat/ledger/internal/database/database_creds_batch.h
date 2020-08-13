@@ -18,8 +18,6 @@ class DatabaseCredsBatch: public DatabaseTable {
   explicit DatabaseCredsBatch(bat_ledger::LedgerImpl* ledger);
   ~DatabaseCredsBatch() override;
 
-  bool Migrate(ledger::DBTransaction* transaction, const int target) override;
-
   void InsertOrUpdate(
       ledger::CredsBatchPtr creds,
       ledger::ResultCallback callback);
@@ -33,7 +31,7 @@ class DatabaseCredsBatch: public DatabaseTable {
       ledger::CredsBatchPtr creds,
       ledger::ResultCallback callback);
 
-  void GetAllRecords(ledger::GetAllCredsBatchCallback callback);
+  void GetAllRecords(ledger::GetCredsBatchListCallback callback);
 
   void UpdateStatus(
       const std::string& trigger_id,
@@ -47,20 +45,18 @@ class DatabaseCredsBatch: public DatabaseTable {
       const ledger::CredsBatchStatus status,
       ledger::ResultCallback callback);
 
+  void GetRecordsByTriggers(
+      const std::vector<std::string>& trigger_ids,
+      ledger::GetCredsBatchListCallback callback);
+
  private:
-  bool CreateTableV18(ledger::DBTransaction* transaction);
-
-  bool CreateIndexV18(ledger::DBTransaction* transaction);
-
-  bool MigrateToV18(ledger::DBTransaction* transaction);
-
   void OnGetRecordByTrigger(
       ledger::DBCommandResponsePtr response,
       ledger::GetCredsBatchCallback callback);
 
-  void OnGetAllRecords(
+  void OnGetRecords(
       ledger::DBCommandResponsePtr response,
-      ledger::GetAllCredsBatchCallback callback);
+      ledger::GetCredsBatchListCallback callback);
 };
 
 }  // namespace braveledger_database

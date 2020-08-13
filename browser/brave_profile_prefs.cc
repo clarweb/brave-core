@@ -10,6 +10,8 @@
 #include "brave/common/brave_wallet_constants.h"
 #include "brave/common/pref_names.h"
 #include "brave/components/binance/browser/buildflags/buildflags.h"
+#include "brave/components/gemini/browser/buildflags/buildflags.h"
+#include "brave/components/brave_ads/browser/ads_p2a.h"
 #include "brave/components/brave_perf_predictor/browser/buildflags.h"
 #include "brave/components/brave_shields/browser/brave_shields_web_contents_observer.h"
 #include "brave/components/brave_sync/brave_sync_prefs.h"
@@ -24,6 +26,7 @@
 #include "components/content_settings/core/common/pref_names.h"
 #include "components/embedder_support/pref_names.h"
 #include "components/gcm_driver/gcm_buildflags.h"
+#include "components/autofill/core/common/autofill_prefs.h"
 #include "components/password_manager/core/common/password_manager_pref_names.h"
 #include "components/pref_registry/pref_registry_syncable.h"
 #include "components/safe_browsing/core/common/safe_browsing_prefs.h"
@@ -49,6 +52,10 @@
 #include "brave/browser/brave_wallet/brave_wallet_utils.h"
 #endif
 
+#if BUILDFLAG(GEMINI_ENABLED)
+#include "brave/components/gemini/browser/pref_names.h"
+#endif
+
 #if BUILDFLAG(ENABLE_BRAVE_PERF_PREDICTOR)
 #include "brave/components/brave_perf_predictor/browser/perf_predictor_tab_helper.h"
 #include "brave/components/brave_perf_predictor/browser/p3a_bandwidth_savings_tracker.h"
@@ -63,6 +70,7 @@
 #endif
 
 #if defined(OS_ANDROID)
+#include "components/feed/core/shared_prefs/pref_names.h"
 #include "components/ntp_tiles/pref_names.h"
 #endif
 
@@ -101,7 +109,7 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
       brave_rewards::prefs::kHideBraveRewardsButton,
       false);
 
-  brave_sync::prefs::Prefs::RegisterProfilePrefs(registry);
+  brave_sync::Prefs::RegisterProfilePrefs(registry);
 
   // TODO(shong): Migrate this to local state also and guard in ENABLE_WIDEVINE.
   // We don't need to display "don't ask widevine prompt option" in settings
@@ -144,6 +152,11 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
   // clear default popular sites
   registry->SetDefaultPrefValue(ntp_tiles::prefs::kPopularSitesJsonPref,
       base::Value(base::Value::Type::LIST));
+  // Disable NTP suggestions
+  registry->SetDefaultPrefValue(feed::prefs::kEnableSnippets,
+                                base::Value(false));
+  registry->SetDefaultPrefValue(feed::prefs::kArticlesListVisible,
+                                base::Value(false));
 #endif
 
   // Hangouts
@@ -186,9 +199,6 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
       prefs::kNetworkPredictionOptions,
       base::Value(chrome_browser_net::NETWORK_PREDICTION_NEVER));
 
-  // Make sync managed to dsiable some UI after password saving.
-  registry->SetDefaultPrefValue(syncer::prefs::kSyncManaged, base::Value(true));
-
   // Disable cloud print
   // Cloud Print: Don't allow this browser to act as Cloud Print server
   registry->SetDefaultPrefValue(prefs::kCloudPrintProxyEnabled,
@@ -199,6 +209,7 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
 
   // Importer: selected data types
   registry->RegisterBooleanPref(kImportDialogExtensions, true);
+  registry->RegisterBooleanPref(kImportDialogPayments, true);
 
   // IPFS companion extension
   registry->RegisterBooleanPref(kIPFSCompanionEnabled, false);
@@ -210,6 +221,8 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
   registry->RegisterBooleanPref(kNewTabPageShowRewards, true);
   registry->RegisterBooleanPref(kNewTabPageShowBinance, true);
   registry->RegisterBooleanPref(kNewTabPageShowTogether, true);
+  registry->RegisterBooleanPref(kNewTabPageShowAddCard, true);
+  registry->RegisterBooleanPref(kNewTabPageShowGemini, true);
 
   // Brave Wallet
   registry->RegisterIntegerPref(kBraveWalletPrefVersion, 0);
@@ -226,15 +239,23 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
   registry->RegisterStringPref(kBinanceRefreshToken, "");
 #endif
 
+  // Gemini widget
+#if BUILDFLAG(GEMINI_ENABLED)
+  registry->RegisterStringPref(kGeminiAccessToken, "");
+  registry->RegisterStringPref(kGeminiRefreshToken, "");
+#endif
+
   // Autocomplete in address bar
   registry->RegisterBooleanPref(kAutocompleteEnabled, true);
   registry->RegisterBooleanPref(kTopSiteSuggestionsEnabled, true);
-  registry->RegisterBooleanPref(kBraveSuggestedSiteSuggestionsEnabled, true);
+  registry->RegisterBooleanPref(kBraveSuggestedSiteSuggestionsEnabled, false);
 
   // Password leak detection should be disabled
   registry->SetDefaultPrefValue(
       password_manager::prefs::kPasswordLeakDetectionEnabled,
       base::Value(false));
+  registry->SetDefaultPrefValue(autofill::prefs::kAutofillWalletImportEnabled,
+                                base::Value(false));
 
 #if BUILDFLAG(ENABLE_SPEEDREADER)
   speedreader::SpeedreaderService::RegisterPrefs(registry);
@@ -242,6 +263,10 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
 
 #if !defined(OS_ANDROID)
   BraveOmniboxClientImpl::RegisterPrefs(registry);
+#endif
+
+#if !defined(OS_ANDROID)
+  brave_ads::RegisterP2APrefs(registry);
 #endif
 
   RegisterProfilePrefsForMigration(registry);

@@ -2,7 +2,6 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-
 #include <map>
 
 #include "base/strings/stringprintf.h"
@@ -11,53 +10,43 @@
 #include "bat/ledger/internal/request/request_util.h"
 #include "bat/ledger/internal/common/security_helper.h"
 
-namespace {
+namespace braveledger_request_util {
 
-std::string BuildBalanceUrl() {
-  std::string url;
-  switch (ledger::_environment) {
-    case ledger::Environment::STAGING:
-      url = BALANCE_STAGING_SERVER;
-      break;
-    case ledger::Environment::PRODUCTION:
-      url = BALANCE_PRODUCTION_SERVER;
-      break;
-    case ledger::Environment::DEVELOPMENT:
-      url = BALANCE_DEVELOPMENT_SERVER;
-      break;
-  }
+namespace publisher {
+const char kDevelopment[] = "https://rewards-dev.brave.software";
+const char kStaging[] = "https://rewards-stg.bravesoftware.com";
+const char kProduction[] = "https://rewards.brave.com";
+}  // namespace publisher
 
-  return url;
-}
+namespace promotion {
+const char kDevelopment[] = "https://grant.rewards.brave.software";
+const char kStaging[] = "https://grant.rewards.bravesoftware.com";
+const char kProduction[] = "https://grant.rewards.brave.com";
+}  // namespace promotion
+
+namespace payment {
+const char kDevelopment[] = "https://payment.rewards.brave.software";
+const char kStaging[] = "http://payment.rewards.bravesoftware.com";
+const char kProduction[] = "http://payment.rewards.brave.com";
+}  // namespace payment
+
+namespace cdn {
+const char kDevelopment[] = "https://pcdn.brave.software";
+const char kStaging[] = "https://pcdn.bravesoftware.com";
+const char kProduction[] = "https://pcdn.brave.com";
+}  // namespace cdn
 
 std::string BuildPublisherUrl() {
   std::string url;
   switch (ledger::_environment) {
+    case ledger::Environment::DEVELOPMENT:
+      url = publisher::kDevelopment;
+      break;
     case ledger::Environment::STAGING:
-      url = PUBLISHER_STAGING_SERVER;
+      url = publisher::kStaging;
       break;
     case ledger::Environment::PRODUCTION:
-      url = PUBLISHER_PRODUCTION_SERVER;
-      break;
-    case ledger::Environment::DEVELOPMENT:
-      url = PUBLISHER_DEVELOPMENT_SERVER;
-      break;
-  }
-
-  return url;
-}
-
-std::string BuildLedgerUrl() {
-  std::string url;
-  switch (ledger::_environment) {
-    case ledger::Environment::STAGING:
-      url = LEDGER_STAGING_SERVER;
-      break;
-    case ledger::Environment::PRODUCTION:
-      url = LEDGER_PRODUCTION_SERVER;
-      break;
-    case ledger::Environment::DEVELOPMENT:
-      url = LEDGER_DEVELOPMENT_SERVER;
+      url = publisher::kProduction;
       break;
   }
 
@@ -67,18 +56,15 @@ std::string BuildLedgerUrl() {
 std::string BuildPromotionUrl() {
   std::string url;
   switch (ledger::_environment) {
-    case ledger::Environment::STAGING: {
-      url = PROMOTION_STAGING_SERVER;
+    case ledger::Environment::DEVELOPMENT:
+      url = promotion::kDevelopment;
       break;
-    }
-    case ledger::Environment::PRODUCTION: {
-      url = PROMOTION_PRODUCTION_SERVER;
+    case ledger::Environment::STAGING:
+      url = promotion::kStaging;
       break;
-    }
-    case ledger::Environment::DEVELOPMENT: {
-      url = PROMOTION_DEVELOPMENT_SERVER;
+    case ledger::Environment::PRODUCTION:
+      url = promotion::kProduction;
       break;
-    }
   }
 
   return url;
@@ -87,46 +73,36 @@ std::string BuildPromotionUrl() {
 std::string BuildPaymentsUrl() {
   std::string url;
   switch (ledger::_environment) {
-    case ledger::Environment::STAGING: {
-      url = PAYMENTS_STAGING_SERVER;
+    case ledger::Environment::DEVELOPMENT:
+      url = payment::kDevelopment;
       break;
-    }
-    case ledger::Environment::PRODUCTION: {
-      url = PAYMENTS_PRODUCTION_SERVER;
+    case ledger::Environment::STAGING:
+      url = payment::kStaging;
       break;
-    }
-    case ledger::Environment::DEVELOPMENT: {
-      url = PAYMENTS_DEVELOPMENT_SERVER;
+    case ledger::Environment::PRODUCTION:
+      url = payment::kProduction;
       break;
-    }
   }
 
   return url;
 }
 
-std::string BuildApiUrl() {
+std::string BuildPrivateCdnUrl() {
   std::string url;
   switch (ledger::_environment) {
-    case ledger::Environment::STAGING: {
-      url = API_STAGING_SERVER;
+    case ledger::Environment::DEVELOPMENT:
+      url = cdn::kDevelopment;
       break;
-    }
-    case ledger::Environment::PRODUCTION: {
-      url = API_PRODUCTION_SERVER;
+    case ledger::Environment::STAGING:
+      url = cdn::kStaging;
       break;
-    }
-    case ledger::Environment::DEVELOPMENT: {
-      url = API_DEVELOPMENT_SERVER;
+    case ledger::Environment::PRODUCTION:
+      url = cdn::kProduction;
       break;
-    }
   }
 
   return url;
 }
-
-}  // namespace
-
-namespace braveledger_request_util {
 
 std::string BuildUrl(
     const std::string& path,
@@ -134,16 +110,8 @@ std::string BuildUrl(
     const ServerTypes& server) {
   std::string url;
   switch (server) {
-    case ServerTypes::BALANCE: {
-      url = BuildBalanceUrl();
-      break;
-    }
     case ServerTypes::kPublisher: {
       url = BuildPublisherUrl();
-      break;
-    }
-    case ServerTypes::LEDGER: {
-      url = BuildLedgerUrl();
       break;
     }
     case ServerTypes::kPromotion: {
@@ -154,8 +122,8 @@ std::string BuildUrl(
       url = BuildPaymentsUrl();
       break;
     }
-    case ServerTypes::kAPI: {
-      url = BuildApiUrl();
+    case ServerTypes::kPrivateCDN: {
+      url = BuildPrivateCdnUrl();
       break;
     }
   }
@@ -168,24 +136,16 @@ std::string BuildUrl(
   return url + prefix + path;
 }
 
-std::string DigestValue(const std::string& body) {
-  const auto body_sha256 = braveledger_helper::Security::GetSHA256(body);
-  const auto body_sha256_base64 =
-      braveledger_helper::Security::GetBase64(body_sha256);
-
-  return base::StringPrintf("SHA-256=%s", body_sha256_base64.c_str());
-}
-
 std::string SignatureHeaderValue(
     const std::string& data,
     const std::string& body,
     const std::string key_id,
     const std::vector<uint8_t>& private_key,
     const bool idempotency_key) {
-  DCHECK(!body.empty());
   DCHECK(!private_key.empty());
 
-  auto digest_header_value = DigestValue(body);
+  auto digest_header_value =
+      braveledger_helper::Security::DigestValue(body);
 
   std::vector<std::map<std::string, std::string>> headers;
   headers.push_back({{"digest", digest_header_value}});
@@ -207,7 +167,8 @@ std::map<std::string, std::string> GetSignHeaders(
     const std::string& key_id,
     const std::vector<uint8_t>& private_key,
     const bool idempotency_key) {
-  const std::string digest_header = DigestValue(body).c_str();
+  const std::string digest_header =
+      braveledger_helper::Security::DigestValue(body).c_str();
   const std::string signature_header = SignatureHeaderValue(
       data,
       body,

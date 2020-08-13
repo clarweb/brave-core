@@ -9,6 +9,8 @@
 
 namespace ads {
 
+namespace {
+
 // Do not change the following string values as they are used for persisting and
 // restoring state
 const char kConfirmationTypeNone[] = "";
@@ -20,6 +22,8 @@ const char kConfirmationTypeFlagged[] = "flag";
 const char kConfirmationTypeUpvoted[] = "upvote";
 const char kConfirmationTypeDownvoted[] = "downvote";
 const char kConfirmationTypeConversion[] = "conversion";
+
+}  // namespace
 
 ConfirmationType::ConfirmationType(
     const std::string& value) {
@@ -91,13 +95,13 @@ ConfirmationType::operator std::string() const {
 }
 
 bool ConfirmationType::operator==(
-    const ConfirmationType type) const {
-  return value_ == type.value_;
+    const ConfirmationType& rhs) const {
+  return value_ == rhs.value_;
 }
 
 bool ConfirmationType::operator!=(
-    const ConfirmationType type) const {
-  return value_ != type.value_;
+    const ConfirmationType& rhs) const {
+  return value_ != rhs.value_;
 }
 
 }  // namespace ads

@@ -11,6 +11,7 @@
 #include "chrome/test/base/in_process_browser_test.h"
 #include "chrome/test/base/ui_test_utils.h"
 #include "components/omnibox/browser/location_bar_model_impl.h"
+#include "content/public/test/browser_test.h"
 #include "content/public/test/url_loader_interceptor.h"
 #include "net/cert/ct_policy_status.h"
 #include "net/ssl/ssl_info.h"
@@ -115,7 +116,7 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(
         // Default (lock-only in omnibox)
         SecurityIndicatorTestParams{true, net::CERT_STATUS_IS_EV,
-                                    security_state::EV_SECURE, false,
+                                    security_state::SECURE, false,
                                     kEmptyString},
         SecurityIndicatorTestParams{true, 0, security_state::SECURE, false,
                                     kEmptyString},

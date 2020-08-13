@@ -13,6 +13,7 @@
 #include "chrome/common/extensions/api/settings_private.h"
 #include "components/browsing_data/core/pref_names.h"
 #include "components/gcm_driver/gcm_buildflags.h"
+#include "components/omnibox/browser/omnibox_prefs.h"
 
 #if BUILDFLAG(ENABLE_BRAVE_WAYBACK_MACHINE)
 #include "brave/components/brave_wayback_machine/pref_names.h"
@@ -40,6 +41,8 @@ const PrefsUtil::TypedPrefMap& BravePrefsUtil::GetWhitelistedKeys() {
   // Add Brave values to the whitelist
   // import data
   (*s_brave_whitelist)[kImportDialogExtensions] =
+      settings_api::PrefType::PREF_TYPE_BOOLEAN;
+  (*s_brave_whitelist)[kImportDialogPayments] =
       settings_api::PrefType::PREF_TYPE_BOOLEAN;
   // Default Brave shields
   (*s_brave_whitelist)[kShieldsAdvancedViewEnabled] =
@@ -93,6 +96,10 @@ const PrefsUtil::TypedPrefMap& BravePrefsUtil::GetWhitelistedKeys() {
         settings_api::PrefType::PREF_TYPE_BOOLEAN;
   (*s_brave_whitelist)[kNewTabPageShowTogether] =
         settings_api::PrefType::PREF_TYPE_BOOLEAN;
+  (*s_brave_whitelist)[kNewTabPageShowAddCard] =
+        settings_api::PrefType::PREF_TYPE_BOOLEAN;
+  (*s_brave_whitelist)[kNewTabPageShowGemini] =
+        settings_api::PrefType::PREF_TYPE_BOOLEAN;
   // Clear browsing data on exit prefs.
   (*s_brave_whitelist)[browsing_data::prefs::kDeleteBrowsingHistoryOnExit] =
     settings_api::PrefType::PREF_TYPE_BOOLEAN;
@@ -139,6 +146,9 @@ const PrefsUtil::TypedPrefMap& BravePrefsUtil::GetWhitelistedKeys() {
   (*s_brave_whitelist)[kBraveGCMChannelStatus] =
       settings_api::PrefType::PREF_TYPE_BOOLEAN;
 #endif
+  // Omnibox pref
+  (*s_brave_whitelist)[omnibox::kPreventUrlElisionsInOmnibox] =
+      settings_api::PrefType::PREF_TYPE_BOOLEAN;
 
   return *s_brave_whitelist;
 }

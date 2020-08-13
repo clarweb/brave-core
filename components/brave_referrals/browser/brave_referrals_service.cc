@@ -20,6 +20,7 @@
 #include "base/values.h"
 #include "brave/common/network_constants.h"
 #include "brave/common/pref_names.h"
+#include "brave/components/brave_referrals/common/pref_names.h"
 #include "brave_base/random.h"
 #include "chrome/browser/browser_process.h"
 #include "chrome/browser/first_run/first_run.h"
@@ -67,23 +68,6 @@ using namespace brave_private_channel;  // NOLINT
 
 namespace {
 
-std::string GetPlatformIdentifier() {
-#if defined(OS_WIN)
-  if (base::SysInfo::OperatingSystemArchitecture() == "x86")
-    return "winia32";
-  else
-    return "winx64";
-#elif defined(OS_MACOSX)
-  return "osx";
-#elif defined(OS_ANDROID)
-  return "android";
-#elif defined(OS_LINUX)
-  return "linux";
-#else
-  return std::string();
-#endif
-}
-
 std::string BuildReferralEndpoint(const std::string& path) {
   std::unique_ptr<base::Environment> env(base::Environment::Create());
   std::string referral_server;
@@ -93,6 +77,7 @@ std::string BuildReferralEndpoint(const std::string& path) {
     referral_server = kBraveReferralsServer;
   if (env->HasVar("BRAVE_REFERRALS_LOCAL"))
     proto = "http";
+
   return base::StringPrintf("%s://%s%s", proto.c_str(),
                             referral_server.c_str(),
                             path.c_str());
@@ -102,20 +87,15 @@ std::string BuildReferralEndpoint(const std::string& path) {
 
 namespace brave {
 
-std::string GetAPIKey() {
-  std::string api_key = BRAVE_REFERRALS_API_KEY;
-  std::unique_ptr<base::Environment> env(base::Environment::Create());
-  if (env->HasVar("BRAVE_REFERRALS_API_KEY"))
-    env->GetVar("BRAVE_REFERRALS_API_KEY", &api_key);
-
-  return api_key;
-}
-
-BraveReferralsService::BraveReferralsService(PrefService* pref_service)
+BraveReferralsService::BraveReferralsService(PrefService* pref_service,
+                                             const std::string& api_key,
+                                             const std::string& platform)
     : initialized_(false),
       task_runner_(base::CreateSequencedTaskRunner(
           {base::ThreadPool(), base::MayBlock()})),
       pref_service_(pref_service),
+      api_key_(api_key),
+      platform_(platform),
       weak_factory_(this) {
 }
 
@@ -254,13 +234,14 @@ void BraveReferralsService::OnReferralHeadersLoadComplete(
     return;
   }
 
-  base::Optional<base::Value> root =
-      base::JSONReader().ReadToValue(*response_body);
-  if (!root || !root->is_list()) {
-    LOG(ERROR) << "Failed to parse referral headers response";
+  base::JSONReader::ValueWithError root =
+      base::JSONReader::ReadAndReturnValueWithError(*response_body);
+  if (!root.value || !root.value->is_list()) {
+    LOG(ERROR) << "Failed to parse referral headers response: "
+               << (!root.value ? root.error_message : "not a list");
     return;
   }
-  pref_service_->Set(kReferralHeaders, root.value());
+  pref_service_->Set(kReferralHeaders, root.value.value());
 }
 
 void BraveReferralsService::OnReferralInitLoadComplete(
@@ -290,25 +271,26 @@ void BraveReferralsService::OnReferralInitLoadComplete(
     return;
   }
 
-  base::Optional<base::Value> root =
-      base::JSONReader().ReadToValue(*response_body);
-  if (!root || !root->is_dict()) {
-    LOG(ERROR) << "Failed to parse referral initialization response";
+  base::JSONReader::ValueWithError root =
+      base::JSONReader::ReadAndReturnValueWithError(*response_body);
+  if (!root.value || !root.value->is_dict()) {
+    LOG(ERROR) << "Failed to parse referral initialization response: "
+               << (!root.value ? root.error_message : "not a dictionary");
     return;
   }
-  if (!root->FindKey("download_id")) {
+  if (!root.value->FindKey("download_id")) {
     LOG(ERROR)
         << "Failed to locate download_id in referral initialization response"
         << ", payload: " << *response_body;
     return;
   }
 
-  const base::Value* headers = root->FindKey("headers");
+  const base::Value* headers = root.value->FindKey("headers");
   if (headers) {
     pref_service_->Set(kReferralHeaders, *headers);
   }
 
-  const base::Value* download_id = root->FindKey("download_id");
+  const base::Value* download_id = root.value->FindKey("download_id");
   pref_service_->SetString(kReferralDownloadID, download_id->GetString());
 
   // We have initialized with the promo server. We can kill the retry timer now.
@@ -318,7 +300,7 @@ void BraveReferralsService::OnReferralInitLoadComplete(
   if (!referral_initialized_callback_.is_null())
     referral_initialized_callback_.Run(download_id->GetString());
 
-  const base::Value* offer_page_url = root->FindKey("offer_page_url");
+  const base::Value* offer_page_url = root.value->FindKey("offer_page_url");
   if (offer_page_url) {
     Profile* last_used_profile = ProfileManager::GetLastUsedProfile();
     GURL gurl(offer_page_url->GetString());
@@ -361,13 +343,14 @@ void BraveReferralsService::OnReferralFinalizationCheckLoadComplete(
     return;
   }
 
-  base::Optional<base::Value> root =
-      base::JSONReader().ReadToValue(*response_body);
-  if (!root) {
-    LOG(ERROR) << "Failed to parse referral finalization check response";
+  base::JSONReader::ValueWithError root =
+      base::JSONReader::ReadAndReturnValueWithError(*response_body);
+  if (!root.value) {
+    LOG(ERROR) << "Failed to parse referral finalization check response: "
+               << root.error_message;
     return;
   }
-  const base::Value* finalized = root->FindKey("finalized");
+  const base::Value* finalized = root.value->FindKey("finalized");
   if (!finalized->GetBool()) {
     LOG(ERROR) << "Referral is not ready, please wait at least 30 days";
     return;
@@ -526,12 +509,10 @@ void BraveReferralsService::MaybeDeletePromoCodePref() const {
 }
 
 std::string BraveReferralsService::BuildReferralInitPayload() const {
-  std::string api_key = GetAPIKey();
-
   base::Value root(base::Value::Type::DICTIONARY);
-  root.SetKey("api_key", base::Value(api_key));
+  root.SetKey("api_key", base::Value(api_key_));
   root.SetKey("referral_code", base::Value(promo_code_));
-  root.SetKey("platform", base::Value(GetPlatformIdentifier()));
+  root.SetKey("platform", base::Value(platform_));
 
   std::string result;
   base::JSONWriter::Write(root, &result);
@@ -541,12 +522,14 @@ std::string BraveReferralsService::BuildReferralInitPayload() const {
 
 std::string BraveReferralsService::BuildReferralFinalizationCheckPayload()
     const {
-  std::string api_key = GetAPIKey();
-
   base::Value root(base::Value::Type::DICTIONARY);
-  root.SetKey("api_key", base::Value(api_key));
+  root.SetKey("api_key", base::Value(api_key_));
   root.SetKey("download_id",
               base::Value(pref_service_->GetString(kReferralDownloadID)));
+#if defined(OS_ANDROID)
+  root.SetKey("safetynet_status",
+              base::Value(pref_service_->GetString(kSafetynetStatus)));
+#endif
 
   std::string result;
   base::JSONWriter::Write(root, &result);
@@ -638,7 +621,31 @@ void BraveReferralsService::InitReferral() {
       kMaxReferralServerResponseSizeBytes);
 }
 
+#if defined(OS_ANDROID)
+void BraveReferralsService::GetSafetynetStatusResult(
+    const bool token_received,
+    const std::string& result_string,
+    const bool attestation_passed) {
+  if (pref_service_->GetString(kSafetynetStatus).empty()) {
+    NOTREACHED() << "Failed to get safetynet status";
+    pref_service_->SetString(kSafetynetStatus, "not verified");
+  }
+  CheckForReferralFinalization();
+}
+#endif
+
 void BraveReferralsService::CheckForReferralFinalization() {
+#if defined(OS_ANDROID)
+  if (pref_service_->GetString(kSafetynetStatus).empty()) {
+    // Get safetynet status before finalization
+    safetynet_check::ClientAttestationCallback attest_callback =
+        base::BindOnce(&BraveReferralsService::GetSafetynetStatusResult,
+                       weak_factory_.GetWeakPtr());
+    safetynet_check_runner_.performSafetynetCheck(
+        "", std::move(attest_callback), true);
+    return;
+  }
+#endif
   net::NetworkTrafficAnnotationTag traffic_annotation =
       net::DefineNetworkTrafficAnnotation("brave_referral_finalization_checker",
         R"(
@@ -711,11 +718,6 @@ std::string BraveReferralsService::FormatExtraHeaders(
 
 ///////////////////////////////////////////////////////////////////////////////
 
-std::unique_ptr<BraveReferralsService> BraveReferralsServiceFactory(
-    PrefService* pref_service) {
-  return std::make_unique<BraveReferralsService>(pref_service);
-}
-
 void RegisterPrefsForBraveReferralsService(PrefRegistrySimple* registry) {
   registry->RegisterBooleanPref(kReferralCheckedForPromoCodeFile, false);
   registry->RegisterBooleanPref(kReferralInitialization, false);
@@ -727,6 +729,7 @@ void RegisterPrefsForBraveReferralsService(PrefRegistrySimple* registry) {
   registry->RegisterListPref(kReferralHeaders);
 #if defined(OS_ANDROID)
   registry->RegisterTimePref(kReferralAndroidFirstRunTimestamp, base::Time());
+  registry->RegisterStringPref(kSafetynetStatus, std::string());
 #endif
 }
 

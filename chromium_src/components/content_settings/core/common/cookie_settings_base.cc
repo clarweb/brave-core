@@ -22,10 +22,16 @@ constexpr char kWordpress[] = "https://[*.]wordpress.com/*";
 constexpr char kPlaystation[] = "https://[*.]playstation.com/*";
 constexpr char kSonyentertainmentnetwork[] =
     "https://[*.]sonyentertainmentnetwork.com/*";
+constexpr char kTwitch[] = "https://clips.twitch.tv/embed?*";
+constexpr char kReddit[] = "https://[www|old]*.reddit.com/*";
+constexpr char kDiscord[] = "https://[*.]discord.com/channels/*";
 constexpr char kUbisoft[] = "https://[*.]ubisoft.com/*";
 constexpr char kUbi[] = "https://[*.]ubi.com/*";
 constexpr char kAmericanexpress[] = "https://[*.]americanexpress.com/*";
 constexpr char kAexp[] = "https://[*.]aexp-static.com/*";
+constexpr char kSony[] = "https://[*.]sony.com/*";
+constexpr char kGoogle[] = "https://[*.]google.com/*";
+constexpr char kGoogleusercontent[] = "https://[*.]googleusercontent.com/*";
 
 bool BraveIsAllowedThirdParty(
     const GURL& url,
@@ -44,12 +50,28 @@ bool BraveIsAllowedThirdParty(
             ContentSettingsPattern::FromString(kWp)
           },
           {
+            ContentSettingsPattern::FromString(kGoogle),
+            ContentSettingsPattern::FromString(kGoogleusercontent)
+          },
+          {
+            ContentSettingsPattern::FromString(kGoogleusercontent),
+            ContentSettingsPattern::FromString(kGoogle)
+          },
+          {
             ContentSettingsPattern::FromString(kPlaystation),
             ContentSettingsPattern::FromString(kSonyentertainmentnetwork)
           },
           {
             ContentSettingsPattern::FromString(kSonyentertainmentnetwork),
             ContentSettingsPattern::FromString(kPlaystation)
+          },
+          {
+            ContentSettingsPattern::FromString(kSony),
+            ContentSettingsPattern::FromString(kPlaystation)
+          },
+          {
+            ContentSettingsPattern::FromString(kPlaystation),
+            ContentSettingsPattern::FromString(kSony)
           },
           {
             ContentSettingsPattern::FromString(kUbisoft),
@@ -66,6 +88,14 @@ bool BraveIsAllowedThirdParty(
           {
             ContentSettingsPattern::FromString(kAexp),
             ContentSettingsPattern::FromString(kAmericanexpress)
+          },
+          {
+            ContentSettingsPattern::FromString(kTwitch),
+            ContentSettingsPattern::FromString(kReddit)
+          },
+          {
+            ContentSettingsPattern::FromString(kTwitch),
+            ContentSettingsPattern::FromString(kDiscord)
           }
       });
 

@@ -29,6 +29,8 @@ export class App extends React.Component<Props, State> {
   }
 
   componentDidMount () {
+    this.actions.isInitialized()
+
     if (!this.props.rewardsData.walletCreated) {
       this.actions.checkWalletExistence()
     }
@@ -49,6 +51,15 @@ export class App extends React.Component<Props, State> {
       this.state.creating &&
       !prevProps.rewardsData.walletCreateFailed &&
       this.props.rewardsData.walletCreateFailed
+    ) {
+      this.setState({
+        creating: false
+      })
+    }
+
+    if (
+      !prevProps.rewardsData.walletCreated &&
+      this.props.rewardsData.walletCreated
     ) {
       this.setState({
         creating: false

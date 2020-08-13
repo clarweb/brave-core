@@ -29,262 +29,6 @@ DatabaseContributionInfoPublishers::DatabaseContributionInfoPublishers(
 DatabaseContributionInfoPublishers::
 ~DatabaseContributionInfoPublishers() = default;
 
-bool DatabaseContributionInfoPublishers::CreateTableV11(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "contribution_id TEXT NOT NULL,"
-        "publisher_key TEXT NOT NULL,"
-        "total_amount DOUBLE NOT NULL,"
-        "contributed_amount DOUBLE,"
-        "CONSTRAINT fk_contribution_info_publishers_contribution_id "
-        "    FOREIGN KEY (contribution_id) "
-        "    REFERENCES contribution_info (contribution_id) "
-        "    ON DELETE CASCADE,"
-        "CONSTRAINT fk_contribution_info_publishers_publisher_id "
-        "    FOREIGN KEY (publisher_key) "
-        "    REFERENCES publisher_info (publisher_id)"
-      ")",
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseContributionInfoPublishers::CreateTableV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "contribution_id TEXT NOT NULL,"
-        "publisher_key TEXT NOT NULL,"
-        "total_amount DOUBLE NOT NULL,"
-        "contributed_amount DOUBLE"
-      ")",
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseContributionInfoPublishers::CreateTableV21(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "contribution_id TEXT NOT NULL,"
-        "publisher_key TEXT NOT NULL,"
-        "total_amount DOUBLE NOT NULL,"
-        "contributed_amount DOUBLE,"
-        "CONSTRAINT %s_unique "
-        "    UNIQUE (contribution_id, publisher_key)"
-      ")",
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseContributionInfoPublishers::CreateIndexV11(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  bool success = this->InsertIndex(transaction, kTableName, "contribution_id");
-
-  if (!success) {
-    return false;
-  }
-
-  return this->InsertIndex(transaction, kTableName, "publisher_key");
-}
-
-bool DatabaseContributionInfoPublishers::CreateIndexV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  bool success = this->InsertIndex(transaction, kTableName, "contribution_id");
-
-  if (!success) {
-    return false;
-  }
-
-  return this->InsertIndex(transaction, kTableName, "publisher_key");
-}
-
-bool DatabaseContributionInfoPublishers::CreateIndexV21(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  bool success = this->InsertIndex(transaction, kTableName, "contribution_id");
-
-  if (!success) {
-    return false;
-  }
-
-  return this->InsertIndex(transaction, kTableName, "publisher_key");
-}
-
-bool DatabaseContributionInfoPublishers::Migrate(
-    ledger::DBTransaction* transaction,
-    const int target) {
-  DCHECK(transaction);
-
-  switch (target) {
-    case 11: {
-      return MigrateToV11(transaction);
-    }
-    case 15: {
-      return MigrateToV15(transaction);
-    }
-    case 21: {
-      return MigrateToV21(transaction);
-    }
-    default: {
-      return true;
-    }
-  }
-}
-
-bool DatabaseContributionInfoPublishers::MigrateToV11(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  if (!DropTable(transaction, kTableName)) {
-    BLOG(0, "Table couldn't be dropped");
-    return false;
-  }
-
-  if (!CreateTableV11(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV11(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  return true;
-}
-
-bool DatabaseContributionInfoPublishers::MigrateToV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string temp_table_name = base::StringPrintf(
-      "%s_temp",
-      kTableName);
-
-  if (!RenameDBTable(transaction, kTableName, temp_table_name)) {
-    BLOG(0, "Table couldn't be renamed");
-    return false;
-  }
-
-  const std::string query =
-      "DROP INDEX IF EXISTS contribution_info_publishers_contribution_id_index;"
-      " DROP INDEX IF EXISTS contribution_info_publishers_publisher_key_index;";
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  if (!CreateTableV15(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV15(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  const std::map<std::string, std::string> columns = {
-    { "contribution_id", "contribution_id" },
-    { "publisher_key", "publisher_key" },
-    { "total_amount", "total_amount" },
-    { "contributed_amount", "contributed_amount" }
-  };
-
-  if (!MigrateDBTable(
-      transaction,
-      temp_table_name,
-      kTableName,
-      columns,
-      true)) {
-    BLOG(0, "Table migration failed");
-    return false;
-  }
-  return true;
-}
-
-bool DatabaseContributionInfoPublishers::MigrateToV21(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string temp_table_name = base::StringPrintf(
-      "%s_temp",
-      kTableName);
-
-  if (!RenameDBTable(transaction, kTableName, temp_table_name)) {
-    BLOG(0, "Table couldn't be renamed");
-    return false;
-  }
-
-  std::string query =
-      "DROP INDEX IF EXISTS contribution_info_publishers_contribution_id_index;"
-      " DROP INDEX IF EXISTS contribution_info_publishers_publisher_key_index;";
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  if (!CreateTableV21(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV21(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  query = base::StringPrintf(
-      "INSERT OR IGNORE INTO %s "
-      "(contribution_id, publisher_key, total_amount, contributed_amount) "
-      "SELECT contribution_id, publisher_key, total_amount, contributed_amount "
-      "FROM %s;",
-      kTableName,
-      temp_table_name.c_str());
-  command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  if (!DropTable(transaction, temp_table_name)) {
-    BLOG(0, "Table couldn't be dropped");
-    return false;
-  }
-
-  return true;
-}
-
 void DatabaseContributionInfoPublishers::InsertOrUpdate(
     ledger::DBTransaction* transaction,
     ledger::ContributionInfoPtr info) {
@@ -350,7 +94,9 @@ void DatabaseContributionInfoPublishers::GetRecordByContributionList(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseContributionInfoPublishers::OnGetRecordByContributionList(
@@ -392,7 +138,7 @@ void DatabaseContributionInfoPublishers::GetContributionPublisherPairList(
 
   const std::string query = base::StringPrintf(
     "SELECT cip.contribution_id, cip.publisher_key, cip.total_amount, "
-    "pi.name, pi.url, pi.favIcon, spi.status, pi.provider "
+    "pi.name, pi.url, pi.favIcon, spi.status, spi.updated_at, pi.provider "
     "FROM %s as cip "
     "INNER JOIN publisher_info AS pi ON cip.publisher_key = pi.publisher_id "
     "LEFT JOIN server_publisher_info AS spi "
@@ -413,6 +159,7 @@ void DatabaseContributionInfoPublishers::GetContributionPublisherPairList(
       ledger::DBCommand::RecordBindingType::STRING_TYPE,
       ledger::DBCommand::RecordBindingType::STRING_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
+      ledger::DBCommand::RecordBindingType::INT64_TYPE,
       ledger::DBCommand::RecordBindingType::STRING_TYPE
   };
 
@@ -424,7 +171,9 @@ void DatabaseContributionInfoPublishers::GetContributionPublisherPairList(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseContributionInfoPublishers::OnGetContributionPublisherInfoMap(
@@ -449,7 +198,8 @@ void DatabaseContributionInfoPublishers::OnGetContributionPublisherInfoMap(
     publisher->favicon_url = GetStringColumn(record_pointer, 5);
     publisher->status = static_cast<ledger::mojom::PublisherStatus>(
         GetInt64Column(record_pointer, 6));
-    publisher->provider = GetStringColumn(record_pointer, 7);
+    publisher->status_updated_at = GetInt64Column(record_pointer, 7);
+    publisher->provider = GetStringColumn(record_pointer, 8);
 
     pair_list.push_back(std::make_pair(
         GetStringColumn(record_pointer, 0),
@@ -492,7 +242,9 @@ void DatabaseContributionInfoPublishers::UpdateContributedAmount(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 }  // namespace braveledger_database

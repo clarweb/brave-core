@@ -27,217 +27,59 @@ DatabaseServerPublisherLinks::DatabaseServerPublisherLinks(
 
 DatabaseServerPublisherLinks::~DatabaseServerPublisherLinks() = default;
 
-bool DatabaseServerPublisherLinks::CreateTableV7(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-      "publisher_key LONGVARCHAR NOT NULL,"
-      "provider TEXT,"
-      "link TEXT,"
-      "CONSTRAINT %s_unique "
-      "    UNIQUE (publisher_key, provider) "
-      "CONSTRAINT fk_%s_publisher_key"
-      "    FOREIGN KEY (publisher_key)"
-      "    REFERENCES server_publisher_info (publisher_key)"
-      "    ON DELETE CASCADE"
-      ")",
-      kTableName,
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseServerPublisherLinks::CreateTableV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-      "publisher_key LONGVARCHAR NOT NULL,"
-      "provider TEXT,"
-      "link TEXT,"
-      "CONSTRAINT %s_unique "
-      "    UNIQUE (publisher_key, provider)"
-      ")",
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseServerPublisherLinks::CreateIndexV7(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_key");
-}
-
-bool DatabaseServerPublisherLinks::CreateIndexV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "publisher_key");
-}
-
-bool DatabaseServerPublisherLinks::Migrate(
+void DatabaseServerPublisherLinks::InsertOrUpdate(
     ledger::DBTransaction* transaction,
-    const int target) {
-  DCHECK(transaction);
+    const ledger::ServerPublisherInfo& server_info) {
+  DCHECK(transaction && !server_info.publisher_key.empty());
 
-  switch (target) {
-    case 7: {
-      return MigrateToV7(transaction);
-    }
-    case 15: {
-      return MigrateToV15(transaction);
-    }
-    default: {
-      return true;
-    }
-  }
-}
-
-
-bool DatabaseServerPublisherLinks::MigrateToV7(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  if (!DropTable(transaction, kTableName)) {
-    BLOG(0, "Table couldn't be dropped");
-    return false;
-  }
-
-  if (!CreateTableV7(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV7(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  return true;
-}
-
-bool DatabaseServerPublisherLinks::MigrateToV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string temp_table_name = base::StringPrintf(
-      "%s_temp",
-      kTableName);
-
-  if (!RenameDBTable(transaction, kTableName, temp_table_name)) {
-    BLOG(0, "Table couldn't be renamed");
-    return false;
-  }
-
-  const std::string query =
-      "DROP INDEX IF EXISTS server_publisher_links_publisher_key_index;";
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  if (!CreateTableV15(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV15(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  const std::map<std::string, std::string> columns = {
-    { "publisher_key", "publisher_key" },
-    { "provider", "provider" },
-    { "link", "link" }
-  };
-
-  if (!MigrateDBTable(
-      transaction,
-      temp_table_name,
-      kTableName,
-      columns,
-      true)) {
-    BLOG(0, "Table migration failed");
-    return false;
-  }
-
-  return true;
-}
-
-void DatabaseServerPublisherLinks::InsertOrUpdateList(
-    ledger::DBTransaction* transaction,
-    const std::vector<ledger::PublisherBanner>& list) {
-  DCHECK(transaction);
-
-  if (list.empty()) {
-    BLOG(1, "List is empty");
+  if (!server_info.banner || server_info.banner->links.empty()) {
     return;
   }
 
-  const std::string base_query = base::StringPrintf(
-      "INSERT OR REPLACE INTO %s VALUES ",
-      kTableName);
-
-  size_t i = 0;
-  std::string query;
-  for (const auto& info : list) {
-    // It's ok if links are empty
-    if (info.links.empty()) {
+  std::string value_list;
+  for (auto& link : server_info.banner->links) {
+    if (link.second.empty()) {
       continue;
     }
-
-
-    for (const auto& link : info.links) {
-      if (link.second.empty()) {
-        continue;
-      }
-
-      if (i == 0) {
-        query += base_query;
-      }
-
-      if (i == kBatchLimit) {
-        query += base_query;
-        i = 0;
-      }
-
-      query += base::StringPrintf(
-        R"(("%s","%s","%s"))",
-        info.publisher_key.c_str(),
+    value_list += base::StringPrintf(
+        R"(("%s","%s","%s"),)",
+        server_info.publisher_key.c_str(),
         link.first.c_str(),
         link.second.c_str());
-      query += (i == kBatchLimit - 1) ? ";" : ",";
-      i++;
-    }
   }
 
-  if (query.empty()) {
+  if (value_list.empty()) {
     return;
   }
 
-  query.pop_back();
+  // Remove trailing comma
+  value_list.pop_back();
 
   auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
+  command->type = ledger::DBCommand::Type::RUN;
+  command->command = base::StringPrintf(
+      "INSERT OR REPLACE INTO %s VALUES %s",
+      kTableName,
+      value_list.c_str());
+
+  transaction->commands.push_back(std::move(command));
+}
+
+void DatabaseServerPublisherLinks::DeleteRecords(
+    ledger::DBTransaction* transaction,
+    const std::string& publisher_key_list) {
+  DCHECK(transaction);
+  if (publisher_key_list.empty()) {
+    return;
+  }
+
+  auto command = ledger::DBCommand::New();
+  command->type = ledger::DBCommand::Type::RUN;
+  command->command = base::StringPrintf(
+      "DELETE FROM %s WHERE publisher_key IN (%s)",
+      kTableName,
+      publisher_key_list.c_str());
+
   transaction->commands.push_back(std::move(command));
 }
 
@@ -274,7 +116,9 @@ void DatabaseServerPublisherLinks::GetRecord(
           _1,
           callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseServerPublisherLinks::OnGetRecord(

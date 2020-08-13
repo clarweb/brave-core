@@ -6,11 +6,12 @@
 #ifndef BRAVE_CHROMIUM_SRC_THIRD_PARTY_BLINK_RENDERER_MODULES_WEBAUDIO_REALTIME_ANALYSER_H_
 #define BRAVE_CHROMIUM_SRC_THIRD_PARTY_BLINK_RENDERER_MODULES_WEBAUDIO_REALTIME_ANALYSER_H_
 
-// RealtimeAnalyser doesn't have access to the owning Document
-// so it needs its own copy of the fudge factor.
-#define BRAVE_REALTIMEANALYSER_H double fudge_factor_;
+#include "base/callback.h"
 
-#include "../../../../../../third_party/blink/renderer/modules/webaudio/realtime_analyser.h"
+#define BRAVE_REALTIMEANALYSER_H \
+  base::RepeatingCallback<float(float, size_t)> audio_farbling_callback_;
+
+#include "../../../../../../../third_party/blink/renderer/modules/webaudio/realtime_analyser.h"
 
 #undef BRAVE_REALTIMEANALYSER_H
 

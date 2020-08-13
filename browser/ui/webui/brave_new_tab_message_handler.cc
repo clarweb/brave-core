@@ -94,6 +94,12 @@ base::DictionaryValue GetPreferencesDictionary(PrefService* prefs) {
   pref_data.SetBoolean(
       "showTogether",
       prefs->GetBoolean(kNewTabPageShowTogether));
+  pref_data.SetBoolean(
+      "showAddCard",
+      prefs->GetBoolean(kNewTabPageShowAddCard));
+  pref_data.SetBoolean(
+      "showGemini",
+      prefs->GetBoolean(kNewTabPageShowGemini));
   return pref_data;
 }
 
@@ -252,6 +258,12 @@ void BraveNewTabMessageHandler::OnJavascriptAllowed() {
   pref_change_registrar_.Add(kNewTabPageShowTogether,
     base::Bind(&BraveNewTabMessageHandler::OnPreferencesChanged,
     base::Unretained(this)));
+  pref_change_registrar_.Add(kNewTabPageShowAddCard,
+    base::Bind(&BraveNewTabMessageHandler::OnPreferencesChanged,
+    base::Unretained(this)));
+  pref_change_registrar_.Add(kNewTabPageShowGemini,
+    base::Bind(&BraveNewTabMessageHandler::OnPreferencesChanged,
+    base::Unretained(this)));
 }
 
 void BraveNewTabMessageHandler::OnJavascriptDisallowed() {
@@ -325,6 +337,10 @@ void BraveNewTabMessageHandler::HandleSaveNewTabPagePref(
     settingsKey = kNewTabPageShowBinance;
   } else if (settingsKeyInput == "showTogether") {
     settingsKey = kNewTabPageShowTogether;
+  } else if (settingsKeyInput == "showAddCard") {
+    settingsKey = kNewTabPageShowAddCard;
+  } else if (settingsKeyInput == "showGemini") {
+    settingsKey = kNewTabPageShowGemini;
   } else {
     LOG(ERROR) << "Invalid setting key";
     return;

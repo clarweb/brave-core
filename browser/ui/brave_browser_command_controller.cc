@@ -201,7 +201,7 @@ bool BraveBrowserCommandController::ExecuteBraveCommandWithDisposition(
       brave::NewTorConnectionForSite(browser_);
       break;
     case IDC_SHOW_BRAVE_SYNC:
-      brave::ShowBraveSync(browser_);
+      brave::ShowSync(browser_);
       break;
     case IDC_SHOW_BRAVE_WALLET:
       brave::ShowBraveWallet(browser_);

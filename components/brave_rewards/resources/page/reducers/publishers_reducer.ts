@@ -8,6 +8,10 @@ import { Reducer } from 'redux'
 import { types } from '../constants/rewards_types'
 
 const publishersReducer: Reducer<Rewards.State | undefined> = (state: Rewards.State, action) => {
+  if (!state) {
+    return
+  }
+
   switch (action.type) {
     case types.ON_CONTRIBUTE_LIST:
       state = { ...state }
@@ -57,7 +61,7 @@ const publishersReducer: Reducer<Rewards.State | undefined> = (state: Rewards.St
       } else {
         state.recurringLoad = true
       }
-      state.recurringList = action.payload.list
+      state.recurringList = action.payload.list || []
       break
     case types.REMOVE_RECURRING_TIP:
       if (!action.payload.publisherKey) {
@@ -72,7 +76,7 @@ const publishersReducer: Reducer<Rewards.State | undefined> = (state: Rewards.St
       } else {
         state.tipsLoad = true
       }
-      state.tipsList = action.payload.list
+      state.tipsList = action.payload.list || []
       break
     case types.ON_RECURRING_TIP_SAVED:
     case types.ON_RECURRING_TIP_REMOVED:

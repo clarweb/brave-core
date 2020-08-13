@@ -13,6 +13,7 @@
 #include "brave/common/brave_paths.h"
 #include "brave/common/pref_names.h"
 #include "brave/components/brave_component_updater/browser/local_data_files_service.h"
+#include "brave/components/brave_shields/browser/brave_shields_util.h"
 #include "chrome/browser/content_settings/host_content_settings_map_factory.h"
 #include "chrome/browser/extensions/extension_browsertest.h"
 #include "chrome/browser/ui/browser.h"
@@ -22,10 +23,14 @@
 #include "components/permissions/permission_request.h"
 #include "components/prefs/pref_service.h"
 #include "content/public/browser/render_frame_host.h"
+#include "content/public/test/browser_test.h"
 #include "content/public/test/browser_test_utils.h"
 #include "net/dns/mock_host_resolver.h"
 
+using brave_shields::ControlType;
+
 const char kEmbeddedTestServerDirectory[] = "webaudio";
+const char kTitleScript[] = "domAutomationController.send(document.title);";
 
 class BraveWebAudioFarblingBrowserTest : public InProcessBrowserTest {
  public:
@@ -48,6 +53,8 @@ class BraveWebAudioFarblingBrowserTest : public InProcessBrowserTest {
 
     ASSERT_TRUE(embedded_test_server()->Start());
 
+    top_level_page_url_ = embedded_test_server()->GetURL("a.com", "/");
+    farbling_url_ = embedded_test_server()->GetURL("a.com", "/farbling.html");
     copy_from_channel_url_ =
         embedded_test_server()->GetURL("a.com", "/copyFromChannel.html");
   }
@@ -59,6 +66,34 @@ class BraveWebAudioFarblingBrowserTest : public InProcessBrowserTest {
 
   const GURL& copy_from_channel_url() { return copy_from_channel_url_; }
 
+  const GURL& farbling_url() { return farbling_url_; }
+
+  HostContentSettingsMap* content_settings() {
+    return HostContentSettingsMapFactory::GetForProfile(browser()->profile());
+  }
+
+  void AllowFingerprinting() {
+    brave_shields::SetFingerprintingControlType(
+        content_settings(), ControlType::ALLOW, top_level_page_url_);
+  }
+
+  void BlockFingerprinting() {
+    brave_shields::SetFingerprintingControlType(
+        content_settings(), ControlType::BLOCK, top_level_page_url_);
+  }
+
+  void SetFingerprintingDefault() {
+    brave_shields::SetFingerprintingControlType(
+        content_settings(), ControlType::DEFAULT, top_level_page_url_);
+  }
+
+  template <typename T>
+  std::string ExecScriptGetStr(const std::string& script, T* frame) {
+    std::string value;
+    EXPECT_TRUE(ExecuteScriptAndExtractString(frame, script, &value));
+    return value;
+  }
+
   content::WebContents* contents() {
     return browser()->tab_strip_model()->GetActiveWebContents();
   }
@@ -69,7 +104,9 @@ class BraveWebAudioFarblingBrowserTest : public InProcessBrowserTest {
   }
 
  private:
+  GURL top_level_page_url_;
   GURL copy_from_channel_url_;
+  GURL farbling_url_;
   std::unique_ptr<ChromeContentClient> content_client_;
   std::unique_ptr<BraveContentBrowserClient> browser_content_client_;
 };
@@ -80,4 +117,29 @@ class BraveWebAudioFarblingBrowserTest : public InProcessBrowserTest {
 IN_PROC_BROWSER_TEST_F(BraveWebAudioFarblingBrowserTest,
                        CopyFromChannelNoCrash) {
   NavigateToURLUntilLoadStop(copy_from_channel_url());
+}
+
+// Tests results of farbling known values
+IN_PROC_BROWSER_TEST_F(BraveWebAudioFarblingBrowserTest, FarbleWebAudio) {
+  // Farbling level: maximum
+  // web audio: pseudo-random data with no relation to underlying audio channel
+  BlockFingerprinting();
+  NavigateToURLUntilLoadStop(farbling_url());
+  EXPECT_EQ(ExecScriptGetStr(kTitleScript, contents()), "405");
+  // second time, same as the first (tests that the PRNG properly resets itself
+  // at the beginning of each calculation)
+  NavigateToURLUntilLoadStop(farbling_url());
+  EXPECT_EQ(ExecScriptGetStr(kTitleScript, contents()), "405");
+
+  // Farbling level: balanced (default)
+  // web audio: farbled audio data
+  SetFingerprintingDefault();
+  NavigateToURLUntilLoadStop(farbling_url());
+  EXPECT_EQ(ExecScriptGetStr(kTitleScript, contents()), "7968");
+
+  // Farbling level: off
+  // web audio: original audio data
+  AllowFingerprinting();
+  NavigateToURLUntilLoadStop(farbling_url());
+  EXPECT_EQ(ExecScriptGetStr(kTitleScript, contents()), "8000");
 }

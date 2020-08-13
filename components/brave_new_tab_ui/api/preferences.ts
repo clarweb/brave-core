@@ -17,6 +17,7 @@ export type Preferences = {
   showClock: boolean
   showTopSites: boolean
   showRewards: boolean
+  showAddCard: boolean
   isBrandedWallpaperNotificationDismissed: boolean
 }
 
@@ -58,12 +59,20 @@ export function saveShowBinance (value: boolean): void {
   sendSavePref('showBinance', value)
 }
 
+export function saveShowAddCard (value: boolean): void {
+  sendSavePref('showAddCard', value)
+}
+
 export function saveBrandedWallpaperOptIn (value: boolean): void {
   sendSavePref('brandedWallpaperOptIn', value)
 }
 
 export function saveIsBrandedWallpaperNotificationDismissed (value: boolean): void {
   sendSavePref('isBrandedWallpaperNotificationDismissed', value)
+}
+
+export function saveShowGemini (value: boolean): void {
+  sendSavePref('showGemini', value)
 }
 
 export function addChangeListener (listener: PreferencesUpdatedHandler): void {

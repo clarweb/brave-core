@@ -11,11 +11,26 @@
     },
     "events": [
       {
-        "name": "onWalletInitialized",
+        "name": "walletCreated",
+        "type": "function",
+        "description": "Fired when wallet is created",
+        "parameters": []
+      },
+      {
+        "name": "walletCreationFailed",
+        "type": "function",
+        "description": "Fired when wallet creation failed",
+        "parameters": [{
+            "name": "result",
+            "type": "integer"
+          }
+        ]
+      },
+      {
+        "name": "initialized",
         "type": "function",
         "description": "Fired when wallet is initialized",
-        "parameters": [
-          {
+        "parameters": [{
             "name": "result",
             "type": "integer"
           }
@@ -310,6 +325,23 @@
         "type": "function",
         "description": "Fired when we get unblinded tokens",
         "parameters": []
+      },
+      {
+        "name": "onCompleteReset",
+        "type": "function",
+        "description": "Fired when rewards was reset",
+        "parameters": [
+          {
+            "name": "properties",
+            "type": "object",
+            "properties": {
+              "success": {
+                "type": "boolean",
+                "description": "was reset successful"
+              }
+            }
+          }
+        ]
       }
     ],
     "functions": [
@@ -1032,6 +1064,9 @@
                   },
                   "accountUrl": {
                     "type": "any"
+                  },
+                  "loginUrl": {
+                    "type": "string"
                   }
                 }
               }
@@ -1079,6 +1114,23 @@
               {
                 "name": "result",
                 "type": "integer"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "isInitialized",
+        "type": "function",
+        "description": "Is ledger process initialized",
+        "parameters": [
+          {
+            "type": "function",
+            "name": "callback",
+            "parameters": [
+              {
+                "name": "initialized",
+                "type": "boolean"
               }
             ]
           }

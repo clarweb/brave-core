@@ -28,138 +28,6 @@ DatabaseMediaPublisherInfo::DatabaseMediaPublisherInfo(
 
 DatabaseMediaPublisherInfo::~DatabaseMediaPublisherInfo() = default;
 
-bool DatabaseMediaPublisherInfo::CreateTableV1(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "media_key TEXT NOT NULL PRIMARY KEY UNIQUE,"
-        "publisher_id LONGVARCHAR NOT NULL,"
-        "CONSTRAINT fk_%s_publisher_id"
-        "    FOREIGN KEY (publisher_id)"
-        "    REFERENCES publisher_info (publisher_id)"
-        "    ON DELETE CASCADE"
-      ")",
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseMediaPublisherInfo::CreateTableV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "media_key TEXT NOT NULL PRIMARY KEY UNIQUE,"
-        "publisher_id LONGVARCHAR NOT NULL"
-      ")",
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabaseMediaPublisherInfo::CreateIndexV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  bool success = this->InsertIndex(transaction, kTableName, "media_key");
-
-  if (!success) {
-    return false;
-  }
-
-  return this->InsertIndex(transaction, kTableName, "publisher_id");
-}
-
-bool DatabaseMediaPublisherInfo::Migrate(
-    ledger::DBTransaction* transaction,
-    const int target) {
-  DCHECK(transaction);
-
-  switch (target) {
-    case 1: {
-      return MigrateToV1(transaction);
-    }
-    case 15: {
-      return MigrateToV15(transaction);
-    }
-    default: {
-      return true;
-    }
-  }
-}
-
-bool DatabaseMediaPublisherInfo::MigrateToV1(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  if (!DropTable(transaction, kTableName)) {
-    BLOG(0, "Table couldn't be dropped");
-    return false;
-  }
-
-  if (!CreateTableV1(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  return true;
-}
-
-bool DatabaseMediaPublisherInfo::MigrateToV15(
-    ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string temp_table_name = base::StringPrintf(
-      "%s_temp",
-      kTableName);
-
-  if (!RenameDBTable(transaction, kTableName, temp_table_name)) {
-    BLOG(0, "Table couldn't be renamed");
-    return false;
-  }
-
-  if (!CreateTableV15(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV15(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  const std::map<std::string, std::string> columns = {
-    { "media_key", "media_key" },
-    { "publisher_id", "publisher_id" }
-  };
-
-  if (!MigrateDBTable(
-      transaction,
-      temp_table_name,
-      kTableName,
-      columns,
-      true)) {
-    BLOG(0, "Table migration failed");
-    return false;
-  }
-
-  return true;
-}
-
 void DatabaseMediaPublisherInfo::InsertOrUpdate(
     const std::string& media_key,
     const std::string& publisher_key,
@@ -189,7 +57,9 @@ void DatabaseMediaPublisherInfo::InsertOrUpdate(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseMediaPublisherInfo::GetRecord(
@@ -204,7 +74,7 @@ void DatabaseMediaPublisherInfo::GetRecord(
 
   const std::string query = base::StringPrintf(
       "SELECT pi.publisher_id, pi.name, pi.url, pi.favIcon, "
-      "pi.provider, spi.status, pi.excluded "
+      "pi.provider, spi.status, spi.updated_at, pi.excluded "
       "FROM %s as mpi "
       "INNER JOIN publisher_info AS pi ON mpi.publisher_id = pi.publisher_id "
       "LEFT JOIN server_publisher_info AS spi "
@@ -225,6 +95,7 @@ void DatabaseMediaPublisherInfo::GetRecord(
       ledger::DBCommand::RecordBindingType::STRING_TYPE,
       ledger::DBCommand::RecordBindingType::STRING_TYPE,
       ledger::DBCommand::RecordBindingType::INT_TYPE,
+      ledger::DBCommand::RecordBindingType::INT64_TYPE,
       ledger::DBCommand::RecordBindingType::INT_TYPE
   };
 
@@ -236,7 +107,9 @@ void DatabaseMediaPublisherInfo::GetRecord(
           _1,
           callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabaseMediaPublisherInfo::OnGetRecord(
@@ -266,8 +139,9 @@ void DatabaseMediaPublisherInfo::OnGetRecord(
   info->provider = GetStringColumn(record, 4);
   info->status =
       static_cast<ledger::mojom::PublisherStatus>(GetIntColumn(record, 5));
+  info->status_updated_at = GetInt64Column(record, 6);
   info->excluded =
-      static_cast<ledger::PublisherExclude>(GetIntColumn(record, 6));
+      static_cast<ledger::PublisherExclude>(GetIntColumn(record, 7));
 
   callback(ledger::Result::LEDGER_OK, std::move(info));
 }

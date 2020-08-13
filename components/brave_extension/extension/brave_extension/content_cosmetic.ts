@@ -10,10 +10,11 @@
 // The RenderView should always be ready when the content script begins, so
 // this message is used to trigger CSS insertion instead.
 chrome.runtime.sendMessage({
-  type: 'contentScriptsLoaded'
+  type: 'contentScriptsLoaded',
+  location: window.location
 })
 
-const parseDomain = require('parse-domain')
+const { parseDomain, ParseResultType } = require('parse-domain')
 
 // Start looking for things to unhide before at most this long after
 // the backend script is up and connected (eg backgroundReady = true),
@@ -182,17 +183,24 @@ const isFirstPartyUrl = (url: string): boolean => {
   }
 
   const parsedTargetDomain = getParsedDomain(url)
-  if (!parsedTargetDomain) {
-    // If we cannot determine the party-ness of the resource,
-    // consider it first-party.
-    console.debug(`Cosmetic filtering: Unable to determine party-ness of "${url}"`)
+
+  if (parsedTargetDomain.type !== _parsedCurrentDomain.type) {
     return false
   }
 
-  return (
-    _parsedCurrentDomain.tld === parsedTargetDomain.tld &&
-    _parsedCurrentDomain.domain === parsedTargetDomain.domain
-  )
+  if (parsedTargetDomain.type === ParseResultType.Listed) {
+    const isSameEtldP1 = (_parsedCurrentDomain.icann.topLevelDomains === parsedTargetDomain.icann.topLevelDomains &&
+                          _parsedCurrentDomain.icann.domain === parsedTargetDomain.icann.domain)
+    return isSameEtldP1
+  }
+
+  const looksLikePrivateOrigin =
+      [ParseResultType.NotListed, ParseResultType.Ip, ParseResultType.Reserved].includes(parsedTargetDomain.type)
+  if (looksLikePrivateOrigin) {
+    return _parsedCurrentDomain.hostname === parsedTargetDomain.hostname
+  }
+
+  return false
 }
 
 const isAdText = (text: string): boolean => {
@@ -507,7 +515,7 @@ const startObserving = () => {
 
 let _hasDelayOcurred: boolean = false
 let _startCheckingId: number | undefined = undefined
-const scheduleQueuePump = (hide1pContent: boolean) => {
+const scheduleQueuePump = (hide1pContent: boolean, generichide: boolean) => {
   // Three states possible here.  First, the delay has already occurred.  If so,
   // pass through to pumpCosmeticFilterQueues immediately.
   if (_hasDelayOcurred === true) {
@@ -523,25 +531,34 @@ const scheduleQueuePump = (hide1pContent: boolean) => {
   // called, in which case set up a timmer and quit
   _startCheckingId = window.requestIdleCallback(function ({ didTimeout }) {
     _hasDelayOcurred = true
-    startObserving()
+    if (!generichide) {
+      startObserving()
+    }
     if (!hide1pContent) {
       pumpCosmeticFilterQueuesOnIdle()
     }
   }, { timeout: maxTimeMSBeforeStart })
 }
 
+const vettedSearchEngines = ['duckduckgo', 'qwant', 'bing', 'startpage', 'yahoo', 'onesearch', 'google', 'yandex']
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   const action = typeof msg === 'string' ? msg : msg.type
   switch (action) {
     case 'cosmeticFilteringBackgroundReady': {
+      if (msg.hideOptions !== undefined) {
+        scheduleQueuePump(msg.hideOptions.hide1pContent, msg.hideOptions.generichide)
+      }
       injectScriptlet(msg.scriptlet)
-      scheduleQueuePump(msg.hide1pContent)
       break
     }
     case 'cosmeticFilterConsiderNewSelectors': {
       const { selectors } = msg
       let nextIndex = cosmeticStyleSheet.rules.length
       for (const selector of selectors) {
+        if (_parsedCurrentDomain.type === ParseResultType.Listed && vettedSearchEngines.includes(_parsedCurrentDomain.icann.domain)) {
+          continue
+        }
         if (allSelectorsToRules.has(selector)) {
           continue
         }
@@ -560,7 +577,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         // @ts-ignore
         document.adoptedStyleSheets = [cosmeticStyleSheet]
       }
-      scheduleQueuePump(false)
+      scheduleQueuePump(false, false)
       break
     }
   }

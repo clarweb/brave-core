@@ -18,15 +18,11 @@ using brave::ResponseCallback;
 
 TEST(BraveSiteHacksNetworkDelegateHelperTest, UAWhitelistedTest) {
   const std::vector<const GURL> urls(
-      {GURL("https://adobe.com"), GURL("https://adobe.com/something"),
-       GURL("https://duckduckgo.com"), GURL("https://duckduckgo.com/something"),
-       GURL("https://brave.com"), GURL("https://brave.com/something"),
+      {GURL("https://duckduckgo.com"), GURL("https://duckduckgo.com/something"),
        GURL("https://netflix.com"), GURL("https://netflix.com/something"),
-       GURL("https://a.adobe.com"), GURL("https://a.duckduckgo.com"),
-       GURL("https://a.brave.com"), GURL("https://a.netflix.com"),
-       GURL("https://a.adobe.com/something"),
+       GURL("https://a.duckduckgo.com"),
+       GURL("https://a.netflix.com"),
        GURL("https://a.duckduckgo.com/something"),
-       GURL("https://a.brave.com/something"),
        GURL("https://a.netflix.com/something")});
   for (const auto& url : urls) {
     net::HttpRequestHeaders headers;
@@ -114,7 +110,7 @@ TEST(BraveSiteHacksNetworkDelegateHelperTest, ReferrerPreserved) {
   }
 }
 
-TEST(BraveSiteHacksNetworkDelegateHelperTest, ReferrerCleared) {
+TEST(BraveSiteHacksNetworkDelegateHelperTest, ReferrerTruncated) {
   const std::vector<const GURL> urls({GURL("https://digg.com/7"),
                                       GURL("https://slashdot.org/5"),
                                       GURL("https://bondy.brian.org")});
@@ -128,7 +124,9 @@ TEST(BraveSiteHacksNetworkDelegateHelperTest, ReferrerCleared) {
     EXPECT_EQ(rc, net::OK);
     // new_url should not be set.
     EXPECT_TRUE(brave_request_info->new_url_spec.empty());
-    EXPECT_EQ(brave_request_info->new_referrer, url.GetOrigin().spec());
+    EXPECT_TRUE(brave_request_info->new_referrer.has_value());
+    EXPECT_EQ(brave_request_info->new_referrer.value(),
+              original_referrer.GetOrigin().spec());
   }
 }
 
@@ -170,6 +168,7 @@ TEST(BraveSiteHacksNetworkDelegateHelperTest, QueryStringUntouched) {
       "https://example.com/?+fbclid=1",
       "https://example.com/?%20fbclid=1",
       "https://example.com/#fbclid=1",
+      "https://example.com/1;k=v;&a=b&c=d&gclid=1234;%3fhttp://ad.co/?e=f&g=1",
   });
   for (const auto& url : urls) {
     auto brave_request_info =

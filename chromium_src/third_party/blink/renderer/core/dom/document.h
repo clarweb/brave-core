@@ -8,6 +8,10 @@
 
 #include "../../../../../../../third_party/blink/renderer/core/dom/document.h"
 
+#include <random>
+
+#include "base/callback.h"
+
 using blink::Document;
 using blink::GarbageCollected;
 using blink::HeapObjectHeader;
@@ -22,6 +26,9 @@ class StaticBitmapImage;
 }  // namespace blink
 
 namespace brave {
+
+typedef base::RepeatingCallback<float(float, size_t)> AudioFarblingCallback;
+
 class CORE_EXPORT BraveSessionCache final
     : public GarbageCollected<BraveSessionCache>,
       public Supplement<Document> {
@@ -35,19 +42,19 @@ class CORE_EXPORT BraveSessionCache final
 
   static BraveSessionCache& From(Document&);
 
-  double GetFudgeFactor();
+  AudioFarblingCallback GetAudioFarblingCallback(blink::LocalFrame* frame);
   scoped_refptr<blink::StaticBitmapImage> PerturbPixels(
       blink::LocalFrame* frame,
       scoped_refptr<blink::StaticBitmapImage> image_bitmap);
+  WTF::String GenerateRandomString(std::string seed, wtf_size_t length);
+  std::mt19937_64 MakePseudoRandomGenerator();
 
  private:
   bool farbling_enabled_;
   uint64_t session_key_;
   uint8_t domain_key_[32];
 
-  scoped_refptr<blink::StaticBitmapImage> PerturbBalanced(
-      scoped_refptr<blink::StaticBitmapImage> image_bitmap);
-  scoped_refptr<blink::StaticBitmapImage> PerturbMax(
+  scoped_refptr<blink::StaticBitmapImage> PerturbPixelsInternal(
       scoped_refptr<blink::StaticBitmapImage> image_bitmap);
 };
 }  // namespace brave

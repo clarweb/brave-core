@@ -7,13 +7,13 @@
 package org.chromium.chrome.browser.dialogs;
 
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager.NameNotFoundException;
-import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -27,8 +27,10 @@ import org.chromium.chrome.browser.BraveRewardsPanelPopup;
 import org.chromium.chrome.browser.flags.ChromeFeatureList;
 import org.chromium.chrome.browser.notifications.BraveOnboardingNotification;
 import org.chromium.chrome.browser.onboarding.OnboardingPrefManager;
-import org.chromium.chrome.browser.settings.BraveRewardsPreferences;
 import org.chromium.chrome.browser.profiles.Profile;
+import org.chromium.chrome.browser.settings.BraveRewardsPreferences;
+import org.chromium.chrome.browser.preferences.BravePref;
+import org.chromium.chrome.browser.preferences.BravePrefServiceBridge;
 import org.chromium.chrome.browser.util.PackageUtils;
 
 import java.lang.System;
@@ -45,8 +47,8 @@ public class BraveAdsSignupDialog {
         boolean shouldShow =
           shouldShowOnboardingDialog()
           && PackageUtils.isFirstInstall(context)
-          && !BraveAdsNativeHelper.nativeIsBraveAdsEnabled(Profile.getLastUsedProfile())
-          && !BraveRewardsPanelPopup.isBraveRewardsEnabled()
+          && !BraveAdsNativeHelper.nativeIsBraveAdsEnabled(Profile.getLastUsedRegularProfile())
+          && !BravePrefServiceBridge.getInstance().getBoolean(BravePref.BRAVE_REWARDS_ENABLED)
           && hasElapsed24Hours(context)
           && ChromeFeatureList.isEnabled(BraveFeatureList.BRAVE_REWARDS);
 
@@ -60,8 +62,8 @@ public class BraveAdsSignupDialog {
         boolean shouldShow =
           shouldShowOnboardingDialog()
           && !PackageUtils.isFirstInstall(context)
-          && !BraveAdsNativeHelper.nativeIsBraveAdsEnabled(Profile.getLastUsedProfile())
-          && !BraveRewardsPanelPopup.isBraveRewardsEnabled()
+          && !BraveAdsNativeHelper.nativeIsBraveAdsEnabled(Profile.getLastUsedRegularProfile())
+          && !BravePrefServiceBridge.getInstance().getBoolean(BravePref.BRAVE_REWARDS_ENABLED)
           && ChromeFeatureList.isEnabled(BraveFeatureList.BRAVE_REWARDS);
 
         boolean shouldShowForViewCount = shouldShowForViewCount();
@@ -74,9 +76,9 @@ public class BraveAdsSignupDialog {
         boolean shouldShow =
           shouldShowOnboardingDialog()
           && !PackageUtils.isFirstInstall(context)
-          && !BraveAdsNativeHelper.nativeIsBraveAdsEnabled(Profile.getLastUsedProfile())
-          && BraveRewardsPanelPopup.isBraveRewardsEnabled()
-          && BraveAdsNativeHelper.nativeIsLocaleValid(Profile.getLastUsedProfile())
+          && !BraveAdsNativeHelper.nativeIsBraveAdsEnabled(Profile.getLastUsedRegularProfile())
+          && BravePrefServiceBridge.getInstance().getBoolean(BravePref.BRAVE_REWARDS_ENABLED)
+          && BraveAdsNativeHelper.nativeIsLocaleValid(Profile.getLastUsedRegularProfile())
           && ChromeFeatureList.isEnabled(BraveFeatureList.BRAVE_REWARDS);
 
         boolean shouldShowForViewCount = shouldShowForViewCount();
@@ -123,7 +125,7 @@ public class BraveAdsSignupDialog {
                 braveRewardsNativeWorker.CreateWallet();
 
                 // Enable ads
-                BraveAdsNativeHelper.nativeSetAdsEnabled(Profile.getLastUsedProfile());
+                BraveAdsNativeHelper.nativeSetAdsEnabled(Profile.getLastUsedRegularProfile());
             }
         }).create();
         alertDialog.show();
@@ -146,7 +148,7 @@ public class BraveAdsSignupDialog {
                 // Enable ads
                 neverShowOnboardingDialogAgain();
 
-                BraveAdsNativeHelper.nativeSetAdsEnabled(Profile.getLastUsedProfile());
+                BraveAdsNativeHelper.nativeSetAdsEnabled(Profile.getLastUsedRegularProfile());
             }
         }).create();
         alertDialog.show();

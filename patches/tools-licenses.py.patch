@@ -1,5 +1,5 @@
 diff --git a/tools/licenses.py b/tools/licenses.py
-index b61ee97f416f564f8324bbca90bd9d9c8a67f6fa..5c1d4eb2447c275233ec0ec12036a103d5691808 100755
+index fb1762f5cf026ab4751412109a5c5de9a4adc161..7eb122537c8d4364ef92756d2ba209a4b4242606 100755
 --- a/tools/licenses.py
 +++ b/tools/licenses.py
 @@ -35,6 +35,7 @@ else:
@@ -10,7 +10,7 @@ index b61ee97f416f564f8324bbca90bd9d9c8a67f6fa..5c1d4eb2447c275233ec0ec12036a103
  
  
  # Paths from the root of the tree to directories to skip.
-@@ -294,6 +295,7 @@ SPECIAL_CASES = {
+@@ -302,6 +303,7 @@ SPECIAL_CASES = {
          "License File": "/third_party/swiftshader/LICENSE.txt",
      },
  }
@@ -18,23 +18,23 @@ index b61ee97f416f564f8324bbca90bd9d9c8a67f6fa..5c1d4eb2447c275233ec0ec12036a103
  
  # Special value for 'License File' field used to indicate that the license file
  # should not be used in about:credits.
-@@ -479,7 +481,8 @@ def FindThirdPartyDirs(prune_paths, root):
-             if skip in dirs:
-                 dirs.remove(skip)
+@@ -499,7 +501,8 @@ def FindThirdPartyDirs(prune_paths, root):
+       if skip in dirs:
+         dirs.remove(skip)
  
--        if os.path.basename(path) == 'third_party':
-+        if (os.path.basename(path) == 'third_party' or
-+            os.path.basename(path) in BRAVE_THIRD_PARTY_DIRS):
-             # Add all subdirectories that are not marked for skipping.
-             for dir in dirs:
-                 dirpath = os.path.join(path, dir)
-@@ -664,7 +667,8 @@ def GenerateCredits(
-     for path in third_party_dirs:
-         try:
-             metadata = ParseDir(path, _REPOSITORY_ROOT)
--        except LicenseError:
-+        except LicenseError as e:
-+            CheckBraveMissingLicense(target_os, path, e)
-             # TODO(phajdan.jr): Convert to fatal error (http://crbug.com/39240).
-             continue
-         if metadata['License File'] == NOT_SHIPPED:
+-    if os.path.basename(path) == 'third_party':
++    if (os.path.basename(path) == 'third_party' or
++        os.path.basename(path) in BRAVE_THIRD_PARTY_DIRS):
+       # Add all subdirectories that are not marked for skipping.
+       for dir in dirs:
+         dirpath = os.path.join(path, dir)
+@@ -684,7 +687,8 @@ def GenerateCredits(
+   for path in third_party_dirs:
+     try:
+       metadata = ParseDir(path, _REPOSITORY_ROOT)
+-    except LicenseError:
++    except LicenseError as e:
++      CheckBraveMissingLicense(target_os, path, e)
+       # TODO(phajdan.jr): Convert to fatal error (http://crbug.com/39240).
+       continue
+     if metadata['License File'] == NOT_SHIPPED:

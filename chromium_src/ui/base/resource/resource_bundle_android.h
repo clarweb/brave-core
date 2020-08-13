@@ -6,14 +6,14 @@
 #ifndef BRAVE_CHROMIUM_SRC_UI_BASE_RESOURCE_RESOURCE_BUNDLE_ANDROID_H_
 #define BRAVE_CHROMIUM_SRC_UI_BASE_RESOURCE_RESOURCE_BUNDLE_ANDROID_H_
 
-#include "../../../../ui/base/resource/resource_bundle_android.h"
+#include "../../../../../ui/base/resource/resource_bundle_android.h"
 
 namespace ui {
 
-UI_BASE_EXPORT void BraveLoadMainAndroidPackFile(
+COMPONENT_EXPORT(UI_BASE) void BraveLoadMainAndroidPackFile(
     const char* path_within_apk,
     const base::FilePath& disk_file_path);
-UI_BASE_EXPORT void BraveLoadBrave100PercentPackFile(
+COMPONENT_EXPORT(UI_BASE) void BraveLoadBrave100PercentPackFile(
     const char* path_within_apk,
     const base::FilePath& disk_file_path);
 

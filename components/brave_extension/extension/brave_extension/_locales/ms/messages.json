@@ -55,6 +55,18 @@
     "message": "Penjejak merentas laman disekat",
     "description": "Message for the scripts blocked row label"
   },
+  "aggressiveAdsTrackersBlocking": {
+    "message": "Penjejak & iklan disekat (agresif)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with aggressive heuristics"
+  },
+  "standardAdsTrackersBlocking": {
+    "message": "Penjejak & iklan disekat (standard)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with standard heuristics"
+  },
+  "allowAdsTrackers": {
+    "message": "Benarkan semua penjejak & iklan",
+    "description": "Message for the option in the ads and trackers blocking select field to allow all ads and trackers"
+  },
   "connectionsUpgradedHTTPS": {
     "message": "Sambungan dipertingkatkan kepada HTTPS",
     "description": "Message for the connections upgraded row label and for the main blocked resources text when there is more than one connection upgraded (plural) and no other ads/trackers blocked"
@@ -79,16 +91,16 @@
     "message": "Semua kuki dibenarkan ",
     "description": "Message for the option in the cookies select field to allow all cookies"
   },
-  "thirdPartyFingerprintingBlocked": {
-    "message": "Pengecapan jari cross-site disekat",
+  "standardFingerprinting": {
+    "message": "Pengecapan jari disekat (standard)",
     "description": "Message for the option in the fingerprinting select field to block all 3rd party recognition attempts"
   },
-  "allFingerprintingBlocked": {
-    "message": "Percubaan pengecapan jari disekat",
+  "strictFingerprinting": {
+    "message": "Pengecapan jari disekat (ketat, mungkin akan melanggar laman)",
     "description": "Message for the option in the fingerprinting select field to block all fingerprinting attempts"
   },
-  "allFingerprintingAllowed": {
-    "message": "Semua percubaan pengecapan jari dibenarkan",
+  "allowAllFingerprinting": {
+    "message": "Benarkan semua pengecapan jari",
     "description": "Message for the option in the fingerprinting select field to allow all fingerprinting attempts"
   },
   "deviceRecognitionAttempts": {

@@ -25,15 +25,9 @@ class PromotionTransfer {
   explicit PromotionTransfer(bat_ledger::LedgerImpl* ledger);
   ~PromotionTransfer();
 
-  void Start(ledger::ExternalWalletPtr wallet, ledger::ResultCallback callback);
+  void Start(ledger::ResultCallback callback);
 
  private:
-  void OnAnonExternalWallet(
-      const ledger::Result result,
-      ledger::ResultCallback callback);
-
-  void GetEligiblePromotion(ledger::ResultCallback callback);
-
   void GetEligibleTokens(
       ledger::PromotionList promotions,
       ledger::ResultCallback callback);

@@ -55,6 +55,18 @@
     "message": "Блокирани са тракери между сайтове",
     "description": "Message for the scripts blocked row label"
   },
+  "aggressiveAdsTrackersBlocking": {
+    "message": "Проследяването и рекламите са блокирани (агресивно)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with aggressive heuristics"
+  },
+  "standardAdsTrackersBlocking": {
+    "message": "Проследяването и рекламите са блокирани (стандартно)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with standard heuristics"
+  },
+  "allowAdsTrackers": {
+    "message": "Разрешаване на всички проследявания и реклами",
+    "description": "Message for the option in the ads and trackers blocking select field to allow all ads and trackers"
+  },
   "connectionsUpgradedHTTPS": {
     "message": "Връзките надградени към HTTPS",
     "description": "Message for the connections upgraded row label and for the main blocked resources text when there is more than one connection upgraded (plural) and no other ads/trackers blocked"
@@ -79,16 +91,16 @@
     "message": "Всички „бисквитки“ са разрешени",
     "description": "Message for the option in the cookies select field to allow all cookies"
   },
-  "thirdPartyFingerprintingBlocked": {
-    "message": "Снемането на пръстови отпечатъци от други сайтове е блокирано",
+  "standardFingerprinting": {
+    "message": "Запазването на цифрови отпечатъци е блокирано (стандартно)",
     "description": "Message for the option in the fingerprinting select field to block all 3rd party recognition attempts"
   },
-  "allFingerprintingBlocked": {
-    "message": "Опитите за снемане на пръстови отпечатъци са блокирани",
+  "strictFingerprinting": {
+    "message": "Запазването на цифрови отпечатъци е блокирано (строго, може да повреди сайтове)",
     "description": "Message for the option in the fingerprinting select field to block all fingerprinting attempts"
   },
-  "allFingerprintingAllowed": {
-    "message": "Разрешени са всички опити за снемане на отпечатъци",
+  "allowAllFingerprinting": {
+    "message": "Разрешаване на всички пръстови отпечатъци",
     "description": "Message for the option in the fingerprinting select field to allow all fingerprinting attempts"
   },
   "deviceRecognitionAttempts": {

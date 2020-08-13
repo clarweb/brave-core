@@ -9,13 +9,13 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 
-import org.chromium.base.Callback;
 import org.chromium.base.supplier.ObservableSupplier;
 import org.chromium.chrome.R;
 import org.chromium.chrome.browser.ActivityTabProvider;
+import org.chromium.chrome.browser.BraveActivity;
+import org.chromium.chrome.browser.ThemeColorProvider;
 import org.chromium.chrome.browser.compositor.layouts.OverviewModeBehavior;
 import org.chromium.chrome.browser.tab.TabImpl;
-import org.chromium.chrome.browser.ThemeColorProvider;
 import org.chromium.chrome.browser.toolbar.IncognitoStateProvider;
 import org.chromium.chrome.browser.toolbar.MenuButton;
 import org.chromium.chrome.browser.toolbar.TabCountProvider;
@@ -25,7 +25,7 @@ import org.chromium.chrome.browser.ui.appmenu.AppMenuButtonHelper;
  * Brave's extension to BrowsingModeBottomToolbarCoordinator.
  */
 public class BraveBrowsingModeBottomToolbarCoordinator
-        extends BrowsingModeBottomToolbarCoordinator {
+    extends BrowsingModeBottomToolbarCoordinator {
     private final BrowsingModeBottomToolbarLinearLayout mBraveToolbarRoot;
     private final ActivityTabProvider mBraveTabProvider;
     private final BookmarksButton mBookmarkButton;
@@ -35,9 +35,11 @@ public class BraveBrowsingModeBottomToolbarCoordinator
     BraveBrowsingModeBottomToolbarCoordinator(View root, ActivityTabProvider tabProvider,
             OnClickListener homeButtonListener, OnClickListener searchAcceleratorListener,
             ObservableSupplier<OnClickListener> shareButtonListenerSupplier,
-            OnLongClickListener tabSwitcherLongClickListener) {
+            OnLongClickListener tabSwitcherLongClickListener,
+            ObservableSupplier<OverviewModeBehavior> overviewModeBehaviorSupplier) {
         super(root, tabProvider, homeButtonListener, searchAcceleratorListener,
-                shareButtonListenerSupplier, tabSwitcherLongClickListener);
+                shareButtonListenerSupplier, tabSwitcherLongClickListener,
+                overviewModeBehaviorSupplier);
         mBraveTabProvider = tabProvider;
         mBraveToolbarRoot = root.findViewById(R.id.bottom_toolbar_browsing);
         mBraveNewTabButton = mBraveToolbarRoot.findViewById(R.id.bottom_new_tab_button);
@@ -47,10 +49,12 @@ public class BraveBrowsingModeBottomToolbarCoordinator
             getNewTabButtonParent().setVisibility(View.GONE);
             OnClickListener bookmarkClickHandler = v -> {
                 TabImpl tab = (TabImpl) mBraveTabProvider.get();
-                if (tab == null || tab.getActivity() == null) {
+                BraveActivity activity = BraveActivity.getBraveActivity();
+                if (tab == null || activity == null) {
+                    assert false;
                     return;
                 }
-                tab.getActivity().addOrEditBookmark(tab);
+                activity.addOrEditBookmark(tab);
             };
             mBookmarkButton.setOnClickListener(bookmarkClickHandler);
         }
@@ -61,13 +65,12 @@ public class BraveBrowsingModeBottomToolbarCoordinator
     }
 
     @Override
-    public void initializeWithNative(OnClickListener newTabListener, OnClickListener tabSwitcherListener,
-            AppMenuButtonHelper menuButtonHelper, TabCountProvider tabCountProvider,
-            ThemeColorProvider themeColorProvider, IncognitoStateProvider incognitoStateProvider,
-            OverviewModeBehavior overviewModeBehavior) {
-        super.initializeWithNative(newTabListener, tabSwitcherListener,
-                menuButtonHelper, tabCountProvider, themeColorProvider,
-                incognitoStateProvider, overviewModeBehavior);
+    public void initializeWithNative(OnClickListener newTabListener,
+            OnClickListener tabSwitcherListener, AppMenuButtonHelper menuButtonHelper,
+            TabCountProvider tabCountProvider, ThemeColorProvider themeColorProvider,
+            IncognitoStateProvider incognitoStateProvider) {
+        super.initializeWithNative(newTabListener, tabSwitcherListener, menuButtonHelper,
+                tabCountProvider, themeColorProvider, incognitoStateProvider);
         mBookmarkButton.setThemeColorProvider(themeColorProvider);
 
         mMenuButton.setAppMenuButtonHelper(menuButtonHelper);

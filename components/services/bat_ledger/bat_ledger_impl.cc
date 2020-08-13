@@ -14,7 +14,7 @@
 
 #include "base/containers/flat_map.h"
 #include "brave/base/containers/utils.h"
-#include "brave/components/services/bat_ledger/bat_ledger_client_mojo_proxy.h"
+#include "brave/components/services/bat_ledger/bat_ledger_client_mojo_bridge.h"
 
 using std::placeholders::_1;
 using std::placeholders::_2;
@@ -23,16 +23,14 @@ using std::placeholders::_3;
 namespace bat_ledger {
 
 BatLedgerImpl::BatLedgerImpl(
-    mojom::BatLedgerClientAssociatedPtrInfo client_info)
-  : bat_ledger_client_mojo_proxy_(
-      new BatLedgerClientMojoProxy(std::move(client_info))),
+    mojo::PendingAssociatedRemote<mojom::BatLedgerClient> client_info)
+  : bat_ledger_client_mojo_bridge_(
+      new BatLedgerClientMojoBridge(std::move(client_info))),
     ledger_(
-      ledger::Ledger::CreateInstance(bat_ledger_client_mojo_proxy_.get())) {
+      ledger::Ledger::CreateInstance(bat_ledger_client_mojo_bridge_.get())) {
 }
 
-BatLedgerImpl::~BatLedgerImpl() {
-}
-
+BatLedgerImpl::~BatLedgerImpl() = default;
 
 void BatLedgerImpl::OnInitialize(
     CallbackHolder<InitializeCallback>* holder,
@@ -280,10 +278,9 @@ void BatLedgerImpl::GetWalletPassphrase(GetWalletPassphraseCallback callback) {
 // static
 void BatLedgerImpl::OnRecoverWallet(
     CallbackHolder<RecoverWalletCallback>* holder,
-    ledger::Result result,
-    double balance) {
+    ledger::Result result) {
   if (holder->is_valid())
-    std::move(holder->get()).Run(result, balance);
+    std::move(holder->get()).Run(result);
   delete holder;
 }
 
@@ -296,8 +293,7 @@ void BatLedgerImpl::RecoverWallet(
   ledger_->RecoverWallet(pass_phrase, std::bind(
       BatLedgerImpl::OnRecoverWallet,
       holder,
-      _1,
-      _2));
+      _1));
 }
 
 void BatLedgerImpl::SetRewardsMainEnabled(bool enabled) {
@@ -326,14 +322,6 @@ void BatLedgerImpl::SetAutoContributionAmount(double amount) {
 
 void BatLedgerImpl::SetAutoContributeEnabled(bool enabled) {
   ledger_->SetAutoContributeEnabled(enabled);
-}
-
-void BatLedgerImpl::UpdateAdsRewards() {
-  ledger_->UpdateAdsRewards();
-}
-
-void BatLedgerImpl::OnTimer(uint32_t timer_id) {
-  ledger_->OnTimer(timer_id);
 }
 
 // static
@@ -462,46 +450,6 @@ void BatLedgerImpl::HasSufficientBalanceToReconcile(
       AsWeakPtr(), std::move(callback));
   ledger_->HasSufficientBalanceToReconcile(
       std::bind(BatLedgerImpl::OnHasSufficientBalanceToReconcile, holder, _1));
-}
-
-void BatLedgerImpl::SetCatalogIssuers(
-    const std::string& info) {
-  ledger_->SetCatalogIssuers(info);
-}
-
-void BatLedgerImpl::ConfirmAd(
-    const std::string& json,
-    const std::string& confirmation_type) {
-  ledger_->ConfirmAd(json, confirmation_type);
-}
-
-void BatLedgerImpl::ConfirmAction(
-    const std::string& creative_instance_id,
-    const std::string& creative_set_id,
-    const std::string& confirmation_type) {
-  ledger_->ConfirmAction(creative_instance_id, creative_set_id,
-      confirmation_type);
-}
-
-// static
-void BatLedgerImpl::OnGetTransactionHistory(
-    CallbackHolder<GetTransactionHistoryCallback>* holder,
-    std::unique_ptr<ledger::TransactionsInfo> history) {
-  std::string json_transactions = history.get() ? history->ToJson() : "";
-  DCHECK(holder);
-  if (holder->is_valid())
-    std::move(holder->get()).Run(json_transactions);
-  delete holder;
-}
-
-void BatLedgerImpl::GetTransactionHistory(
-    GetTransactionHistoryCallback callback) {
-  auto* holder = new CallbackHolder<GetTransactionHistoryCallback>(
-      AsWeakPtr(), std::move(callback));
-
-  ledger_->GetTransactionHistory(
-      std::bind(BatLedgerImpl::OnGetTransactionHistory,
-          holder, _1));
 }
 
 void BatLedgerImpl::OnGetRewardsInternalsInfo(
@@ -1072,6 +1020,28 @@ void BatLedgerImpl::GetAllPromotions(GetAllPromotionsCallback callback) {
 
   ledger_->GetAllPromotions(
       std::bind(BatLedgerImpl::OnGetAllPromotions,
+          holder,
+          _1));
+}
+
+// static
+void BatLedgerImpl::OnShutdown(
+    CallbackHolder<ShutdownCallback>* holder,
+    const ledger::Result result) {
+  DCHECK(holder);
+  if (holder->is_valid()) {
+    std::move(holder->get()).Run(result);
+  }
+
+  delete holder;
+}
+
+void BatLedgerImpl::Shutdown(ShutdownCallback callback) {
+  auto* holder = new CallbackHolder<ShutdownCallback>(
+      AsWeakPtr(), std::move(callback));
+
+  ledger_->Shutdown(
+      std::bind(BatLedgerImpl::OnShutdown,
           holder,
           _1));
 }

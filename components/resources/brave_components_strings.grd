@@ -28,6 +28,7 @@
       <output filename="brave_components_strings_pa.pak" type="data_package" lang="pa" />
       <output filename="brave_components_strings_si.pak" type="data_package" lang="si" />
       <output filename="brave_components_strings_sq.pak" type="data_package" lang="sq" />
+      <output filename="brave_components_strings_sr-Latn.pak" type="data_package" lang="sr-Latn" />
       <output filename="brave_components_strings_ur.pak" type="data_package" lang="ur" />
       <output filename="brave_components_strings_uz.pak" type="data_package" lang="uz" />
       <output filename="brave_components_strings_zh-HK.pak" type="data_package" lang="zh-HK" />
@@ -45,7 +46,13 @@
     <output filename="brave_components_strings_en-GB.pak" type="data_package" lang="en-GB" />
     <output filename="brave_components_strings_en-US.pak" type="data_package" lang="en" />
     <output filename="brave_components_strings_es.pak" type="data_package" lang="es" />
-    <output filename="brave_components_strings_es-419.pak" type="data_package" lang="es-419" />
+    <if expr="is_ios">
+      <!-- iOS uses es-MX for es-419 -->
+      <output filename="brave_components_strings_es-MX.pak" type="data_package" lang="es-419" />
+    </if>
+    <if expr="not is_ios">
+      <output filename="brave_components_strings_es-419.pak" type="data_package" lang="es-419" />
+    </if>
     <output filename="brave_components_strings_et.pak" type="data_package" lang="et" />
     <output filename="brave_components_strings_fa.pak" type="data_package" lang="fa" />
     <output filename="brave_components_strings_fake-bidi.pak" type="data_package" lang="fake-bidi" />
@@ -72,7 +79,13 @@
          be 'nb'. -->
     <output filename="brave_components_strings_nb.pak" type="data_package" lang="no" />
     <output filename="brave_components_strings_pl.pak" type="data_package" lang="pl" />
-    <output filename="brave_components_strings_pt-BR.pak" type="data_package" lang="pt-BR" />
+    <if expr="is_ios">
+      <!-- iOS uses pt for pt-BR -->
+      <output filename="brave_components_strings_pt.pak" type="data_package" lang="pt-BR" />
+    </if>
+    <if expr="not is_ios">
+      <output filename="brave_components_strings_pt-BR.pak" type="data_package" lang="pt-BR" />
+    </if>
     <output filename="brave_components_strings_pt-PT.pak" type="data_package" lang="pt-PT" />
     <output filename="brave_components_strings_ro.pak" type="data_package" lang="ro" />
     <output filename="brave_components_strings_ru.pak" type="data_package" lang="ru" />
@@ -188,6 +201,19 @@
       <message name="IDS_BRAVE_NEW_TAB_TOP_SITES" desc="Top Sites title">top sites</message>
       <message name="IDS_BRAVE_NEW_TAB_STATS" desc="Brave Stats title">Brave Stats</message>
       <message name="IDS_BRAVE_NEW_TAB_CLOCK" desc="Clock title">clock</message>
+      <message name="IDS_BRAVE_NEW_TAB_REWARDS" desc="Brave Rewards Title">Brave Rewards</message>
+      <message name="IDS_BRAVE_NEW_TAB_BACKGROUND_IMAGE" desc="Background image title">Background Image</message>
+
+      <message name="IDS_BRAVE_NEW_TAB_STATS_TAB" desc="Brave Stats title">Brave Stats</message>
+      <message name="IDS_BRAVE_NEW_TAB_CLOCK_TAB" desc="Clock title">Clock</message>
+      <message name="IDS_BRAVE_NEW_TAB_TOP_SITES_TAB" desc="Top Sites title">Top Sites</message>
+      <message name="IDS_BRAVE_NEW_TAB_BACKGROUND_IMG_TAB" desc="Background image title">Background Image</message>
+      <message name="IDS_BRAVE_NEW_TAB_WIDGET_ADD" desc="Add Widget Text">Add</message>
+      <message name="IDS_BRAVE_NEW_TAB_WIDGET_HIDE" desc="Hide Widget Text">Hide</message>
+      <message name="IDS_BRAVE_NEW_TAB_BRAVE_REWARDS_TITLE" desc="">Brave Rewards</message>
+      <message name="IDS_BRAVE_NEW_TAB_REWARDS_WIDGET_DESC" desc="Rewards widget description">Earn tokens for watching privacy-respecting ads.</message>
+      <message name="IDS_BRAVE_NEW_TAB_BINANCE_WIDGET_DESC" desc="Binance widget description">Trade Crypto on Binance directly in your browser.</message>
+      <message name="IDS_BRAVE_NEW_TAB_GEMINI_WIDGET_DESC" desc="Gemini widget description">Trade Crypto on Gemini directly in your browser.</message>
 
       <!-- WebUI private tab resources -->
       <message name="IDS_BRAVE_PRIVATE_NEW_TAB_LEARN_MORE" desc="">Learn more</message>
@@ -273,6 +299,13 @@
       <message name="IDS_BRAVE_REWARDS_LOCAL_ADS_PER_HOUR_3" desc="">3 ads per hour</message>
       <message name="IDS_BRAVE_REWARDS_LOCAL_ADS_PER_HOUR_4" desc="">4 ads per hour</message>
       <message name="IDS_BRAVE_REWARDS_LOCAL_ADS_PER_HOUR_5" desc="">5 ads per hour</message>
+      <message name="IDS_BRAVE_REWARDS_LOCAL_ADS_SUBDIVISION_TARGETING_TITLE" desc="">State level ad targeting</message>
+      <message name="IDS_BRAVE_REWARDS_LOCAL_ADS_SUBDIVISION_TARGETING_DESCRIPTION" desc="">This allows Brave to show you ads meant specifically for your state.</message>
+      <message name="IDS_BRAVE_REWARDS_LOCAL_ADS_SUBDIVISION_TARGETING_LEARN" desc="">Learn More</message>
+      <message name="IDS_BRAVE_REWARDS_LOCAL_ADS_SUBDIVISION_TARGETING_AUTOMATICALLY_DETECTED_AS" desc="">Auto-detected as {{adsSubdivisionTarget}}</message>
+      <message name="IDS_BRAVE_REWARDS_LOCAL_ADS_SUBDIVISION_TARGETING_AUTOMATICALLY_DETECT" desc="">Auto-detect</message>
+      <message name="IDS_BRAVE_REWARDS_LOCAL_ADS_SUBDIVISION_TARGETING_DISABLE" desc="">Disable</message>
+      <message name="IDS_BRAVE_REWARDS_LOCAL_ADS_SUBDIVISION_TARGETING_DISABLED" desc="">Disabled</message>
       <message name="IDS_BRAVE_UI_BAT_REWARDS_TEXT" desc="">BAT</message>
       <message name="IDS_BRAVE_UI_BAP_REWARDS_TEXT" desc="">BAP</message>
       <message name="IDS_BRAVE_UI_BAT_POINTS_TEXT" desc="">BAT Points</message>
@@ -318,9 +351,10 @@
       <message name="IDS_BRAVE_REWARDS_LOCAL_DONAT_ABILITY_TW" desc="">Twitter</message>
       <message name="IDS_BRAVE_REWARDS_LOCAL_DONAT_DISABLED_TEXT1" desc="">Tip on the spot as you find gems.</message>
       <message name="IDS_BRAVE_REWARDS_LOCAL_DONAT_DISABLED_TEXT2" desc="">If you like, let people know with a quick tweet.</message>
-      <message name="IDS_BRAVE_REWARDS_LOCAL_WALLET_RECOVERY_SUCCESS" desc="">{{balance}} {{currency}} was recovered. Your wallet key has been verified and loaded successfully.</message>
+      <message name="IDS_BRAVE_REWARDS_LOCAL_WALLET_RECOVERY_SUCCESS" desc="">Your wallet key has been verified and loaded successfully.</message>
       <message name="IDS_BRAVE_REWARDS_LOCAL_WALLET_RESTORED" desc="">Wallet restored!</message>
       <message name="IDS_BRAVE_REWARDS_LOCAL_WALLET_RECOVERY_FAIL" desc="">Please re-enter keys or try different keys.</message>
+      <message name="IDS_BRAVE_REWARDS_LOCAL_WALLET_RECOVERY_OUTDATED" desc="">The restore key entered is not supported anymore. Please visit <ph name="BEGIN_LINK_REGION_TEXT">&lt;a target="_blank" href="http://brave.com/faq#convert-old-keys"&gt;</ph>here<ph name="END_LINK_REGION_TEXT">&lt;/a&gt;</ph> to get a new key.</message>
       <message name="IDS_BRAVE_REWARDS_LOCAL_ALMOST_THERE" desc="">Almost there…</message>
       <message name="IDS_BRAVE_REWARDS_LOCAL_PROVE_HUMAN" desc="">Prove that you are human!</message>
       <message name="IDS_BRAVE_REWARDS_LOCAL_NOT_QUITE" desc="">Hmmm, not quite...</message>
@@ -344,41 +378,43 @@
       <message name="IDS_BRAVE_REWARDS_LOCAL_REDIRECT_MODAL_NOT_ALLOWED" desc="">BAT is not currently supported in your region. Please refer <ph name="BEGIN_LINK_REGION_TEXT">&lt;a target="_blank" href="$1"&gt;</ph>here<ph name="END_LINK_REGION_TEXT">&lt;/a&gt;</ph> for updates.</message>
       <message name="IDS_BRAVE_REWARDS_LOCAL_REDIRECT_MODAL_CLOSE" desc="">Close</message>
       <message name="IDS_BRAVE_REWARDS_LOCAL_REDIRECT_MODAL_ERROR_WALLET" desc="">Error creating Brave Browser BAT card</message>
+      <message name="IDS_BRAVE_REWARDS_LOCAL_REDIRECT_MODAL_BAT_LIMIT_TITLE" desc="">You need a verified wallet to Login</message>
+      <message name="IDS_BRAVE_REWARDS_LOCAL_REDIRECT_MODAL_BAT_LIMIT_TEXT" desc="">You need a minimum of 25 BAT to create an Uphold wallet. Please try again after you have verified your wallet with Uphold.</message>
 
       <!-- WebUI rewards internals resources -->
       <message name="IDS_BRAVE_REWARDS_INTERNALS_AMOUNT" desc="Amount">Amount:</message>
       <message name="IDS_BRAVE_REWARDS_INTERNALS_AUTO_REFRESH" desc="">Automatically refresh every 5 seconds</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_CLEAR_BUTTON" desc="">Clear</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_CURRENT_RECONCILE" desc="Current reconcile">Current Reconcile</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_DOWNLOAD_BUTTON" desc="">Download full log</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_INVALID" desc="Invalid indicator">Invalid</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_KEY_INFO_SEED" desc="Key info seed">Key Info Seed:</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_LOG_NOTICE" desc="">We show the last {{numberOfLines}} lines of the log. If you want the whole log, you can download it above.</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_REFRESH_BUTTON" desc="Refresh button">Refresh</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_LEVEL" desc="Retry level">Retry Level:</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_STEP" desc="Retry step">Retry Step:</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_STEP_CURRENT" desc="Retry step current">Current</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_STEP_FINAL" desc="Retry step final">Final</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_STEP_PAYLOAD" desc="Retry step payload">Payload</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_STEP_PREPARE" desc="Retry step prepare">Prepare</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_STEP_PROOF" desc="Retry step proof">Proof</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_STEP_RECONCILE" desc="Retry step reconcile">Reconcile</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_STEP_REGISTER" desc="Retry step register">Register</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_STEP_UNKNOWN" desc="Retry step unknown">Unknown</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_STEP_VIEWING" desc="Retry step viewing">Viewing</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_STEP_VOTE" desc="Retry step vote">Vote</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_STEP_WINNERS" desc="Retry step winners">Winners</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_REWARDS_NOT_ENABLED" desc="Rewards not enabled">Brave Rewards is not enabled. Enable it by visiting</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_VALID" desc="Valid indicator">Valid</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_VIEWING_ID" desc="Viewing ID">Viewing ID:</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_WALLET_PAYMENT_ID" desc="Wallet payment ID">Wallet Payment ID:</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_PERSONA_ID" desc="Wallet persona ID">Persona ID</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_USER_ID" desc="Wallet user ID">User ID</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_BOOT_STAMP" desc="Wallet start time">Wallet created</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_TOTAL_BALANCE" desc="Total balance">Total balance</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_WALLET_INFO" desc="">Wallet info</message>
       <message name="IDS_BRAVE_REWARDS_INTERNALS_BALANCE_INFO" desc="">Balance info</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTIONS_IN_PROGRESS" desc="">Contributions in progress</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_BOOT_STAMP" desc="Wallet start time">Wallet created:</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CLEAR_BUTTON" desc="">Clear</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTED_AMOUNT" desc="Contributed Amount">Contributed amount:</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTED_CREATED_AT" desc="">Created at:</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION" desc="Contribution">Contribution</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_PROCESSOR" desc="Contribution processor">Processor:</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP" desc="">Step:</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP_AUTO_CONTRIBUTE_TABLE_EMPTY" desc="">Auto Contribute table empty</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP_NOT_ENOUGH_FUNDS" desc="">Not enough funds</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP_FAILED" desc="">Failed</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP_COMPLETED" desc="">Completed</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP_NO" desc="">Unknown</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP_START" desc="">Start</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP_PREPARE" desc="">Prepare</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP_RESERVE" desc="">Reserve</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP_EXTERNAL_TRANSACTION" desc="">External transaction</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP_CREDS" desc="">Creds</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP_REWARDS_OFF" desc="">Rewards was turned off</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP_AUTO_CONTRIBUTE_OFF" desc="">Auto-contribute was turned off</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_STEP_RETRY_COUNT" desc="">Stopped retrying</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_MAIN_DISCLAIMER" desc="">WARNING: Data on this page may be sensitive. Treat them as you would your wallet private keys. Be careful who you share them with.</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTION_TYPE" desc="Contribution type">Type:</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_CONTRIBUTIONS" desc="">Contributions</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_DOWNLOAD_BUTTON" desc="">Download full log</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_EXTERNAL_WALLET" desc="">External wallet info</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_INVALID" desc="Invalid indicator">Invalid</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_KEY_INFO_SEED" desc="Key info seed">Key info seed:</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_LOG_NOTICE" desc="">We show the last {{numberOfLines}} lines of the log. If you want the whole log, you can download it above.</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_MAIN_TITLE" desc="">Rewards internals</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_PERSONA_ID" desc="Wallet persona ID">Persona ID</message>
       <message name="IDS_BRAVE_REWARDS_INTERNALS_PROMOTION_ADS" desc="">Ads</message>
       <message name="IDS_BRAVE_REWARDS_INTERNALS_PROMOTION_AMOUNT" desc="">Amount</message>
       <message name="IDS_BRAVE_REWARDS_INTERNALS_PROMOTION_CLAIMED_AT" desc="">Claimed at</message>
@@ -397,11 +433,30 @@
       <message name="IDS_BRAVE_REWARDS_INTERNALS_PROMOTION_TYPE" desc="">Type</message>
       <message name="IDS_BRAVE_REWARDS_INTERNALS_PROMOTION_UGP" desc="">UGP</message>
       <message name="IDS_BRAVE_REWARDS_INTERNALS_PROMOTION_VERSION" desc="">Version</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_MAIN_TITLE" desc="">Rewards internals</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_REFRESH_BUTTON" desc="Refresh button">Refresh</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_RETRY_COUNT" desc="Retry count">Retry Count:</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_REWARDS_NOT_ENABLED" desc="Rewards not enabled">Brave Rewards is not enabled. Enable it by visiting</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_REWARDS_TYPE_AUTO" desc="Auto Contribute">Auto Contribute</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_REWARDS_TYPE_ONE_TIME_TIP" desc="One-time tip">One-time tip</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_REWARDS_TYPE_RECURRING_TIP" desc="Recurring tip">Recurring tip</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_TAB_CONTRIBUTIONS" desc="">Contributions</message>
       <message name="IDS_BRAVE_REWARDS_INTERNALS_TAB_GENERAL_INFO" desc="">General info</message>
       <message name="IDS_BRAVE_REWARDS_INTERNALS_TAB_LOGS" desc="">Logs</message>
       <message name="IDS_BRAVE_REWARDS_INTERNALS_TAB_PROMOTIONS" desc="">Promotions</message>
-      <message name="IDS_BRAVE_REWARDS_INTERNALS_TAB_CONTRIBUTIONS" desc="">Contributions</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_TOTAL_AMOUNT" desc="Total Amount">Total amount:</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_TOTAL_BALANCE" desc="Total balance">Total balance</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_USER_ID" desc="Wallet user ID">User ID</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_VALID" desc="Valid indicator">Valid</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_WALLET_ADDRESS" desc="">Wallet address:</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_WALLET_INFO" desc="">Wallet info</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_WALLET_PAYMENT_ID" desc="Wallet payment ID">Wallet payment ID:</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_WALLET_STATUS" desc="Wallet status">Wallet status:</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_WALLET_STATUS_CONNECTED" desc="">Connected</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_WALLET_STATUS_NOT_CONNECTED" desc="">Not connected</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_WALLET_STATUS_VERIFIED" desc="">Verified</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_WALLET_STATUS_DISCONNECTED_NOT_VERIFIED" desc="">Disconnected (Not verified)</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_WALLET_STATUS_DISCONNECTED_VERIFIED" desc="">Disconnected (Verified)</message>
+      <message name="IDS_BRAVE_REWARDS_INTERNALS_WALLET_STATUS_PENDING" desc="">Pending</message>
 
       <!-- WebUI brave ui resources -->
       <message name="IDS_BRAVE_UI_ABOUT" desc="">about</message>
@@ -498,6 +553,9 @@
       <message name="IDS_BRAVE_UI_IMPORT" desc="">import</message>
       <message name="IDS_BRAVE_UI_INCLUDE_IN_AUTO" desc="">Include in Auto-Contribute</message>
       <message name="IDS_BRAVE_UI_LEARN_MORE" desc="">Learn More</message>
+      <message name="IDS_BRAVE_UI_LOGIN" desc="">Login</message>
+      <message name="IDS_BRAVE_UI_LOGIN_MESSAGE_TITLE" desc="">Verifying wallet allows you to manage your funds more efficiently.</message>
+      <message name="IDS_BRAVE_UI_LOGIN_MESSAGE_TEXT" desc="">You need to have minimum 25 BAT to create an Uphold account. Please try again later. <ph name="BREAK">&lt;br/&gt;</ph>If you already have a verified Uphold account, continue to login.</message>
       <message name="IDS_BRAVE_UI_MAKE_MONTHLY" desc="">Make this monthly</message>
       <message name="IDS_BRAVE_UI_MANAGE_WALLET" desc="">Manage Your Wallet</message>
       <message name="IDS_BRAVE_UI_MONTH_APR" desc="">Apr</message>
@@ -569,12 +627,19 @@
       <message name="IDS_BRAVE_UI_REMOVE_AD_FROM_SAVED" desc="">Remove From Saved</message>
       <message name="IDS_BRAVE_UI_RESERVED_AMOUNT_TEXT" desc="Notification about how much BAT do you have reserved">You’ve designated {{reservedAmount}} {{currency}} for creators who haven’t yet signed up to receive contributions. Your browser will keep trying to contribute until they verify, or until 90 days have passed.</message>
       <message name="IDS_BRAVE_UI_RESERVED_MORE_LINK" desc="Text for the link that explains more about reserved amount">Learn more.</message>
+      <message name="IDS_BRAVE_UI_RESET" desc="">Reset</message>
       <message name="IDS_BRAVE_UI_RESTORE" desc="">Restore</message>
       <message name="IDS_BRAVE_UI_RESTORE_ALL" desc="">Restore All</message>
       <message name="IDS_BRAVE_UI_REVIEW_SITE_MSG" desc="">Your pinned sites have been moved to</message>
-      <message name="IDS_BRAVE_UI_REWARDS_BACKUP_TEXT1" desc="">Backup your Wallet</message>
-      <message name="IDS_BRAVE_UI_REWARDS_BACKUP_TEXT2" desc="">Keep this recovery key safe.</message>
-      <message name="IDS_BRAVE_UI_REWARDS_BACKUP_TEXT3" desc="">You can always use this key to get your wallet back if something happens to your browser or computer. But make sure to protect it — anyone who gets this key could steal your wallet. It’s probably safest to write it down on a piece of paper, or wherever else you keep important info.</message>
+      <message name="IDS_BRAVE_UI_REWARDS_BACKUP_NOTICE_TEXT1" desc="">The funds in your Brave wallet are virtual and not required to backup. It's available for you to spend exclusively on this browser.</message>
+      <message name="IDS_BRAVE_UI_REWARDS_BACKUP_NOTICE_TEXT2" desc="">If you'd like to secure all of your funds in the case of clean installing the browser or switching to a new device, and have other benefits such as adding, withdrawing and transferring funds, we recommend</message>
+      <message name="IDS_BRAVE_UI_REWARDS_BACKUP_NOTICE_TEXT3" desc="">connecting to a verified Uphold wallet.</message>
+      <message name="IDS_BRAVE_UI_REWARDS_BACKUP_TEXT1" desc="">Keep this recovery key safe.</message>
+      <message name="IDS_BRAVE_UI_REWARDS_BACKUP_TEXT2" desc="">You can always use this key to get your wallet back if something happens to your browser or computer. But make sure to protect it — anyone who gets this key could steal your wallet. It’s probably safest to write it down on a piece of paper, or wherever else you keep important info.</message>
+      <message name="IDS_BRAVE_UI_REWARDS_BACKUP_TEXT3" desc="">Note:</message>
+      <message name="IDS_BRAVE_UI_REWARDS_BACKUP_TEXT4" desc="">Part of the funds may be received from Brave and are not included in the backup as it is not required. It's available for you to spend exclusively on this browser.</message>
+      <message name="IDS_BRAVE_UI_REWARDS_BACKUP_TEXT5" desc="">If you'd like to secure all of your funds in the case of clean installing the browser or switching to a new device, and have other benefits such as adding, withdrawing and transferring funds, we recommend</message>
+      <message name="IDS_BRAVE_UI_REWARDS_BACKUP_TEXT6" desc="">connecting to a verified Uphold wallet.</message>
       <message name="IDS_BRAVE_UI_REWARDS_BANNER_TEXT1" desc="">You can support this content creator by sending a tip. It’s a way of thanking them for making great content. Verified creators get paid for their tips during the first week of each calendar month.</message>
       <message name="IDS_BRAVE_UI_REWARDS_BANNER_TEXT2" desc="">You can also set a monthly recurring contribution from within the Brave Rewards panel.</message>
       <message name="IDS_BRAVE_UI_REWARDS_BANNER_MONTHLY_TEXT1" desc="">You can support this content creator by setting a monthly contribution. It’s a way of thanking them for making great content on an ongoing basis. Verified creators get paid for their contributions during the first week of each calendar month.</message>
@@ -602,6 +667,10 @@
       <message name="IDS_BRAVE_UI_REWARDS_RESTORE_TEXT2" desc="">Use your recovery key to restore your wallet.</message>
       <message name="IDS_BRAVE_UI_REWARDS_RESTORE_TEXT3" desc="">Restoring with a recovery key will replace your current wallet. So make sure you empty or back up your current wallet before restoring.</message>
       <message name="IDS_BRAVE_UI_REWARDS_RESTORE_TEXT4" desc="">Enter your recovery key or</message>
+      <message name="IDS_BRAVE_UI_REWARDS_RESTORE_WARNING" desc="">Backup your wallet before replacing. Or you will lose the fund, {{funds}}, in your current wallet.</message>
+      <message name="IDS_BRAVE_UI_REWARDS_RESET_CONFIRMATION" desc="">Are you sure you want to reset your Rewards Wallet?</message>
+      <message name="IDS_BRAVE_UI_REWARDS_RESET_TEXT_FUNDS" desc="">Your <ph name="BEGIN_BOLD">&lt;b&gt;</ph>{{amount}} BATs<ph name="BEGIN_END">&lt;/b&gt;</ph> and other Rewards data will be permanently lost if you reset your wallet. Please ensure you have verified your wallet with Uphold so you can keep your BAT.</message>
+      <message name="IDS_BRAVE_UI_REWARDS_RESET_TEXT_NO_FUNDS" desc="">Your Rewards data will be permanently lost if you reset your wallet.</message>
       <message name="IDS_BRAVE_UI_TOKEN_GRANT" desc="">Token Grants Claimed</message>
       <message name="IDS_BRAVE_UI_REWARDS_SUMMARY" desc="">Rewards Summary</message>
       <message name="IDS_BRAVE_UI_REWARDS_WHY" desc="">Why Brave Rewards?</message>
@@ -711,14 +780,18 @@
       <message name="IDS_BRAVE_UI_WALLET_VERIFICATION_LIST3" desc="">Withdraw BAT that you may have previously added to your Brave Rewards wallet</message>
       <message name="IDS_BRAVE_UI_WALLET_VERIFICATION_HEADER" desc="">But if you verify, you can...</message>
       <message name="IDS_BRAVE_UI_WALLET_VERIFICATION_TITLE1" desc="">Verifying your wallet is optional.</message>
+      <message name="IDS_BRAVE_UI_WALLET_CONNECTED" desc="">Connected</message>
+      <message name="IDS_BRAVE_UI_WALLET_PENDING" desc="">Pending</message>
       <message name="IDS_BRAVE_UI_WALLET_VERIFIED" desc="">Verified</message>
       <message name="IDS_BRAVE_UI_WALLET_VERIFICATION_NOTE1" desc="">Uphold may require you to verify your identity based on services requested.</message>
       <message name="IDS_BRAVE_UI_WALLET_VERIFICATION_NOTE2" desc="">Brave Software Inc. does not process, store, or access any of the personal information that you provide to Uphold when you establish an account with them.</message>
 
       <message name="IDS_BRAVE_UI_TAP_NETWORK_TITLE" desc="">Redeem BAT for Gift Cards</message>
       <message name="IDS_BRAVE_UI_TAP_NETWORK_INFO" desc="">With TAP Network, you can redeem your BAT for popular name-brand gift cards.</message>
-      <message name="IDS_BRAVE_UI_TAP_NETWORK_LINK" desc="">Visit TAP.</message>
       <message name="IDS_BRAVE_UI_TAP_NETWORK_DISCLAIMER" desc="">* Requires Uphold Verification.</message>
+
+      <message name="IDS_BRAVE_UI_UPHOLD_PROMO_TITLE" desc="">Get 2% cryptoback with the Uphold card</message>
+      <message name="IDS_BRAVE_UI_UPHOLD_PROMO_INFO" desc="">Spend your crypto and other assets at nearly 50 million merchants and ATMs worldwide. Spend crypto to get crypto!</message>
 
       <!-- Rewards New Tab Widget resources -->
       <message name="IDS_REWARDS_WIDGET_ABOUT_REWARDS" desc="">
@@ -776,6 +849,7 @@
       >
         Hide sponsored images
       </message>
+      <message name="IDS_ADD_CARD_WIDGET_TITLE" desc="">Add Card</message>
       <message name="IDS_TOGETHER_WIDGET_TITLE" desc="">Brave Together</message>
       <message name="IDS_TOGETHER_WIDGET_WELCOME_TITLE" desc="">Start a private video call with your friends and colleagues.</message>
       <message name="IDS_TOGETHER_WIDGET_START_BUTTON" desc="">Start video call</message>
@@ -829,82 +903,25 @@
       <message name="IDS_BINANCE_WIDGET_AUTH_INVALID" desc="">Session Expired</message>
       <message name="IDS_BINANCE_WIDGET_AUTH_INVALID_COPY" desc="">Your Binance access token has expired. Please reconnect to continue using the widget.</message>
 
-      <!-- WebUI brave sync resources -->
-      <!-- WebUI brave sync resources: Shared Content -->
-      <message name="IDS_BRAVE_SYNC_SHARED_DONE_BUTTON" desc="The Sync `done` button which closes a modal">Done</message>
-      <message name="IDS_BRAVE_SYNC_SHARED_REMOVE_PARTIAL" desc="The Sync `remove` label which points to an X button to remove a given device">Remove</message>
-      <message name="IDS_BRAVE_SYNC_SHARED_COPIED_TEXT" desc="The Sync `copied` word telling the user that a content was copied to the clipboard">Copied!</message>
-      <message name="IDS_BRAVE_SYNC_SHARED_WORD_COUNT_TEXT" desc="The Sync `word count` phrase that shows how many words are in a textarea field">Word Count:</message>
-      <message name="IDS_BRAVE_SYNC_SHARED_OK_BUTTON" desc="The Sync `ok` button that indicates user is aware of what is being written">Ok</message>
-      <message name="IDS_BRAVE_SYNC_SHARED_CANCEL_BUTTON" desc="The Sync `cancel` button that closes the current modal">Cancel</message>
-      <message name="IDS_BRAVE_SYNC_SHARED_CANCEL_SYNCING_TITLE" desc="The Sync phrase for when the user is about to reset sync by closing the `view code` or `scan code` modal">Sync is still waiting to confirm your new device connection. If you close this window, your sync chain will be reset and you will need to start over.</message>
-      <message name="IDS_BRAVE_SYNC_SHARED_CANCEL_SYNCING_BUTTON" desc="The Sync button label for when the user is about to reset sync by closing the `view code` or `scan code` modal">Close anyway</message>
-      <message name="IDS_BRAVE_SYNC_SHARED_FROM_THIS_CHAIN_PARTIAL" desc="The Sync partial phrase included in `remove X from this sync chain` where X is the user's device name">from this sync chain</message>
-      <message name="IDS_BRAVE_SYNC_SHARED_VIEW_CODE_BUTTON" desc="The Sync button to enter code words instead of scanning the current code">View Code Words</message>
-      <message name="IDS_BRAVE_SYNC_SCAN_CODE_LOOKING_FOR_DEVICE_BUTTON" desc="The Sync temporary button that holds while a device is not found yet">Looking for device</message>
-      <!-- WebUI brave sync resources: Enabled Content -->
-      <message name="IDS_BRAVE_SYNC_ENABLED_BRAVE_TITLE" desc="The Brave Sync title">Sync</message>
-      <message name="IDS_BRAVE_SYNC_ENABLED_DEVICES_CHAIN_TITLE" desc="The Sync title for the table of devices synced">The device list below includes all devices in your sync chain. Each device can be managed from any other device.</message>
-      <message name="IDS_BRAVE_SYNC_ENABLED_TABLE_DEVICE_NAME_TITLE" desc="The Sync table title for the device column">device name</message>
-      <message name="IDS_BRAVE_SYNC_ENABLED_TABLE_THIS_DEVICE_TEXT" desc="The Sync table title for the device column">(This Device)</message>
-      <message name="IDS_BRAVE_SYNC_ENABLED_TABLE_ADDED_ON_TITLE" desc="The Sync table title indicating when a device was added to the chain">Date Added</message>
-      <message name="IDS_BRAVE_SYNC_ENABLED_ADD_DEVICE_BUTTON" desc="The Sync button `add device` for adding a new device to the sync chain. triggers a modal with device options">Add New Device</message>
-      <message name="IDS_BRAVE_SYNC_ENABLED_VIEW_CODE_BUTTON" desc="The Sync button `view sync code` for viewing the passphrase and qr code needed to add a new device. triggers a modal with sync code">View Sync Code</message>
-      <message name="IDS_BRAVE_SYNC_ENABLED_SETTINGS_TITLE" desc="The Sync title that shows the options for data syncing">Sync Settings</message>
-      <message name="IDS_BRAVE_SYNC_ENABLED_SETTINGS_DESCRIPTION" desc="The Sync description that shows the options for data syncing">Manage what information you would like to sync between devices. These settings only affect this device.</message>
-      <message name="IDS_BRAVE_SYNC_ENABLED_TABLE_SETTINGS" desc="The Sync description that shows the options for data syncing">Settings</message>
-      <message name="IDS_BRAVE_SYNC_ENABLED_BOOKMARKS_LABEL" desc="The Sync label for the `bookmarks` toggle">Bookmarks</message>
-      <message name="IDS_BRAVE_SYNC_ENABLED_SITE_SETTINGS_LABEL" desc="The Sync label for the `saved site settings` toggle">Saved Site Settings</message>
-      <message name="IDS_BRAVE_SYNC_ENABLED_HISTORY_LABEL" desc="The Sync label for the `browsing history` toggle">Browsing History</message>
-      <message name="IDS_BRAVE_SYNC_ENABLED_LEAVE_CHAIN_BUTTON" desc="The Sync button that opens a modal to leave the current sync chain">Leave Sync Chain</message>
-      <!-- WebUI brave sync resources: Disabled Content -->
-      <message name="IDS_BRAVE_SYNC_DISABLED_DESCRIPTION" desc="The Brave Sync title.">Sync Setup</message>
-      <message name="IDS_BRAVE_SYNC_DISABLED_NEW_CHAIN_DESCRIPTION" desc="The Sync phrase explaining what happens when you start a new sync chain. Appears when sync is disabled.">To start, you will need Brave installed on all the devices you plan to sync. To chain them together, start a sync chain that you will use to securely link all of your devices together.</message>
-      <message name="IDS_BRAVE_SYNC_DISABLED_START_NEW_CHAIN_BUTTON" desc="The Sync button that triggers a modal to start a new sync chian">Start a new Sync Chain</message>
-      <message name="IDS_BRAVE_SYNC_DISABLED_ENTER_CODE_BUTTON" desc="The Sync button that triggers a modal asking for the sync chain code passphrase">I have a Sync Code</message>
-      <message name="IDS_BRAVE_SYNC_DISABLED_CONFIRM_CODE_BUTTON" desc="The Sync button to confirm the Sync code that was inputed by the user">Confirm Sync Code</message>
-      <!-- WebUI brave sync resources: [modal] Enter Sync Code -->
-      <message name="IDS_BRAVE_SYNC_ENTER_CODE_TITLE" desc="The Sync modal title for `enter sync code`">Enter a sync code</message>
-      <message name="IDS_BRAVE_SYNC_ENTER_CODE_DESCRIPTION" desc="The Sync modal text for `enter sync code`">Type your supplied sync chain code words into the form below.</message>
-      <message name="IDS_BRAVE_SYNC_ENTER_CODE_CONFIRM_CODE_BUTTON" desc="The Sync modal button for `enter sync code` to confirm sync code">Confirm Sync Code</message>
-      <!-- WebUI brave sync resources: [modal] Remove Main Device -->
-      <message name="IDS_BRAVE_SYNC_REMOVE_THIS_DEVICE_DESCRIPTION" desc="The Sync phrase in `remove this device` modal explaining how data behaves on all devices">Local device data will remain intact on all devices. Other devices in this sync chain will remain synced.</message>
-      <message name="IDS_BRAVE_SYNC_REMOVE_THIS_DEVICE_JOIN_CHAIN_INSTRUCTIONS" desc="The Sync phrase in `remove this device` modal explaining how to join a sync chain again">To join a sync chain again, choose “Enter a sync chain code”.</message>
-      <!-- WebUI brave sync resources: [modal] Remove Other Device -->
-      <message name="IDS_BRAVE_SYNC_REMOVE_OTHER_DEVICE_DESCRIPTION" desc="The Sync phrase in `remove other device` modal explaining what happens when the device is removed">Note: Removing this device from this sync chain does not clear previously synced data from the device.</message>
-      <!-- WebUI brave sync resources: [modal] Reset Sync -->
-      <message name="IDS_BRAVE_SYNC_RESET_WARNING_TITLE" desc="The Sync `warning` text used as a title in `reset sync` modal">Warning!</message>
-      <message name="IDS_BRAVE_SYNC_RESET_REMOVING_PARTIAL" desc="The Sync partial phrase from `removing X will delete this sync chain` where X is the user's device name. Used in the `reset sync` modal">Removing</message>
-      <message name="IDS_BRAVE_SYNC_RESET_DELETE_CHAIN_PARTIAL" desc="The Sync partial phrase from `removing X will delete this sync chain` where X is the user's device name. Used in the `reset sync` modal">will delete this sync chain.</message>
-      <message name="IDS_BRAVE_SYNC_RESET_REMOVAL_INSTRUCTIONS" desc="The Sync phrase explaining what happens if you reset your sync chain. Used in the `reset sync` modal">Your local data on this device will be retained but all data in Brave’s Sync cache will be deleted.</message>
-      <message name="IDS_BRAVE_SYNC_RESET_START_NEW_INSTRUCTIONS" desc="The Sync phrase explaining how you can start a new sync chain after reseting sync. Used in the `reset sync` modal">You can start a new sync chain or sync with a new device by entering its sync chain code.</message>
-      <message name="IDS_BRAVE_SYNC_RESET_ARE_YOU_SURE_TITLE" desc="The Sync dialog title asking if user is sure about the action of reseting sync">Are you sure?</message>
-      <!-- WebUI brave sync resources: [modal] Scan Code -->
-      <message name="IDS_BRAVE_SYNC_SCAN_CODE_TITLE" desc="The Sync title for the `scan sync code` modal">Sync Chain QR Code</message>
-      <message name="IDS_BRAVE_SYNC_SCAN_CODE_DESCRIPTION_PARTIAL_1" desc="The Sync instructions for the `scan sync code` modal partial phrase (1)">On your mobile device, navigate to Brave Sync in the Settings panel and click the button</message>
-      <message name="IDS_BRAVE_SYNC_SCAN_CODE_DESCRIPTION_PARTIAL_2" desc="The Sync instructions for the `scan sync code` modal partial phrase (2)">“Scan Sync Code”.</message>
-      <message name="IDS_BRAVE_SYNC_SCAN_CODE_DESCRIPTION_PARTIAL_3" desc="The Sync instructions for the `scan sync code` modal partial phrase (3)">Use your camera to scan the QR Code below.</message>
-      <!-- WebUI brave sync resources: [modal] View Code -->
-      <message name="IDS_BRAVE_SYNC_VIEW_CODE_TITLE" desc="The Sync title for the `view sync code` modal">Sync Chain Code</message>
-      <message name="IDS_BRAVE_SYNC_VIEW_CODE_DESCRIPTION_PARTIAL_1" desc="The Sync instructions for the `view sync code` modal partial phrase (1)">On your target computer, navigate to Brave Sync in settings and click the button</message>
-      <message name="IDS_BRAVE_SYNC_VIEW_CODE_DESCRIPTION_PARTIAL_2" desc="The Sync instructions for the `view sync code` modal partial phrase (2)">“I have a Sync Code”.</message>
-      <message name="IDS_BRAVE_SYNC_VIEW_CODE_DESCRIPTION_PARTIAL_3" desc="The Sync instructions for the `view sync code` modal partial phrase (3)">Enter the sync chain code words shown below. Treat this code like a password. If someone gets ahold of it, they can read and modify your synced data.</message>
-      <message name="IDS_BRAVE_SYNC_VIEW_CODE_USE_CAMERA_BUTTON" desc="The Sync button to use your camera to sync the code instead of copying the sync code">Use my camera instead</message>
-      <message name="IDS_BRAVE_SYNC_VIEW_CODE_QR_CODE" desc="The Sync description suggesting where to go with the current sync code">View QR Code</message>
-      <!-- WebUI brave sync resources: [modal] Choose Device Type -->
-      <message name="IDS_BRAVE_SYNC_CHOOSE_DEVICE_TITLE" desc="The Sync title to sync a new device. Appears in the `choose device type` modal">Choose Device Type</message>
-      <message name="IDS_BRAVE_SYNC_CHOOSE_DEVICE_DESCRIPTION" desc="The Sync title to select which device to sync. Appears in the `choose device type` modal">Choose the type of device you would like to sync to.</message>
-      <message name="IDS_BRAVE_SYNC_CHOOSE_DEVICE_MOBILE_TITLE" desc="The Sync Phone/tablet word below the phone/tablet image. Appears in the `choose device type` modal">Phone/Tablet</message>
-      <message name="IDS_BRAVE_SYNC_CHOOSE_DEVICE_COMPUTER_TITLE" desc="The Sync Computer word below the computer image. Appears in the `choose device type` modal">Computer</message>
-      <!-- WebUI brave sync resources: Errors -->
-      <message name="IDS_BRAVE_SYNC_ERROR_WRONG_CODE_TITLE" desc="Error message in dialog for when sync words are invalid (title)">Invalid sync code.</message>
-      <message name="IDS_BRAVE_SYNC_ERROR_WRONG_CODE_DESCRIPTION" desc="Error message in dialog for when sync words are invalid (description)">Please try again.</message>
-      <message name="IDS_BRAVE_SYNC_ERROR_MISSING_DEVICE_NAME_TITLE" desc="Error message in dialog for when device name is missing (title)">Device name is required.</message>
-      <message name="IDS_BRAVE_SYNC_ERROR_MISSING_SYNC_CODE_TITLE" desc="Error message in dialog for when device name is missing (description)">Please add a sync code.</message>
-      <message name="IDS_BRAVE_SYNC_ERROR_INIT_FAILED_TITLE" desc="Error message in dialog for when a Sync error happens in the back-end">Couldn't contact Sync servers</message>
-      <message name="IDS_BRAVE_SYNC_ERROR_INIT_FAILED_DESCRIPTION" desc="Error message in dialog for when a Sync error happens in the back-end">You might be having network trouble, or there could be a problem with the Sync servers.</message>
-      <message name="IDS_BRAVE_SYNC_REQUIRES_CORRECT_TIME_TITLE" desc="Error message in dialog for when a Sync could not couldn't connect to Sync servers, because of wrong system time (title)">Couldn't connect to Sync servers</message>
-      <message name="IDS_BRAVE_SYNC_REQUIRES_CORRECT_TIME_DESCRIPTION" desc="Error message in dialog for when a Sync could not connect to Sync servers, because of wrong system time (description)">Your computer's clock may be set to the wrong time or time zone. Check your clock settings.</message>
+      <message name="IDS_GEMINI_WIDGET_CONNECT_TITLE" desc="">Purchase and trade with Gemini</message>
+      <message name="IDS_GEMINI_WIDGET_CONNECT_COPY" desc="">Enable a Gemini connection to view your Gemini account balance and trade crypto.</message>
+      <message name="IDS_GEMINI_WIDGET_CONNECT_BUTTON" desc="">Connect to Gemini</message>
+      <message name="IDS_GEMINI_WIDGET_AUTH_INVALID_COPY" desc="">Your Gemini access token has expired and could not be refreshed. Please reconnect.</message>
+      <message name="IDS_GEMINI_WIDGET_FAILED_TRADE" desc="">Unable to perform trade</message>
+      <message name="IDS_GEMINI_WIDGET_ERROR" desc="">Something went wrong</message>
+      <message name="IDS_GEMINI_WIDGET_CONFIRM_TRADE" desc="">Confirm Trade</message>
+      <message name="IDS_GEMINI_WIDGET_SELL" desc="">Sell</message>
+      <message name="IDS_GEMINI_WIDGET_GET_QUOTE" desc="">Get a Quote</message>
+      <message name="IDS_GEMINI_WIDGET_TRADE_LABEL" desc="">Trade</message>
+      <message name="IDS_GEMINI_WIDGET_BALANCE_LABEL" desc="">Balance</message>
+      <message name="IDS_GEMINI_WIDGET_BUYING" desc="">Buying</message>
+      <message name="IDS_GEMINI_WIDGET_SELLING" desc="">Selling</message>
+      <message name="IDS_GEMINI_WIDGET_BOUGHT" desc="">You bought</message>
+      <message name="IDS_GEMINI_WIDGET_SOLD" desc="">You sold</message>
+      <message name="IDS_GEMINI_WIDGET_UNIT_PRICE" desc="">Unit Price</message>
+      <message name="IDS_GEMINI_WIDGET_TOTAL_PRICE" desc="">Total Spent</message>
+      <message name="IDS_GEMINI_WIDGET_TOTAL_AMOUNT" desc="">Total Received</message>
+
       <!-- WebUI Brave Toolbar resources -->
       <message name="IDS_WALLETS_TITLE" desc="The toolbar title for the brave://wallets page">Crypto Wallets</message>
       <!-- WebUI Crypto Wallets resources -->

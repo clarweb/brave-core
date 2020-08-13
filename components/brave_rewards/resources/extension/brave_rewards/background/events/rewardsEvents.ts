@@ -5,15 +5,18 @@
 import rewardsPanelActions from '../actions/rewardsPanelActions'
 
 // Handle all rewards events and pass to actions
-chrome.braveRewards.onWalletInitialized.addListener((result: RewardsExtension.Result) => {
-  rewardsPanelActions.onWalletInitialized(result)
+chrome.braveRewards.walletCreated.addListener(() => {
+  rewardsPanelActions.walletCreated()
+})
+chrome.braveRewards.walletCreationFailed.addListener((result: RewardsExtension.Result) => {
+  rewardsPanelActions.walletCreationFailed(result)
 })
 
 chrome.braveRewards.onPublisherData.addListener((windowId: number, publisher: RewardsExtension.Publisher) => {
   rewardsPanelActions.onPublisherData(windowId, publisher)
 
   // Get publisher amounts
-  if (publisher && publisher.publisher_key) {
+  if (publisher && publisher.publisher_key && publisher.status !== 0) {
     chrome.braveRewards.getPublisherBanner(publisher.publisher_key, ((banner: RewardsExtension.PublisherBanner) => {
       rewardsPanelActions.onPublisherBanner(banner)
     }))
@@ -32,6 +35,10 @@ chrome.rewardsNotifications.onNotificationDeleted.addListener((id: string, type:
   chrome.windows.getAll({ populate: true }, (windows) => {
     rewardsPanelActions.onNotificationDeleted(id, type, timestamp, windows)
   })
+})
+
+chrome.rewardsNotifications.onAllNotificationsDeleted.addListener(() => {
+  rewardsPanelActions.onAllNotificationsDeleted()
 })
 
 chrome.braveRewards.onEnabledMain.addListener((enabledMain: boolean) => {
@@ -108,6 +115,14 @@ chrome.braveRewards.onPromotionFinish.addListener((result: RewardsExtension.Resu
   (report: RewardsExtension.BalanceReport) => {
     rewardsPanelActions.onBalanceReport(report)
   })
+})
+
+chrome.braveRewards.onCompleteReset.addListener((properties: { success: boolean }) => {
+  rewardsPanelActions.onCompleteReset(properties.success)
+})
+
+chrome.braveRewards.initialized.addListener((result: RewardsExtension.Result) => {
+  rewardsPanelActions.initialized()
 })
 
 // Fetch initial data required to refresh state, keeping in mind

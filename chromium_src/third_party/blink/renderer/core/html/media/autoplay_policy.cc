@@ -9,7 +9,7 @@
 
 namespace {
 
-bool IsAutoplayAllowedPerSettings(
+bool IsAutoplayAllowedForElement(
     blink::Member<blink::HTMLMediaElement> element) {
   blink::LocalFrame* frame = element->GetDocument().GetFrame();
   if (!frame)
@@ -21,16 +21,10 @@ bool IsAutoplayAllowedPerSettings(
 
 }  // namespace
 
-#define BRAVE_AUTOPLAY_POLICY_REQUEST_AUTOPLAY_BY_ATTRIBUTE \
-  if (!IsAutoplayAllowedPerSettings(element_))              \
-    return false;
+#define BRAVE_AUTOPLAY_POLICY_IS_GESTURE_NEEDED_FOR_PLAYBACK \
+  if (!IsAutoplayAllowedForElement(element_))                \
+    return true;
 
-#define BRAVE_AUTOPLAY_POLICY_REQUEST_PLAY     \
-  if (!IsAutoplayAllowedPerSettings(element_)) \
-    return DOMExceptionCode::kNotAllowedError;
+#include "../../../../../../../../third_party/blink/renderer/core/html/media/autoplay_policy.cc"
 
-#include "../../../../../third_party/blink/renderer/core/html/media/autoplay_policy.cc"  // NOLINT
-
-#undef BRAVE_AUTOPLAY_POLICY_REQUEST_AUTOPLAY_BY_ATTRIBUTE
-#undef BRAVE_AUTOPLAY_POLICY_REQUEST_PLAY
-#undef BRAVE_AUTOPLAY_POLICY_IS_AUTOPLAY_ALLOWED_PER_SETTINGS
+#undef BRAVE_AUTOPLAY_POLICY_IS_GESTURE_NEEDED_FOR_PLAYBACK

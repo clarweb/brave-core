@@ -221,13 +221,13 @@ This file contains all "about" strings.  It is set to NOT be translated, in tran
         Don't persist tabs between browsing sessions
       </message>
       <message name="IDS_BRAVE_STATS_TEXT_ADS" desc="Title for the number of blocked ads and trackers">
-        Ads and Trackers Blocked
+        Trackers &amp; Ads Blocked
       </message>
       <message name="IDS_BRAVE_STATS_TEXT_DATA_SAVED" desc="Title for the data saved stats">
-        Data Saved
+        Data\nSaved
       </message>
       <message name="IDS_BRAVE_STATS_TEXT_TIME" desc="Title for the estimated saved time">
-        Est. Time Saved
+        Est. Time\nSaved
       </message>
       <message name="IDS_SETTINGS_DESKTOP_MODE_TITLE" desc="Title for desktop mode in site settings">
         Desktop Mode
@@ -309,11 +309,14 @@ This file contains all "about" strings.  It is set to NOT be translated, in tran
       <message name="IDS_TROUBLESHOOTING_ONBOARDING" desc="Text for trouble shooting page for onboarding">
         Troubleshooting onboarding
       </message>
-      <message name="IDS_WELCOME_TO_BRAVE_BROWSER" desc="Title for search engine page for onboarding">
-        Welcome to Brave Browser
+      <message name="IDS_CHOOSE_DEFAULT_SEARCH_ENGINE" desc="Title Text for search engine page for onboarding">
+        Choose default search engine
       </message>
-      <message name="IDS_SELECT_YOUR_DEFAULT_SEARCH_ENGINE" desc="Text for search engine page for onboarding">
-        Select your default search engine
+      <message name="IDS_SEARCH_ENGINE_TEXT" desc="Text for search engine page for onboarding">
+        You can always change your preference later in app settings.
+      </message>
+      <message name="IDS_SAVE" desc="Text for save button">
+        Save
       </message>
       <message name="IDS_BLOCK" desc="Partial Text for brave shield page">
         Block
@@ -331,13 +334,13 @@ This file contains all "about" strings.  It is set to NOT be translated, in tran
         Brave Rewards
       </message>
       <message name="IDS_BRAVE_REWARDS_ONBOARDING_TEXT" desc="Text for brave rewards page">
-        for seeing privacy-respecting ads. Use them to support your favorite sites and creators.
+        by viewing privacy-respecting ads and support your favorite sites and creators by default.
       </message>
       <message name="IDS_BRAVE_REWARDS_ONBOARDING_TEXT2" desc="Alternate Text for brave rewards page">
         for seeing privacy-respecting ads.
       </message>
       <message name="IDS_TERMS_TEXT" desc="Text for terms of service page">
-        By turning on Rewards, you agree to the
+        By tapping Earn &amp; Give, you agree to the
       </message>
       <message name="IDS_TERMS_OF_SERVICE" desc="Text for terms of service">
         Terms of Service
@@ -352,7 +355,7 @@ This file contains all "about" strings.  It is set to NOT be translated, in tran
         Brave will show your first ad in
       </message>
       <message name="IDS_BRAVE_ADS_ONBOARDING_TEXT" desc="Text for brave ads page">
-        To see ads from Brave Rewards, make sure Brave is allowed to show you notifications.
+        Now you'll earn token from Brave Ads.
       </message>
       <message name="IDS_THIS_IS_YOUR_FIRST_AD" desc="Text brave rewards notification.">
         This is your first Brave ad. Tap to learn more.
@@ -363,13 +366,12 @@ This file contains all "about" strings.  It is set to NOT be translated, in tran
       <message name="IDS_FINISH" desc="Text for finish button">
         Finish
       </message>
-      <message name="IDS_PREFS_WELCOME_TOUR" desc="Title for welcome tour preferences.">
-        Welcome Tour
+      <message name="IDS_EARN_AND_GIVE" desc="Button text for rewards onboarding.">
+        Earn &amp; Give
       </message>
-      <message name="IDS_WELCOME_TOUR_DIALOG_TEXT" desc="Text for welcome tour dialog">
-        Relaunching Welcome Tour will not affect any existing settings.
+      <message name="IDS_CONTINUE_TO_WALLET" desc="Text for continue to wallet button">
+        Continue to wallet
       </message>
-
       <message name="IDS_CONTINUE_BUTTON" desc="Generic label for a button to continue to the next screen. Used in multiple contexts. [CHAR-LIMIT=20]">
         Continue
       </message>
@@ -657,9 +659,6 @@ until they verify, or until 90 days have passed.
       <message name="IDS_BRAVE_ADS_EXISTING_USER_OFFER_TITLE" desc="Title for Brave Ads offer.">
         Brave Ads are here!
       </message>
-      <message name="IDS_BRAVE_SYNC_REQUIRES_CORRECT_TIME" desc="Text for Brave Sync requires correct time.">
-	Your computer's clock may be set to the wrong time, or to the wrong time-zone. Check your clock settings
-      </message>
       <message name="IDS_BRAVE_SYNC_DEVICE_FAILURE" desc="Text for Brave Sync device failure.">
 	Sync could not be setup
       </message>
@@ -672,14 +671,23 @@ until they verify, or until 90 days have passed.
       <message name="IDS_BRAVE_SYNC_LOADING_DEVICES_TITLE" desc="Text for Brave Sync loading devices title.">
 	LOADING DEVICES...
       </message>
+      <message name="IDS_BRAVE_SYNC_LEAVING_SYNC_CHAIN_TITLE" desc="Text for Brave Sync leaving sync chain (doing reset) title.">
+  LEAVING THE SYNC CHAIN...
+      </message>
+      <message name="IDS_BRAVE_SYNC_TRY_RESET_LATER_TEXT" desc="Text to display when trying to reset sync, but it's setup is in progress.">
+  Sync setup is in progress, try to reset it later
+      </message>
       <message name="IDS_BRAVE_SYNC_WORD_COUNT_TEXT" desc="Text for Brave Sync word count message.">
 	Word count: <ph name="WORD_COUNT">%1$d</ph>
       </message>
       <message name="IDS_BRAVE_SYNC_WORD_COUNT_ERROR" desc="Text for Brave Sync word count error.">
 	Incorrect number of words
       </message>
-      <message name="IDS_BRAVE_SYNC_TIME_OUT_MESSAGE" desc="Text for Brave Sync time out message.">
-	Something went wrong, looks like your request timed out.
+      <message name="IDS_BRAVE_SYNC_WRONG_CODE_ERROR" desc="Text for wrong Brave Sync code error.">
+	Wrong sync code
+      </message>
+      <message name="IDS_BRAVE_SYNC_WRONG_QRCODE_ERROR" desc="Text for wrong Brave Sync QR code error.">
+	Wrong sync QR code
       </message>
       <message name="IDS_BRAVE_SYNC_OFFICIAL" desc="Text for Brave Sync preference.">
 	Brave Sync
@@ -699,8 +707,8 @@ until they verify, or until 90 days have passed.
       <message name="IDS_BRAVE_SYNC_CODE_WORDS_TITLE" desc="Text for Brave Sync code words title.">
 	Pair
       </message>
-      <message name="IDS_BRAVE_SYNC_DELETE_SENT" desc="Text for Brave Sync delete request message.">
-	Delete request has been sent. Device will be removed shortly.
+      <message name="IDS_BRAVE_SYNC_CATEGORIES_TEXT" desc="Text for show categories to sync button.">
+  Categories
       </message>
       <message name="IDS_BRAVE_SYNC_REMOVE_DEVICE_TEXT" desc="Text for Brave Sync remove device message.">
 	Remove this device
@@ -734,9 +742,6 @@ until they verify, or until 90 days have passed.
       </message>
       <message name="IDS_BRAVE_SYNC_CODE_WARNING" desc="Text for Brave Sync code warning message.">
 	Treat this code like a password. If someone gets hold of it, they can read and modify your synced data.
-      </message>
-      <message name="IDS_BRAVE_SYNC_LOADING_DATA_TITLE" desc="Text for Brave Sync loading data title.">
-	Loading data...
       </message>
       <message name="IDS_BRAVE_SYNC_ADD_LAPTOP_TEXT_PART_2_NEW" desc="Text for Brave Sync add laptop part 2.">
 	On your target computer, navigate to Brave Sync in settings and click the button "I have a Sync Code".\nEnter the sync chain code words shown below.
@@ -777,17 +782,8 @@ until they verify, or until 90 days have passed.
       <message name="IDS_BRAVE_SYNC_USE_CAMERA_TEXT" desc="Text for Brave Sync use camera message.">
 	I'll use my camera...
       </message>
-      <message name="IDS_BRAVE_SYNC_EXAMPLE_DEVICE_NAME" desc="Text for Brave Sync example device name.">
-	Android device
-      </message>
       <message name="IDS_BRAVE_SYNC_DEVICE" desc="Text for sync device message.">
 	Sync device
-      </message>
-      <message name="IDS_BRAVE_SYNC_SETTINGS_ADD_DEVICE_NAME_TITLE" desc="Text for sync settings add device name.">
-	Add device name
-      </message>
-      <message name="IDS_BRAVE_SYNC_SETTINGS_ADD_DEVICE_NAME_LABEL" desc="Text for sync settings add device name label.">
-	Enter an optional name for this device
       </message>
       <message name="IDS_SETTINGS_EXIT" desc="Text for Settings exit.">
 	Settings exit
@@ -819,8 +815,12 @@ until they verify, or until 90 days have passed.
       <message name="IDS_ACCESSIBILITY_TOOLBAR_BTN_BOOKMARK" desc="Content description for the bookmark button.">
         Create a bookmark
       </message>
-      <message name="IDS_SYNC_REQUIRES_CORRECT_TIME" desc="The message for the dialog where the user notified about sync setup failure.">
-        Your computer's clock may be set to the wrong time, or to the wrong time-zone. Check your clock settings
+      <!-- Sync Infobar -->
+      <message name="IDS_BRAVE_SYNC_V2_MIGRATE_INFOBAR_MESSAGE" desc="Message text shown to users who used a previous version of Brave Sync and need to perform setup again for the new version.">
+        Brave Sync has been upgraded and requires setup
+      </message>
+      <message name="IDS_BRAVE_SYNC_V2_MIGRATE_INFOBAR_COMMAND" desc="Command text shown to users who used a previous version of Brave Sync and need to perform setup again for the new version.">
+        Begin Setup
       </message>
       <message name="IDS_SYNC_DEVICE_FAILURE" desc="The message for the dialog where the user notified about sync setup failure.">
         Sync could not be setup
@@ -840,7 +840,7 @@ until they verify, or until 90 days have passed.
       <message name="IDS_BRAVE_NEW_TAB_PRIVATE_HEADER" desc="Header shown when a user opens a private tab explaining private mode">
         This is a Private Tab
       </message>
-      <message name="IDS_NEW_TAB_OTR_TITLE" desc="Message shown when a user opens a private tab explaining private mode">
+      <message name="IDS_NEW_TAB_PRIVATE_DESC" desc="Message shown when a user opens a private tab explaining private mode">
         Even though sites you visit in private tabs are not saved locally, they do not make you anonymous or invisible to your ISP, your employer, or to the sites you are visiting.
       </message>
       <message name="IDS_NOTIFICATION_CATEGORY_BRAVE_ADS_BACKGROUND" desc="Label for Brave Ads in background.">
@@ -895,13 +895,13 @@ until they verify, or until 90 days have passed.
         point
       </message>
       <message name="IDS_ONE_TIP_OPTION" desc="Text for one tip option">
-        1 <ph name="TIP">%1$s<ex>BAT</ex></ph>
+        1.000 <ph name="TIP">%1$s<ex>BAT</ex></ph>
       </message>
       <message name="IDS_FIVE_TIP_OPTION" desc="Text for five tip option">
-        5 <ph name="TIP">%1$s<ex>BAT</ex></ph>
+        5.000 <ph name="TIP">%1$s<ex>BAT</ex></ph>
       </message>
       <message name="IDS_TEN_TIP_OPTION" desc="Text for ten tip option">
-        10 <ph name="TIP">%1$s<ex>BAT</ex></ph>
+        10.000 <ph name="TIP">%1$s<ex>BAT</ex></ph>
       </message>
       <message name="IDS_PREFS_NEW_TAB_PAGE" desc="Title of New Tab Page settings.">
         New Tab Page
@@ -919,7 +919,7 @@ until they verify, or until 90 days have passed.
         Turn on Brave Ads
       </message>
       <message name="IDS_NTP_TOS_TEXT" desc="Text for term of service on NTP">
-        By tapping Earn &amp; Give, you agree to the <ph name="TERMS_OF_SERVICE">%1$s</ph>. 
+        By turning on Rewards, you agree to the <ph name="TERMS_OF_SERVICE">%1$s</ph>. 
       </message>
       <message name="IDS_GET_PAID_TO_SEE_IMAGE" desc="Text description for NTP banner.">
         Get paid to see this background image.
@@ -1063,16 +1063,13 @@ until they verify, or until 90 days have passed.
         Earn tokens for viewing this image and pay it forward to creators. <ph name="LEARN_MORE">%1$s</ph>
       </message>
       <message name="IDS_EARN_TOKENS_FOR_VIEWING_TITLE" desc="Title for brave rewards banner.">
-        Earn tokens for viewing this image. Turn on Earn &amp; Give to claim your share.
+        Earn tokens for viewing this image. Turn on Brave Ads to claim your share.
       </message>
       <message name="IDS_YOU_ARE_EARNING_TOKENS" desc="Title for brave rewards banner.">
         You're earning tokens for viewing this image.\n<ph name="LEARN_MORE">%1$s</ph>
       </message>
       <message name="IDS_YOU_ARE_EARNING_TOKENS2" desc="Title for brave rewards banner.">
         You're earning tokens for viewing this image.
-      </message>
-      <message name="IDS_IM_READY_TO_EARN" desc="Title for brave rewards bottom sheet action.">
-        I'm ready to Earn &amp; Give
       </message>
       <message name="IDS_LEARN_MORE_ABOUT_SPONSORED_IMAGES" desc="Title for brave rewards bottom sheet.">
         Learn more about sponsored images
@@ -1151,6 +1148,156 @@ until they verify, or until 90 days have passed.
       </message>
       <message name="IDS_REQUIRED_MINIUM_BALANCE" desc="Text for verify wallet minimum required balance.">
         A minimum balance of 25 BAT is required to verify.
+      </message>
+      <message name="IDS_AUTOCOMPLETE_TOP_SITES_TITLE" desc="The label for settings switch controlling whether or not top sites show up in autocomplete">
+        Show top sites in autocomplete
+      </message>
+      <message name="IDS_AUTOCOMPLETE_BRAVE_SUGGESTED_SITES_TITLE" desc="The label for settings switch controlling whether or not Brave suggested sites show up in autocomplete">
+        Show suggested sites in autocomplete
+      </message>
+      <message name="IDS_UPDATE_NOTIFICATION_TITLE" desc="Title of notification on application update.">
+        Save Data Online
+      </message>
+      <message name="IDS_UPDATE_NOTIFICATION_TEXT" desc="Text of notification on application update.">
+        Browse faster and block ads with Brave
+      </message>
+      <message name="IDS_YOU_JUST_BLOCKED" desc="Shields tootltip text">
+        You just blocked some trackers &amp; ads.
+      </message>
+      <message name="IDS_TAKE_A_LOOK" desc="Shields tootltip text">
+        Take a look
+      </message>
+      <message name="IDS_NICE" desc="Shields tootltip title">
+        Nice!
+      </message>
+      <message name="IDS_BRAVE_WORKS_EVERYWHERE" desc="Cross promotional modal title text">
+        Brave works everywhere
+      </message>
+      <message name="IDS_DOWNLOAD_BRAVE" desc="Cross promotional modal text">
+        Download Brave at brave.com on your laptop or tablet for a faster and more private web
+      </message>
+      <message name="IDS_PRIVACY_PROTECTION" desc="Title for onboading bottomsheet.">
+        Privacy protection
+      </message>
+      <message name="IDS_PRIVACY_PROTECTION_TEXT" desc="Text for onboading bottomsheet.">
+        Brave stops ads &amp; trackers from collecting information about you without your consent.
+      </message>
+      <message name="IDS_SAVE_DATA_AND_BATTERY" desc="Title for onboading bottomsheet.">
+        Save data and battery
+      </message>
+      <message name="IDS_SAVE_DATA_AND_BATTERY_TEXT" desc="Text for onboading bottomsheet.">
+        Without ads &amp; trackers, websites use less data and battery. You mighth even save money on carrier fees.
+      </message>
+      <message name="IDS_WEBSITES_LOAD_FASTER" desc="Title for onboading bottomsheet.">
+        Websites load faster
+      </message>
+      <message name="IDS_WEBSITES_LOAD_FASTER_TEXT" desc="Text for onboading bottomsheet.">
+        Loading less data means websites in Brave load faster - up to 8x faster than other browsers.
+      </message>
+      <message name="IDS_GET_WEEKLY_UPDATES" desc="Title for onboading bottomsheet.">
+        Get weekly updates
+      </message>
+      <message name="IDS_GET_WEEKLY_UPDATES_TEXT" desc="Text for onboading bottomsheet.">
+        Be informed about which websites you visit are the most privacy invasive.\n\nOnly you can see these privacy statistics. No personal data or browsing history ever leaves the Brave browser on your device.
+      </message>
+      <message name="IDS_TURN_ON_PRIVACY_STATS" desc="Button text for onboading bottomsheet.">
+        Turn on privacy reports
+      </message>
+      <message name="IDS_LEARN_MORE" desc="Button text for onboading bottomsheet.">
+        Learn more
+      </message>
+      <message name="IDS_WEEK" desc="Tab title text">
+        Week
+      </message>
+      <message name="IDS_MONTH" desc="Tab title text">
+        Month
+      </message>
+      <message name="IDS_MONTHS_3" desc="Tab title text">
+        3 Months
+      </message>
+      <message name="IDS_BRAVE_STATS" desc="Brave stats title">
+        Privacy Report
+      </message>
+      <message name="IDS_BRAVE_STATS_NOTIFICATION" desc="Brave stats title">
+        Privacy Report Notification
+      </message>
+      <message name="IDS_TRACKERS_AND_ADS" desc="Brave stats title">
+        Trackers &amp; Ads Blocked
+      </message>
+      <message name="IDS_NO_DATA_TEXT" desc="Brave stats title">
+        No data to show yet
+      </message>
+      <message name="IDS_ADS_TRACKERS_TEXT" desc="Brave stats text">
+        Trackers &amp; Ads\nBlocked
+      </message>
+      <message name="IDS_DATA_SAVED_TEXT" desc="Brave stats text">
+        Data Saved\n(<ph name="DATA_SAVED">%1$s</ph>)
+      </message>
+      <message name="IDS_TIME_SAVED_TEXT" desc="Brave stats text">
+        Time Saved
+      </message>
+      <message name="IDS_WEBSITES" desc="Brave stats title">
+        Websites
+      </message>
+      <message name="IDS_TRACKERS" desc="Brave stats title">
+        Trackers
+      </message>
+      <message name="IDS_NTP_STAT_TEXT" desc="NTP stat text">
+        <ph name="COUNT">%1$s</ph><ph name="COUNT_TEXT">%2$s</ph>
+      </message>
+      <message name="IDS_NOTIFICATION_HOUR_3_TEXT_1" desc="3_hours notification text">
+        You blocked <ph name="COUNT">%1$s</ph> trackers &amp; ads with Brave browser in the past 3 hours.
+      </message>
+      <message name="IDS_NOTIFICATION_HOUR_3_TEXT_2" desc="3_hours notification text">
+        Browse up to 6x faster on major news sites in Brave by blocking trackes &amp; ads.
+      </message>
+      <message name="IDS_NOTIFICATION_HOUR_3_TEXT_3" desc="3_hours notification text">
+        Turn on Privacy Reports to see how many trackers &amp; ads have been blocked in the past 3 hours.
+      </message>
+      <message name="IDS_NOTIFICATION_HOUR_24_TEXT_1" desc="24_hours notification text">
+        You saved <ph name="DATA">%1$s</ph> <ph name="DATA_TEXT">%2$s</ph> data with Brave browser.
+      </message>
+      <message name="IDS_NOTIFICATION_HOUR_24_TEXT_2" desc="24_hours notification text">
+        Turn on Privacy Reports to see how much data you've saved.
+      </message>
+      <message name="IDS_NOTIFICATION_MARKETING" desc="Marketing notification text">
+        Brave browser uses 40% less battery on average.
+      </message>
+      <message name="IDS_NOTIFICATION_WEEKLY_STATS" desc="Weekly stats notification text">
+        You blocked <ph name="COUNT">%1$s</ph> trackers &amp; ads with Brave browser last week.
+      </message>
+      <message name="IDS_NOTIFICATION_REWARDS" desc="Rewards notification text">
+        Earn tokens by viewing privacy-respecting ads and support your favorite websites.
+      </message>
+      <message name="IDS_NOTIFICATION_BRAVE_STATS_TRACKERS" desc="Rewards notification text">
+        Nice! You've blocked 250 trackers &amp; ads with Brave browser.
+      </message>
+      <message name="IDS_NOTIFICATION_BRAVE_STATS_DATA" desc="Rewards notification text">
+        Nice! You've saved 10MB with Brave browser.
+      </message>
+      <message name="IDS_NOTIFICATION_BRAVE_STATS_TIME" desc="Rewards notification text">
+        Nice! You've saved 10 Mins of loading time with Brave browser.
+      </message>
+      <message name="IDS_START_BROWSING_TO_SEE" desc="Brave stats empty text">
+        Start browsing to see privacy reporting
+      </message>
+      <message name="IDS_SET_BRAVE_AS_YOUR" desc="Deafult browser notification text">
+        Set Brave as your default browser for private and secure browsing.
+      </message>
+      <message name="IDS_ALLOWS_BRAVE_TO_SHOW" desc="Brave stats pref summary text">
+        Allows brave to show your privacy statistics
+      </message>
+      <message name="IDS_SENDS_A_WEEKLY" desc="Brave stats pref summary text">
+        Sends a weekly privacy report
+      </message>
+      <message name="IDS_CLEAR_BRAVE_STATS_DATA" desc="Brave stats pref summary text">
+        Clear all privacy reports data
+      </message>
+      <message name="IDS_RESETS_YOUR_BRAVE_STATS" desc="Brave stats pref summary text">
+        Resets your privacy reports to zero
+      </message>
+      <message name="IDS_DATA_HAS_BEEN_CLEARED" desc="Brave stats pref summary text">
+        Privacy reports data has been cleared.
       </message>
     </messages>
   </release>

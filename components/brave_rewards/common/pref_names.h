@@ -13,7 +13,6 @@ extern const char kHideBraveRewardsButton[];
 extern const char kBraveRewardsEnabled[];
 extern const char kRewardsNotifications[];
 extern const char kRewardsNotificationTimerInterval[];
-extern const char kRewardsBackupNotificationFrequency[];
 extern const char kRewardsBackupNotificationInterval[];
 extern const char kRewardsBackupSucceeded[];
 extern const char kRewardsUserHasFunded[];
@@ -24,7 +23,7 @@ extern const char kRewardsBadgeText[];
 
 // Defined in native-ledger
 extern const char kStateServerPublisherListStamp[];
-extern const char kStateUpholdAnonAddress[];
+extern const char kStateUpholdAnonAddress[];  // DEPRECATED
 extern const char kStatePromotionLastFetchStamp[];
 extern const char kStatePromotionCorruptedMigrated[];
 extern const char kStateAnonTransferChecked[];
@@ -39,7 +38,6 @@ extern const char kStateAutoContributeEnabled[];
 extern const char kStateAutoContributeAmount[];
 extern const char kStateNextReconcileStamp[];
 extern const char kStateCreationStamp[];
-extern const char kStateAnonymousCardId[];
 extern const char kStateRecoverySeed[];
 extern const char kStatePaymentId[];
 extern const char kStateInlineTipRedditEnabled[];
@@ -51,6 +49,7 @@ extern const char kStateParametersAutoContributeChoices[];
 extern const char kStateParametersTipChoices[];
 extern const char kStateParametersMonthlyTipChoices[];
 extern const char kStateFetchOldBalance[];
+extern const char kStateEmptyBalanceChecked[];
 
 extern const char kUseRewardsStagingServer[];
 }  // namespace prefs

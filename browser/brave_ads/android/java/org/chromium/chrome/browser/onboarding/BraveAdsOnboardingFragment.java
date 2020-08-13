@@ -19,8 +19,9 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.airbnb.lottie.LottieAnimationView;
+
 import org.chromium.chrome.R;
-import org.chromium.chrome.browser.BraveRewardsHelper;
 import org.chromium.chrome.browser.notifications.BraveOnboardingNotification;
 import org.chromium.chrome.browser.onboarding.OnViewPagerAction;
 import org.chromium.chrome.browser.onboarding.OnboardingPrefManager;
@@ -30,6 +31,8 @@ public class BraveAdsOnboardingFragment extends Fragment {
 
     private int progress;
     private int endTime = 3;
+
+    private LottieAnimationView animatedView;
 
     private TextView tvTitle;
     private TextView tvTimer;
@@ -43,15 +46,13 @@ public class BraveAdsOnboardingFragment extends Fragment {
     private Button btnStartBrowsing;
     private Button btnDidntSeeAd;
 
-    private boolean fromSettings;
-
     public BraveAdsOnboardingFragment() {
         // Required empty public constructor
     }
 
     @Override
     public View onCreateView(
-            LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View root = inflater.inflate(R.layout.fragment_brave_ads_onboarding, container, false);
 
@@ -72,6 +73,9 @@ public class BraveAdsOnboardingFragment extends Fragment {
             btnDidntSeeAd.setVisibility(View.GONE);
             startCountdown();
             OnboardingPrefManager.isNotification = true;
+            if (animatedView != null) {
+                animatedView.playAnimation();
+            }
         }
     }
 
@@ -79,21 +83,23 @@ public class BraveAdsOnboardingFragment extends Fragment {
         btnStartBrowsing.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                assert onViewPagerAction != null;
-                if (onViewPagerAction != null) onViewPagerAction.onStartBrowsing();
+                // assert onViewPagerAction != null;
+                // if (onViewPagerAction != null) onViewPagerAction.onStartBrowsing();
             }
         });
 
         btnDidntSeeAd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                assert onViewPagerAction != null;
-                if (onViewPagerAction != null) onViewPagerAction.onDidntSeeAd();
+                // assert onViewPagerAction != null;
+                // if (onViewPagerAction != null) onViewPagerAction.onDidntSeeAd();
             }
         });
     }
 
     private void initializeViews(View root) {
+        animatedView = root.findViewById(R.id.bg_image);
+
         tvTitle = root.findViewById(R.id.section_title);
 
         countDownLayout = root.findViewById(R.id.count_down_layout);
@@ -109,10 +115,6 @@ public class BraveAdsOnboardingFragment extends Fragment {
 
     public void setOnViewPagerAction(OnViewPagerAction onViewPagerAction) {
         this.onViewPagerAction = onViewPagerAction;
-    }
-
-    public void setFromSettings(boolean fromSettings) {
-        this.fromSettings = fromSettings;
     }
 
     private void startCountdown() {
@@ -135,27 +137,13 @@ public class BraveAdsOnboardingFragment extends Fragment {
                 setProgress(progress, endTime);
                 tvTimer.setText("0");
 
-                OnboardingPrefManager.getInstance().onboardingNotification(
-                        getActivity(), fromSettings);
-
+                OnboardingPrefManager.getInstance().onboardingNotification(getActivity());
                 new Handler().postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        BraveRewardsHelper.crossfade(null, actionLayout, View.GONE, 1f,
-                                BraveRewardsHelper.CROSS_FADE_DURATION);
-                        if (!fromSettings)
-                            BraveRewardsHelper.crossfade(countDownLayout, null, View.GONE, 1f,
-                                    BraveRewardsHelper.CROSS_FADE_DURATION);
-                        else
-                            countDownLayout.setVisibility(View.GONE);
-                        new Handler().postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                BraveRewardsHelper.crossfade(null, btnDidntSeeAd, View.GONE, 1f,
-                                        BraveRewardsHelper.CROSS_FADE_DURATION);
-                            }
-                        }, 2000);
-                        OnboardingPrefManager.isNotification = false;
+                        assert onViewPagerAction != null;
+                        if (onViewPagerAction != null)
+                            onViewPagerAction.onNext();
                     }
                 }, 1000);
             }

@@ -10,6 +10,7 @@
 
 #include "base/memory/ref_counted.h"
 #include "brave/browser/tor/buildflags.h"
+#include "brave/components/brave_ads/browser/buildflags/buildflags.h"
 #include "brave/components/brave_component_updater/browser/brave_component.h"
 #include "brave/components/brave_referrals/buildflags/buildflags.h"
 #include "brave/components/greaselion/browser/buildflags/buildflags.h"
@@ -40,7 +41,6 @@ class AdBlockService;
 class AdBlockCustomFiltersService;
 class AdBlockRegionalServiceManager;
 class HTTPSEverywhereService;
-class ReferrerWhitelistService;
 class TrackingProtectionService;
 }  // namespace brave_shields
 
@@ -59,7 +59,11 @@ class BraveTorClientUpdater;
 }
 
 namespace speedreader {
-class SpeedreaderWhitelist;
+class SpeedreaderRewriterService;
+}
+
+namespace brave_user_model {
+class UserModelFileService;
 }
 
 class BraveBrowserProcessImpl : public BrowserProcessImpl {
@@ -81,7 +85,6 @@ class BraveBrowserProcessImpl : public BrowserProcessImpl {
   brave_component_updater::ExtensionWhitelistService*
   extension_whitelist_service();
 #endif
-  brave_shields::ReferrerWhitelistService* referrer_whitelist_service();
 #if BUILDFLAG(ENABLE_GREASELION)
   greaselion::GreaselionDownloadService* greaselion_download_service();
 #endif
@@ -97,9 +100,12 @@ class BraveBrowserProcessImpl : public BrowserProcessImpl {
 #endif
   brave::BraveStatsUpdater* brave_stats_updater();
   ntp_background_images::NTPBackgroundImagesService*
-      ntp_background_images_service();
+  ntp_background_images_service();
 #if BUILDFLAG(ENABLE_SPEEDREADER)
-  speedreader::SpeedreaderWhitelist* speedreader_whitelist();
+  speedreader::SpeedreaderRewriterService* speedreader_rewriter_service();
+#endif
+#if BUILDFLAG(BRAVE_ADS_ENABLED)
+  brave_user_model::UserModelFileService* user_model_file_service();
 #endif
 
  private:
@@ -117,7 +123,7 @@ class BraveBrowserProcessImpl : public BrowserProcessImpl {
   void OnBraveDarkModeChanged();
 
   brave_component_updater::BraveComponent::Delegate*
-      brave_component_updater_delegate();
+  brave_component_updater_delegate();
 
   // local_data_files_service_ should always be first because it needs
   // to be destroyed last
@@ -134,8 +140,6 @@ class BraveBrowserProcessImpl : public BrowserProcessImpl {
   std::unique_ptr<brave_component_updater::ExtensionWhitelistService>
       extension_whitelist_service_;
 #endif
-  std::unique_ptr<brave_shields::ReferrerWhitelistService>
-      referrer_whitelist_service_;
 #if BUILDFLAG(ENABLE_GREASELION)
   std::unique_ptr<greaselion::GreaselionDownloadService>
       greaselion_download_service_;
@@ -159,7 +163,13 @@ class BraveBrowserProcessImpl : public BrowserProcessImpl {
       ntp_background_images_service_;
 
 #if BUILDFLAG(ENABLE_SPEEDREADER)
-  std::unique_ptr<speedreader::SpeedreaderWhitelist> speedreader_whitelist_;
+  std::unique_ptr<speedreader::SpeedreaderRewriterService>
+      speedreader_rewriter_service_;
+#endif
+
+#if BUILDFLAG(BRAVE_ADS_ENABLED)
+  std::unique_ptr<brave_user_model::UserModelFileService>
+      user_model_file_service_;
 #endif
 
   SEQUENCE_CHECKER(sequence_checker_);

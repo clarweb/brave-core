@@ -8,9 +8,7 @@
 
 #include <string>
 
-#include "bat/ads/confirmation_type.h"
 #include "bat/ads/export.h"
-#include "bat/ads/result.h"
 
 namespace ads {
 
@@ -20,13 +18,9 @@ struct ADS_EXPORT AdInfo {
       const AdInfo& info);
   ~AdInfo();
 
-  std::string ToJson() const;
-  Result FromJson(
-      const std::string& json,
-      std::string* error_description = nullptr);
-
   std::string creative_instance_id;
   std::string creative_set_id;
+  std::string campaign_id;
   std::string category;
   std::string target_url;
   std::string geo_target;

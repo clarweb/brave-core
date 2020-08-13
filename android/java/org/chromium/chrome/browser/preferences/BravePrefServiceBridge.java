@@ -84,26 +84,6 @@ public class BravePrefServiceBridge {
         return BravePrefServiceBridgeJni.get().getDataSaved(profile);
     }
 
-    public String getSyncDeviceId() {
-        return BravePrefServiceBridgeJni.get().getSyncDeviceId();
-    }
-
-    public void setSyncDeviceName(String deviceName) {
-        BravePrefServiceBridgeJni.get().setSyncDeviceName(deviceName);
-    }
-
-    public String getSyncDeviceName() {
-        return BravePrefServiceBridgeJni.get().getSyncDeviceName();
-    }
-
-    public void setSyncSeed(String seed) {
-        BravePrefServiceBridgeJni.get().setSyncSeed(seed);
-    }
-
-    public String getSyncSeed() {
-        return BravePrefServiceBridgeJni.get().getSyncSeed();
-    }
-
     /**
      * @param whether SafetyNet check failed.
      */
@@ -113,6 +93,10 @@ public class BravePrefServiceBridge {
 
     public boolean getSafetynetCheckFailed() {
         return BravePrefServiceBridgeJni.get().getSafetynetCheckFailed();
+    }
+
+    public void setSafetynetStatus(String status) {
+        BravePrefServiceBridgeJni.get().setSafetynetStatus(status);
     }
 
     public void setUseRewardsStagingServer(boolean enabled) {
@@ -139,11 +123,11 @@ public class BravePrefServiceBridge {
         return BravePrefServiceBridgeJni.get().getBooleanForContentSetting(content_type);
     }
 
-        /**
-     * @param preference The name of the preference.
-     * @return Whether the specified preference is enabled.
-     */
-    public boolean getBoolean(@Pref int preference) {
+    /**
+    * @param preference The name of the preference.
+    * @return Whether the specified preference is enabled.
+    */
+    public boolean getBoolean(int preference) {
         return BravePrefServiceBridgeJni.get().getBoolean(preference);
     }
 
@@ -151,7 +135,7 @@ public class BravePrefServiceBridge {
      * @param preference The name of the preference.
      * @param value The value the specified preference will be set to.
      */
-    public void setBoolean(@Pref int preference, boolean value) {
+    public void setBoolean(int preference, boolean value) {
         BravePrefServiceBridgeJni.get().setBoolean(preference, value);
     }
 
@@ -159,7 +143,7 @@ public class BravePrefServiceBridge {
      * @param preference The name of the preference.
      * @return value The value of the specified preference.
      */
-    public int getInteger(@Pref int preference) {
+    public int getInteger(int preference) {
         return BravePrefServiceBridgeJni.get().getInteger(preference);
     }
 
@@ -167,7 +151,7 @@ public class BravePrefServiceBridge {
      * @param preference The name of the preference.
      * @param value The value the specified preference will be set to.
      */
-    public void setInteger(@Pref int preference, int value) {
+    public void setInteger(int preference, int value) {
         BravePrefServiceBridgeJni.get().setInteger(preference, value);
     }
 
@@ -176,7 +160,7 @@ public class BravePrefServiceBridge {
      * @return value The value of the specified preference.
      */
     @NonNull
-    public String getString(@Pref int preference) {
+    public String getString(int preference) {
         return BravePrefServiceBridgeJni.get().getString(preference);
     }
 
@@ -184,7 +168,7 @@ public class BravePrefServiceBridge {
      * @param preference The name of the preference.
      * @param value The value the specified preference will be set to.
      */
-    public void setString(@Pref int preference, @NonNull String value) {
+    public void setString(int preference, @NonNull String value) {
         BravePrefServiceBridgeJni.get().setString(preference, value);
     }
 
@@ -233,16 +217,10 @@ public class BravePrefServiceBridge {
         void setOldAdsBlockedCount(Profile profile, long count);
         void setOldHttpsUpgradesCount(Profile profile, long count);
 
-        String getSyncDeviceId();
-
-        void setSyncDeviceName(String deviceName);
-        String getSyncDeviceName();
-
-        void setSyncSeed(String seed);
-        String getSyncSeed();
-
         void setSafetynetCheckFailed(boolean value);
         boolean getSafetynetCheckFailed();
+
+        void setSafetynetStatus(String status);
 
         void setUseRewardsStagingServer(boolean enabled);
         boolean getUseRewardsStagingServer();

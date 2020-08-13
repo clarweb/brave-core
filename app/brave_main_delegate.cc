@@ -6,6 +6,7 @@
 #include "brave/app/brave_main_delegate.h"
 
 #include <memory>
+#include <string>
 #include <unordered_set>
 
 #include "base/base_switches.h"
@@ -28,14 +29,19 @@
 #include "chrome/common/chrome_switches.h"
 #include "components/autofill/core/common/autofill_features.h"
 #include "components/autofill/core/common/autofill_payments_features.h"
+#include "components/embedder_support/switches.h"
 #include "components/feed/feed_feature_list.h"
+#include "components/language/core/common/language_experiments.h"
 #include "components/offline_pages/core/offline_page_feature.h"
+#include "components/omnibox/common/omnibox_features.h"
 #include "components/password_manager/core/common/password_manager_features.h"
+#include "components/safe_browsing/core/features.h"
 #include "components/security_state/core/features.h"
 #include "components/sync/driver/sync_driver_switches.h"
 #include "components/translate/core/browser/translate_prefs.h"
 #include "content/public/common/content_features.h"
 #include "content/public/common/content_switches.h"
+#include "services/device/public/cpp/device_features.h"
 #include "services/network/public/cpp/features.h"
 #include "third_party/blink/public/common/features.h"
 #include "third_party/widevine/cdm/buildflags.h"
@@ -49,6 +55,27 @@
 #include "components/dom_distiller/core/dom_distiller_switches.h"
 #endif
 
+#if defined(OS_ANDROID)
+#include "base/android/jni_android.h"
+#include "brave/build/android/jni_headers/BraveQAPreferences_jni.h"
+#endif
+
+namespace {
+// staging "https://sync-v2.bravesoftware.com/v2" can be overriden by
+// switches::kSyncServiceURL manually
+const char kBraveSyncServiceStagingURL[] =
+    "https://sync-v2.bravesoftware.com/v2";
+#if defined(OFFICIAL_BUILD)
+// production
+const char kBraveSyncServiceURL[] = "https://sync-v2.brave.com/v2";
+#else
+// For local server development "http://localhost:8295/v2 can also be overriden
+// by switches::kSyncServiceURL
+// dev
+const char kBraveSyncServiceURL[] = "https://sync-v2.brave.software/v2";
+#endif
+}  // namespace
+
 #if !defined(CHROME_MULTIPLE_DLL_BROWSER)
 base::LazyInstance<BraveContentRendererClient>::DestructorAtExit
     g_brave_content_renderer_client = LAZY_INSTANCE_INITIALIZER;
@@ -59,6 +86,10 @@ base::LazyInstance<BraveContentUtilityClient>::DestructorAtExit
 base::LazyInstance<BraveContentBrowserClient>::DestructorAtExit
     g_brave_content_browser_client = LAZY_INSTANCE_INITIALIZER;
 #endif
+
+const char kBraveOriginTrialsPublicKey[] =
+    "bYUKPJoPnCxeNvu72j4EmPuK7tr1PAC7SHh8ld9Mw3E=,"
+    "fMS4mpO6buLQ/QMd+zJmxzty/VQ6B1EUZqoCU04zoRU=";
 
 BraveMainDelegate::BraveMainDelegate()
     : ChromeMainDelegate() {}
@@ -146,9 +177,20 @@ bool BraveMainDelegate::BasicStartupComplete(int* exit_code) {
   command_line.AppendSwitchASCII(switches::kExtensionsInstallVerification,
       "enforce");
 
+  if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
+          embedder_support::kOriginTrialPublicKey)) {
+    command_line.AppendSwitchASCII(embedder_support::kOriginTrialPublicKey,
+                                   kBraveOriginTrialsPublicKey);
+  }
+
+  std::string brave_sync_service_url = kBraveSyncServiceURL;
+#if defined(OS_ANDROID)
+  AdjustSyncServiceUrlForAndroid(&brave_sync_service_url);
+#endif  // defined(OS_ANDROID)
+
   // Brave's sync protocol does not use the sync service url
   command_line.AppendSwitchASCII(switches::kSyncServiceURL,
-                                 "https://no-thanks.invalid");
+                                 brave_sync_service_url.c_str());
 
   // Enabled features.
   std::unordered_set<const char*> enabled_features = {
@@ -164,6 +206,11 @@ bool BraveMainDelegate::BasicStartupComplete(int* exit_code) {
       // this feature.
       features::kWebUIDarkMode.name,
       blink::features::kPrefetchPrivacyChanges.name,
+      features::kReducedReferrerGranularity.name,
+#if defined(OS_WIN)
+      features::kWinrtGeolocationImplementation.name,
+#endif
+      omnibox::kOmniboxContextMenuShowFullUrls.name,
   };
 
   if (!base::CommandLine::ForCurrentProcess()->HasSwitch(
@@ -177,11 +224,12 @@ bool BraveMainDelegate::BasicStartupComplete(int* exit_code) {
     autofill::features::kAutofillServerCommunication.name,
     blink::features::kTextFragmentAnchor.name,
     features::kAllowPopupsDuringPageUnload.name,
-    features::kLookalikeUrlNavigationSuggestionsUI.name,
     features::kNotificationTriggers.name,
+    features::kPrivacySettingsRedesign.name,
     features::kSmsReceiver.name,
     features::kVideoPlaybackQuality.name,
     features::kTabHoverCards.name,
+    safe_browsing::kEnhancedProtection.name,
 #if defined(OS_ANDROID)
     feed::kInterestFeedContentSuggestions.name,
     translate::kTranslateUI.name,
@@ -201,3 +249,27 @@ bool BraveMainDelegate::BasicStartupComplete(int* exit_code) {
 
   return ret;
 }
+
+#if defined(OS_ANDROID)
+void BraveMainDelegate::AdjustSyncServiceUrlForAndroid(
+    std::string* brave_sync_service_url) {
+  DCHECK_NE(brave_sync_service_url, nullptr);
+  const char kProcessTypeSwitchName[] = "type";
+
+  // On Android we can detect data dir only on host process, and we cannot
+  // for example on renderer or gpu-process, because JNI is not initialized
+  // And no sense to override sync service url for them in anyway
+  if (base::CommandLine::ForCurrentProcess()->HasSwitch(
+          kProcessTypeSwitchName)) {
+    // This is something other than browser process
+    return;
+  }
+
+  JNIEnv* env = base::android::AttachCurrentThread();
+  bool b_use_staging_sync_server =
+      Java_BraveQAPreferences_isSyncStagingUsed(env);
+  if (b_use_staging_sync_server) {
+    *brave_sync_service_url = kBraveSyncServiceStagingURL;
+  }
+}
+#endif  // defined(OS_ANDROID)

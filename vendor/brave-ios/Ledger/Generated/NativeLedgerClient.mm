@@ -11,26 +11,14 @@ NativeLedgerClient::~NativeLedgerClient() {
   bridge_ = nil;
 }
 
-void NativeLedgerClient::ConfirmationsTransactionHistoryDidChange() {
-  [bridge_ confirmationsTransactionHistoryDidChange];
-}
 void NativeLedgerClient::FetchFavIcon(const std::string & url, const std::string & favicon_key, ledger::FetchIconCallback callback) {
   [bridge_ fetchFavIcon:url faviconKey:favicon_key callback:callback];
-}
-void NativeLedgerClient::KillTimer(const uint32_t timer_id) {
-  [bridge_ killTimer:timer_id];
 }
 void NativeLedgerClient::LoadLedgerState(ledger::OnLoadCallback callback) {
   [bridge_ loadLedgerState:callback];
 }
-void NativeLedgerClient::LoadNicewareList(ledger::GetNicewareListCallback callback) {
-  [bridge_ loadNicewareList:callback];
-}
 void NativeLedgerClient::LoadPublisherState(ledger::OnLoadCallback callback) {
   [bridge_ loadPublisherState:callback];
-}
-void NativeLedgerClient::LoadState(const std::string & name, ledger::OnLoadCallback callback) {
-  [bridge_ loadState:name callback:callback];
 }
 void NativeLedgerClient::LoadURL(const std::string & url, const std::vector<std::string> & headers, const std::string & content, const std::string & contentType, const ledger::UrlMethod method, ledger::LoadURLCallback callback) {
   [bridge_ loadURL:url headers:headers content:content contentType:contentType method:method callback:callback];
@@ -41,23 +29,11 @@ void NativeLedgerClient::Log(const char * file, const int line, const int verbos
 void NativeLedgerClient::OnPanelPublisherInfo(ledger::Result result, ledger::PublisherInfoPtr publisher_info, uint64_t windowId) {
   [bridge_ onPanelPublisherInfo:result publisherInfo:std::move(publisher_info) windowId:windowId];
 }
-void NativeLedgerClient::OnReconcileComplete(ledger::Result result, const std::string & viewing_id, const double amount, const ledger::RewardsType type) {
-  [bridge_ onReconcileComplete:result viewingId:viewing_id type:type amount:amount];
-}
-void NativeLedgerClient::ResetState(const std::string & name, ledger::ResultCallback callback) {
-  [bridge_ resetState:name callback:callback];
+void NativeLedgerClient::OnReconcileComplete(ledger::Result result, ledger::ContributionInfoPtr contribution) {
+  [bridge_ onReconcileComplete:result contribution:std::move(contribution)];
 }
 void NativeLedgerClient::PublisherListNormalized(ledger::PublisherInfoList list) {
   [bridge_ publisherListNormalized:std::move(list)];
-}
-void NativeLedgerClient::SaveState(const std::string & name, const std::string & value, ledger::ResultCallback callback) {
-  [bridge_ saveState:name value:value callback:callback];
-}
-void NativeLedgerClient::SetConfirmationsIsReady(const bool is_ready) {
-  [bridge_ setConfirmationsIsReady:is_ready];
-}
-void NativeLedgerClient::SetTimer(uint64_t time_offset, uint32_t * timer_id) {
-  [bridge_ setTimer:time_offset timerId:timer_id];
 }
 std::string NativeLedgerClient::URIEncode(const std::string & value) {
   return [bridge_ URIEncode:value];
@@ -104,8 +80,8 @@ uint64_t NativeLedgerClient::GetUint64State(const std::string& name) const {
 void NativeLedgerClient::ClearState(const std::string& name) {
   [bridge_ clearState:name];
 }
-void NativeLedgerClient::GetExternalWallets(ledger::GetExternalWalletsCallback callback) {
-  [bridge_ getExternalWallets:callback];
+std::map<std::string, ledger::ExternalWalletPtr> NativeLedgerClient::GetExternalWallets() {
+  return [bridge_ getExternalWallets];
 }
 void NativeLedgerClient::SaveExternalWallet(const std::string& wallet_type, ledger::ExternalWalletPtr wallet) {
   [bridge_ saveExternalWallet:wallet_type wallet:std::move(wallet)];
@@ -157,4 +133,10 @@ void NativeLedgerClient::GetCreateScript(ledger::GetCreateScriptCallback callbac
 }
 void NativeLedgerClient::PendingContributionSaved(const ledger::Result result) {
   [bridge_ pendingContributionSaved:result];
+}
+void NativeLedgerClient::ClearAllNotifications() {
+  [bridge_ clearAllNotifications];
+}
+void NativeLedgerClient::WalletDisconnected(const std::string& wallet_type) {
+  [bridge_ walletDisconnected:wallet_type];
 }

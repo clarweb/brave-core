@@ -26,8 +26,9 @@
 #include "brave/components/brave_shields/browser/ad_block_regional_service_manager.h"
 #include "brave/components/brave_shields/browser/ad_block_service.h"
 #include "brave/components/brave_shields/browser/https_everywhere_service.h"
-#include "brave/components/brave_shields/browser/referrer_whitelist_service.h"
 #include "brave/components/brave_shields/browser/tracking_protection_service.h"
+#include "brave/components/brave_sync/buildflags/buildflags.h"
+#include "brave/components/brave_sync/network_time_helper.h"
 #include "brave/components/ntp_background_images/browser/features.h"
 #include "brave/components/ntp_background_images/browser/ntp_background_images_service.h"
 #include "brave/components/p3a/buildflags.h"
@@ -55,6 +56,7 @@
 #endif
 
 #if BUILDFLAG(ENABLE_BRAVE_REFERRALS)
+#include "brave/browser/brave_referrals/brave_referrals_service_factory.h"
 #include "brave/components/brave_referrals/browser/brave_referrals_service.h"
 #endif
 
@@ -73,7 +75,7 @@
 #endif
 
 #if BUILDFLAG(ENABLE_SPEEDREADER)
-#include "brave/components/speedreader/speedreader_whitelist.h"
+#include "brave/components/speedreader/speedreader_rewriter_service.h"
 #endif
 
 #if defined(OS_ANDROID)
@@ -81,6 +83,10 @@
 #include "chrome/browser/android/component_updater/background_task_update_scheduler.h"
 #else
 #include "chrome/browser/ui/browser.h"
+#endif
+
+#if BUILDFLAG(BRAVE_ADS_ENABLED)
+#include "brave/components/brave_user_model/browser/user_model_file_service.h"
 #endif
 
 using brave_component_updater::BraveComponent;
@@ -111,7 +117,8 @@ BraveBrowserProcessImpl::BraveBrowserProcessImpl(StartupData* startup_data)
   g_brave_browser_process = this;
 
 #if BUILDFLAG(ENABLE_BRAVE_REFERRALS)
-  brave_referrals_service_ = brave::BraveReferralsServiceFactory(local_state());
+  brave_referrals_service_ = brave::BraveReferralsServiceFactory::GetInstance()
+    ->GetForPrefs(local_state());
   base::SequencedTaskRunnerHandle::Get()->PostDelayedTask(
       FROM_HERE,
       base::BindOnce(
@@ -186,16 +193,23 @@ void BraveBrowserProcessImpl::StartBraveServices() {
 #if BUILDFLAG(ENABLE_EXTENSIONS)
   extension_whitelist_service();
 #endif
-  referrer_whitelist_service();
   tracking_protection_service();
 #if BUILDFLAG(ENABLE_GREASELION)
   greaselion_download_service();
 #endif
 #if BUILDFLAG(ENABLE_SPEEDREADER)
-  speedreader_whitelist();
+  speedreader_rewriter_service();
+#endif
+#if BUILDFLAG(BRAVE_ADS_ENABLED)
+  user_model_file_service();
 #endif
   // Now start the local data files service, which calls all observers.
   local_data_files_service()->Start();
+
+#if BUILDFLAG(ENABLE_BRAVE_SYNC)
+  brave_sync::NetworkTimeHelper::GetInstance()
+    ->SetNetworkTimeTracker(g_browser_process->network_time_tracker());
+#endif
 }
 
 brave_shields::AdBlockService* BraveBrowserProcessImpl::ad_block_service() {
@@ -255,16 +269,6 @@ BraveBrowserProcessImpl::extension_whitelist_service() {
   return extension_whitelist_service_.get();
 }
 #endif
-
-brave_shields::ReferrerWhitelistService*
-BraveBrowserProcessImpl::referrer_whitelist_service() {
-  if (!referrer_whitelist_service_) {
-    referrer_whitelist_service_ =
-        brave_shields::ReferrerWhitelistServiceFactory(
-            local_data_files_service());
-  }
-  return referrer_whitelist_service_.get();
-}
 
 #if BUILDFLAG(ENABLE_GREASELION)
 greaselion::GreaselionDownloadService*
@@ -393,12 +397,26 @@ void BraveBrowserProcessImpl::CreateNotificationPlatformBridge() {
 }
 
 #if BUILDFLAG(ENABLE_SPEEDREADER)
-speedreader::SpeedreaderWhitelist*
-BraveBrowserProcessImpl::speedreader_whitelist() {
-  if (!speedreader_whitelist_) {
-    speedreader_whitelist_.reset(new speedreader::SpeedreaderWhitelist(
-        brave_component_updater_delegate()));
+speedreader::SpeedreaderRewriterService*
+BraveBrowserProcessImpl::speedreader_rewriter_service() {
+  if (!speedreader_rewriter_service_) {
+    speedreader_rewriter_service_.reset(
+        new speedreader::SpeedreaderRewriterService(
+            brave_component_updater_delegate()));
   }
-  return speedreader_whitelist_.get();
+  return speedreader_rewriter_service_.get();
 }
 #endif  // BUILDFLAG(ENABLE_SPEEDREADER)
+
+#if BUILDFLAG(BRAVE_ADS_ENABLED)
+brave_user_model::UserModelFileService*
+BraveBrowserProcessImpl::user_model_file_service() {
+  if (!user_model_file_service_) {
+    user_model_file_service_.reset(
+        new brave_user_model::UserModelFileService(
+            brave_component_updater_delegate()));
+  }
+  return user_model_file_service_.get();
+}
+
+#endif  // BUILDFLAG(BRAVE_ADS_ENABLED)

@@ -44,7 +44,7 @@ std::string FetchSignedCredsUrl(
   return BuildUrl(path, PREFIX_V1, ServerTypes::kPromotion);
 }
 
-std::string GetReedemTokensUrl() {
+std::string GetRedeemTokensUrl() {
   return BuildUrl("/suggestions", PREFIX_V1, ServerTypes::kPromotion);
 }
 
@@ -57,6 +57,41 @@ std::string ReportClobberedClaimsUrl() {
 
 std::string GetTransferTokens() {
   return BuildUrl("/suggestions/claim", PREFIX_V1, ServerTypes::kPromotion);
+}
+
+std::string GetBatlossURL(
+    const std::string& payment_id,
+    const int32_t version) {
+  const std::string& path = base::StringPrintf(
+      "/wallets/%s/events/batloss/%d",
+      payment_id.c_str(),
+      version);
+  return BuildUrl(path, PREFIX_V1, ServerTypes::kPromotion);
+}
+
+std::string GetCreateWalletURL() {
+  return BuildUrl("/wallet/brave", PREFIX_V3, ServerTypes::kPromotion);
+}
+
+std::string GetRecoverWalletURL(const std::string& public_key) {
+    const std::string& path = base::StringPrintf(
+      "/wallet/recover/%s",
+      public_key.c_str());
+  return BuildUrl(path, PREFIX_V3, ServerTypes::kPromotion);
+}
+
+std::string GetClaimWalletURL(const std::string& payment_id) {
+    const std::string& path = base::StringPrintf(
+      "/wallet/uphold/%s/claim",
+      payment_id.c_str());
+  return BuildUrl(path, PREFIX_V3, ServerTypes::kPromotion);
+}
+
+std::string GetBalanceWalletURL(const std::string& payment_id) {
+    const std::string path = base::StringPrintf(
+      "/wallet/uphold/%s",
+      payment_id.c_str());
+  return BuildUrl(path, PREFIX_V3, ServerTypes::kPromotion);
 }
 
 }  // namespace braveledger_request_util

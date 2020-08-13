@@ -9,9 +9,8 @@
 <translation id="2445484935443597917">Créer un profil</translation>
 <translation id="2666990579225592931">Ouvrir une fenêtre d'invité</translation>
 <translation id="120759863357279975"><ph name="EXTENSION_NAME"/> (extension ID "<ph name="EXTENSION_ID"/>") n'est pas autorisé dans Brave.</translation>
-<translation id="7450557937477381864">Fermer Chrome</translation>
-<translation id="7008934821596358692">Pour terminer l'importation, fermez toutes les fenêtres de Chrome.</translation>
 <translation id="6786747875388722282">Extensions</translation>
+<translation id="984275831282074731">Modes de paiement</translation>
 <translation id="3699882589215410581">Installer et exécuter Widevine</translation>
 <translation id="8926389886865778422">Ne plus afficher ce message</translation>
 <translation id="4726634924419692905">Demander quand un site veut installer Widevine sur votre ordinateur.</translation>
@@ -22,7 +21,6 @@
 <translation id="8410111618231938546">Google Widevine est un code de gestion des droits numériques (GDN) que Brave Software ne possède pas et ne peut inspecter. Le code Google Widevine est chargé à partir des serveurs Google et non de nos serveurs. Il n'est chargé que lorsque vous activez cette option. Nous décourageons l'utilisation de la GDN, mais nous respectons le choix de l'utilisateur et reconnaissons que certains utilisateurs de Brave aimeraient utiliser les services qui en ont besoin.
 
 En installant cette extension, vous acceptez les conditions d'utilisation de Google Widevine. Vous reconnaissez que Brave n'est pas responsable des dommages ou pertes liés à votre utilisation de Google Widevine.</translation>
-<translation id="453977518730680921">Lecture automatique des médias</translation>
 <translation id="410351446219883937">Lecture automatique</translation>
 <translation id="2240268017737062801">Demander quand un site veut lire automatiquement un média</translation>
 <translation id="3371702087847741961">Demandez quand un site veut lire automatiquement les médias (recommandé)</translation>
@@ -39,11 +37,14 @@ En installant cette extension, vous acceptez les conditions d'utilisation de Goo
 <translation id="7635711399568194460">Cache le bouton « Récompenses de Brave » dans la barre d'adresse lorsque les récompenses de Brave ne sont pas activées</translation>
 <translation id="1520361618554057102">Toujours afficher les signets sur la page Nouvel onglet</translation>
 <translation id="5802665280774361839">Afficher la saisie semi-automatique dans la barre d'adresse</translation>
+<translation id="597020512043916976">Afficher les meilleurs sites dans les suggestions autocomplètes</translation>
+<translation id="264150068416846820">Afficher les sites suggérés par Brave dans les suggestions autocomplètes</translation>
 <translation id="7781069478569868053">Nouvel onglet</translation>
 <translation id="2467749191278759605">Personnalisez votre tableau de bord de Brave</translation>
 <translation id="1717331825806276156">Images de fond</translation>
 <translation id="1820041496463124489">Images sponsorisées</translation>
 <translation id="8173998484743827990">Statistiques Brave</translation>
+<translation id="5551238871320268996">Brave Together</translation>
 <translation id="6966052266404721769">Binance</translation>
 <translation id="4643117005422448078">Sites principaux</translation>
 <translation id="1776831331757823105">Horloge</translation>
@@ -72,9 +73,9 @@ En installant cette extension, vous acceptez les conditions d'utilisation de Goo
 <translation id="7390783310074170337">Affichage par défaut</translation>
 <translation id="130615081792797568">Affichage simple</translation>
 <translation id="2360360976480535628">Vue détaillée</translation>
-<translation id="5709627087332022422">Bloquez les pisteurs inter-site</translation>
-<translation id="6447842834002726250">Cookies</translation>
-<translation id="6522412052085018663">Relevé d'empreintes digitales</translation>
+<translation id="2133317862976486547">Blocage des traqueurs et des publicités</translation>
+<translation id="4385707520896576447">Blocage des mouchards</translation>
+<translation id="4978786495456601191">Bloquage de la prise d'emprintes digitales</translation>
 <translation id="3570081523466826008">Mettre à niveau les connexions vers le HTTPS</translation>
 <translation id="4824468494729001999">Bloquer les scripts</translation>
 <translation id="519861640102428255">Aspect et convivialité</translation>
@@ -83,12 +84,12 @@ En installant cette extension, vous acceptez les conditions d'utilisation de Goo
 <translation id="863171915776379000">Autoriser les connexions à Facebook et les messages intégrés</translation>
 <translation id="5165042248369837294">Autoriser les tweets intégrés à Twitter</translation>
 <translation id="958971637207126733">Permettre les publications LinkedIn intégrées</translation>
-<translation id="4699812599455071925">Bloquer uniquement les témoins intersites</translation>
-<translation id="5657156137487675418">Autoriser tous les cookies</translation>
-<translation id="6883611015375728278">Bloquer tous les cookies</translation>
-<translation id="5963670684159057574">Bloquer le relevé d'empreintes digitales intersites</translation>
-<translation id="769702552748212954">Autoriser toutes les empreintes digitales</translation>
-<translation id="4540198958192073185">Bloquer toutes les empreintes digitales</translation>
+<translation id="4078738236287221428">Aggressif</translation>
+<translation id="7740996059027112821">Standard</translation>
+<translation id="4176463684765177261">Désactivé</translation>
+<translation id="5770288601196774623">Uniquement intersite</translation>
+<translation id="3587482841069643663">Tous</translation>
+<translation id="5533533363827555308">Stricte, peut briser les sites</translation>
 <translation id="8942080017911802454">Politique de gestion des adresses Web de WebRTC</translation>
 <translation id="6165508094623778733">En savoir plus</translation>
 <translation id="8798099450830957504">Par défaut</translation>
@@ -96,8 +97,47 @@ En installant cette extension, vous acceptez les conditions d'utilisation de Goo
 <translation id="5825943197137337319">Interface publique par défaut uniquement</translation>
 <translation id="1689062823386843231">Désactiver le protocole UDP non proxy</translation>
 <translation id="8502234992433094996">Utiliser Google Services pour les messages Push</translation>
-<translation id="3888068426966679906">Débogage à distance</translation>
-<translation id="6645631466045614531">Accès à la synchronisation via</translation>
+<translation id="5565355416171743213">Commencer à utiliser la synchronisation</translation>
+<translation id="4332558599726753990">Synchroniser la configuration</translation>
+<translation id="2187778349654214731">Pour commencer, vous devrez installer Brave sur tous les appareils que vous prévoyez synchroniser. Ensuite, liez-les ensemble de manière sécurisée avec un code de synchronisation.</translation>
+<translation id="7530575064080939974">Gérez vos appreils synchronisés</translation>
+<translation id="7575156386943878014">Gestionnaire de synchronisation</translation>
+<translation id="1755198127524719638">Paramètres de synchronisation</translation>
+<translation id="7558480201297099157">Gérez les informations que vous souhaitez synchroniser entre les appareils. Ces paramètres n'affectent que cet appareil.</translation>
+<translation id="7731928563672901833">Liste des appareils</translation>
+<translation id="28332161031213248">La liste d'appareils ci-dessous comprend tous les appareils de votre chaîne de synchronisation. Chaque appareil peut être géré à partir de n'importe quel autre appareil.</translation>
+<translation id="1313162974556054106">Nom de l'appareil</translation>
+<translation id="923757506389336140"><ph name="DEVICE_NAME"/> (Cet appareil)</translation>
+<translation id="3686835020221422649">Dernière activité</translation>
+<translation id="2569646144216067185">Nombre de mots : <ph name="WORD_COUNT"/></translation>
+<translation id="7885157704277298658">Copié!</translation>
+<translation id="8802630444265810662">Un code QR à scanner avec un appareil mobile dans le but de transmettre votre code de sychronisation</translation>
+<translation id="6221331245829088299">Il y a eu une erreur d'affichage du code QR, veuillez actualiser la page et essayer à nouveau.</translation>
+<translation id="298546024891487702">Pour commencer, vous devrez installer Brave sur tous les appareils que vous prévoyez de synchroniser. Pour les relier entre eux, lancez une chaîne de synchronisation que vous utiliserez pour le faire en toute sécurité.</translation>
+<translation id="6200528822592747640">Démarrer une nouvelle chaîne de synchronisation</translation>
+<translation id="5184726904895809379">J'ai un code de synchronisation</translation>
+<translation id="8780295742023331191">Afficher le code de synchronisation</translation>
+<translation id="9017050385815017931">Téléphone/tablette</translation>
+<translation id="1736420071277903564">Ordinateur</translation>
+<translation id="3407602902101449803">Code QR de la chaîne de synchronisation</translation>
+<translation id="8369686073965491869">Sur votre appareil mobile, naviguez vers Brave Sync dans le panneau de réglage et cliquez sur le bouton</translation>
+<translation id="6527776448555649991">“Lire le code de synchronisation”.</translation>
+<translation id="1400862780574843709">Utilisez votre appareil photo pour scanner le code QR ci-dessous.</translation>
+<translation id="5086223971958279691">Synchroniser le code de la chaîne</translation>
+<translation id="2899261497479389619">Sur votre ordinateur cible, accédez à Synchronisation de Brave dans les paramètres et cliquez sur le bouton</translation>
+<translation id="4827439149833241990">“J'ai un code de synchronisation”.</translation>
+<translation id="24067401253841795">Saisissez les mots de code de la chaîne de synchronisation indiqués ci-dessous. Traitez ce code comme un mot de passe. Si quelqu'un met la main dessus, il peut lire et modifier vos données synchronisées.</translation>
+<translation id="3034163433136515805">Afficher le code QR</translation>
+<translation id="5373825572723282843">Entrez un code de synchronisation</translation>
+<translation id="5734745018569675530">Tapez les mots de code de la chaîne de synchronisation dans le formulaire ci-dessous.</translation>
+<translation id="1061533051865606843">Ajouter un nouveau dispositif</translation>
+<translation id="5093410893656857925">Choisissez le type de dispositif</translation>
+<translation id="4581190919849683048">Avec quel type d'appareil voulez-vous vous synchroniser?</translation>
+<translation id="4112587618563511470">Code de sychronisation invalide, veuillez vérifier et essayer à nouveau.</translation>
+<translation id="2339730291919608488">Quitter la chaîne de synchronisation</translation>
+<translation id="115699408012835975">Si vous réinitialisez la synchronisation, vous devrez entrer à nouveau un code de synchronisation à partir d'un autre appareil afin de le synchroniser. Êtes-vous sûr de vouloir continuer?</translation>
+<translation id="3396347744975515056">Brave Synch a été mis à jour et nécessite une réinitiallisation</translation>
+<translation id="7473245612074035141">Commencer la configuration</translation>
 <translation id="6696935187608454456">Conseils pratiques</translation>
 <translation id="2775956301559569472">Afficher l'invite Wayback Machine sur les pages 404</translation>
 <translation id="1807246157184219062">Clair</translation>
@@ -110,6 +150,7 @@ En installant cette extension, vous acceptez les conditions d'utilisation de Goo
 <translation id="7701040980221191251">Aucun</translation>
 <translation id="1085027414516521238">MetaMask</translation>
 <translation id="3905324891414560921">Fournisseur Web3 pour l'utilisation de Dapps</translation>
+<translation id="5913089932885076110">Charger Crypto Wallets au démarrage</translation>
 <translation id="6554397389149987360">Utilise le composant Hangouts pour permettre le partage d'écran et d'autres fonctionnalités du navigateur.</translation>
 <translation id="1765684547504191670">Utilise le composant Media Router afin d'activer Chromecast dans le navigateur.</translation>
 <translation id="9156965752763025780">Vos modifications seront prises en compte au prochain redémarrage de Brave.</translation>
@@ -171,22 +212,27 @@ En installant cette extension, vous acceptez les conditions d'utilisation de Goo
 <translation id="6469509880167172749">Envoyer automatiquement à Brave des analyses entièrement confidentielles relatives au produit</translation>
 <translation id="7090566321964540749">Ces informations anonymes permettent à Brave d'estimer l'utilisation globale de certaines fonctionnalités.</translation>
 <translation id="9111960429693394744">Souhaitez-vous utiliser les portefeuilles de crypto-monnaies de Brave ou MetaMask pour Dapps?</translation>
+<translation id="8721775358057000783">Souhaitez-vous lancer Crypto Wallets pour le support web3 sur cette page ?</translation>
 <translation id="7583735190612229830">Configurer Crypto Wallets pour interagir avec cette application et d'autres similaires.</translation>
-<translation id="8337117349965899723">Utiliser Crypto Wallets</translation>
+<translation id="4823406846571523661">Configurer les Crypto Wallets</translation>
 <translation id="5756155765711979898">Utiliser MetaMask</translation>
 <translation id="6754134632841262799">CONFIGURATION</translation>
+<translation id="8199661191594897555">Démarrer Crypto Wallets et recharger</translation>
+<translation id="8428213095426709021">Paramètres</translation>
 <translation id="4552520379838695057">Désolé, cette page est manquante.</translation>
 <translation id="2609895996619941644">Voulez-vous vérifier si une version enregistrée est disponible sur la Wayback Machine?</translation>
 <translation id="8053093028263274061">Désolé, il n'y a pas de version sauvegardée disponible.</translation>
 <translation id="8517321676372639828">Vérifier la version enregistrée</translation>
-<translation id="191143826155037518">Brave est mis à votre disposition sous le nom de <ph name="BEGIN_LINK_MPL">&amp;lt;a target="_blank" href="$1"&amp;gt;</ph>Mozilla Public License 2.0<ph name="END_LINK_MPL">&amp;lt;/a&amp;gt;</ph> (MPL) et inclut <ph name="BEGIN_LINK_OSS">&amp;lt;a target="_blank" href="$2"&amp;gt;</ph>logiciel à source ouverte<ph name="END_LINK_OSS">&amp;lt;/a&amp;gt;</ph> sous plusieurs autres licences.
-        Vous pouvez lire <ph name="BEGIN_LINK_BUILD_INSTRUCTIONS">&amp;lt;a target="_blank" href="$3"&amp;gt;</ph>instructions sur la façon de télécharger et de construire pour vous-même<ph name="END_LINK_BUILD_INSTRUCTIONS">&amp;lt;/a&amp;gt;</ph> le code <ph name="BEGIN_LINK_SOURCE_CODE">&amp;lt;a target="_blank" href="$4"&amp;gt;</ph>source spécifique utilisé pour créer cette copie<ph name="END_LINK_SOURCE_CODE">&amp;lt;/a&amp;gt;</ph>.</translation>
+<translation id="191143826155037518">Brave est mis à votre disposition sous le nom de <ph name="BEGIN_LINK_MPL">&lt;a target="_blank" href="$1"&gt;</ph>Mozilla Public License 2.0<ph name="END_LINK_MPL">&lt;/a&gt;</ph> (MPL) et inclut <ph name="BEGIN_LINK_OSS">&lt;a target="_blank" href="$2"&gt;</ph>logiciel à source ouverte<ph name="END_LINK_OSS">&lt;/a&gt;</ph> sous plusieurs autres licences.
+        Vous pouvez lire <ph name="BEGIN_LINK_BUILD_INSTRUCTIONS">&lt;a target="_blank" href="$3"&gt;</ph>instructions sur la façon de télécharger et de construire pour vous-même<ph name="END_LINK_BUILD_INSTRUCTIONS">&lt;/a&gt;</ph> le code <ph name="BEGIN_LINK_SOURCE_CODE">&lt;a target="_blank" href="$4"&gt;</ph>source spécifique utilisé pour créer cette copie<ph name="END_LINK_SOURCE_CODE">&lt;/a&gt;</ph>.</translation>
 <translation id="4474155171896946103">Ajouter tous les onglets aux favoris...</translation>
 <translation id="2336228925368920074">Ajouter tous les onglets aux favoris…</translation>
 <translation id="796831669370432378">Pour ajouter un signet, cliquez sur le bouton de signet à côté de la barre d'adresse</translation>
 <translation id="4989337484121655457">Accès complet au disque requis</translation>
-<translation id="8025559074845816210">Brave a besoin d'un accès total au disque dur pour importer vos signets de Safari.</translation>
+<translation id="5501596373144334003">Brave a besoin d'un accès complet au disque dur pour importer vos marque-pages et votre historique depuis Safari.</translation>
 <translation id="8515328844674404333">Apprenez comment accorder un accès complet au disque à partir de vos préférences système.</translation>
 <translation id="6414878884710400018">Ouvrir les préférences du système</translation>
 <translation id="5570470519803062774">Paramètres du site et des boucliers</translation>
+<translation id="8487693399751278191">Importer des marque-pages maintenant...</translation>
+<translation id="2557899542277210112">Pour un accès rapide, placez vos marque-pages ici sur la barre de favoris.</translation>
 </translationbundle>

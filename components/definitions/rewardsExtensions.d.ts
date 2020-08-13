@@ -17,6 +17,7 @@ declare namespace RewardsExtension {
     recurringTips: Record<string, number>[]
     tipAmounts: Record<string, number[]>
     externalWallet?: ExternalWallet
+    initializing: boolean
   }
 
   interface ApplicationState {
@@ -170,7 +171,8 @@ declare namespace RewardsExtension {
     CONNECTED = 1,
     VERIFIED = 2,
     DISCONNECTED_NOT_VERIFIED = 3,
-    DISCONNECTED_VERIFIED = 4
+    DISCONNECTED_VERIFIED = 4,
+    PENDING = 5
   }
 
   export interface ExternalWallet {
@@ -183,5 +185,6 @@ declare namespace RewardsExtension {
     withdrawUrl: string
     userName: string
     accountUrl: string
+    loginUrl: string
   }
 }

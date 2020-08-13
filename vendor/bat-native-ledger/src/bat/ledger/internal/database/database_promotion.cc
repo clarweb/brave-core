@@ -27,197 +27,10 @@ const char kTableName[] = "promotion";
 
 DatabasePromotion::DatabasePromotion(
     bat_ledger::LedgerImpl* ledger) :
-    DatabaseTable(ledger),
-    creds_(std::make_unique<DatabasePromotionCreds>(ledger)) {
+    DatabaseTable(ledger) {
 }
 
 DatabasePromotion::~DatabasePromotion() = default;
-
-bool DatabasePromotion::CreateTableV10(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "promotion_id TEXT NOT NULL,"
-        "version INTEGER NOT NULL,"
-        "type INTEGER NOT NULL,"
-        "public_keys TEXT NOT NULL,"
-        "suggestions INTEGER NOT NULL DEFAULT 0,"
-        "approximate_value DOUBLE NOT NULL DEFAULT 0,"
-        "status INTEGER NOT NULL DEFAULT 0,"
-        "expires_at TIMESTAMP NOT NULL,"
-        "created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-        "PRIMARY KEY (promotion_id)"
-      ")",
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabasePromotion::CreateIndexV10(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return this->InsertIndex(transaction, kTableName, "promotion_id");
-}
-
-bool DatabasePromotion::Migrate(
-    ledger::DBTransaction* transaction,
-    const int target) {
-  DCHECK(transaction);
-
-  switch (target) {
-    case 10: {
-      return MigrateToV10(transaction);
-    }
-    case 13: {
-      return MigrateToV13(transaction);
-    }
-    case 14: {
-      return MigrateToV14(transaction);
-    }
-    case 15: {
-      return MigrateToV15(transaction);
-    }
-    case 18: {
-      return MigrateToV18(transaction);
-    }
-    case 25: {
-      return MigrateToV25(transaction);
-    }
-    default: {
-      return true;
-    }
-  }
-}
-
-bool DatabasePromotion::MigrateToV10(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  if (!DropTable(transaction, kTableName)) {
-    BLOG(0, "Table couldn't be dropped");
-    return false;
-  }
-
-  if (!CreateTableV10(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  if (!CreateIndexV10(transaction)) {
-    BLOG(0, "Index couldn't be created");
-    return false;
-  }
-
-  if (!creds_->Migrate(transaction, 10)) {
-    return false;
-  }
-
-  return true;
-}
-
-bool DatabasePromotion::MigrateToV13(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const char column[] = "claimed_at";
-  const std::string query = base::StringPrintf(
-      "ALTER TABLE %s ADD %s TIMESTAMP",
-      kTableName,
-      column);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabasePromotion::MigrateToV14(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "UPDATE %s SET approximate_value = "
-      "(SELECT (suggestions * 0.25) FROM %s as ps "
-      "WHERE ps.promotion_id = %s.promotion_id)",
-      kTableName,
-      kTableName,
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabasePromotion::MigrateToV15(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  return creds_->Migrate(transaction, 15);
-}
-
-bool DatabasePromotion::MigrateToV18(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const char column[] = "claim_id";
-  std::string query = base::StringPrintf(
-      "ALTER TABLE %s ADD %s TEXT",
-      kTableName,
-      column);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-
-  transaction->commands.push_back(std::move(command));
-
-  query = base::StringPrintf(
-      "UPDATE %s as p SET claim_id = "
-      "(SELECT claim_id FROM promotion_creds as pc "
-      "WHERE pc.promotion_id = p.promotion_id)",
-      kTableName);
-
-  command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-
-  transaction->commands.push_back(std::move(command));
-
-  query = base::StringPrintf(
-      "UPDATE %s SET status = 1 WHERE status = 2 OR status = 3",
-      kTableName);
-
-  command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-
-  transaction->commands.push_back(std::move(command));
-
-  return creds_->Migrate(transaction, 18);
-}
-
-bool DatabasePromotion::MigrateToV25(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const char column[] = "legacy";
-  const std::string query = base::StringPrintf(
-      "ALTER TABLE %s ADD %s BOOLEAN DEFAULT 0 NOT NULL",
-      kTableName,
-      column);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
 
 void DatabasePromotion::InsertOrUpdate(
     ledger::PromotionPtr info,
@@ -258,7 +71,9 @@ void DatabasePromotion::InsertOrUpdate(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePromotion::GetRecord(
@@ -305,7 +120,9 @@ void DatabasePromotion::GetRecord(
           _1,
           callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePromotion::OnGetRecord(
@@ -379,7 +196,9 @@ void DatabasePromotion::GetAllRecords(
           _1,
           callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePromotion::OnGetAllRecords(
@@ -417,33 +236,6 @@ void DatabasePromotion::OnGetAllRecords(
   callback(std::move(map));
 }
 
-void DatabasePromotion::DeleteRecordList(
-    const std::vector<std::string>& ids,
-    ledger::ResultCallback callback) {
-  if (ids.empty()) {
-    BLOG(1, "List of ids is empty");
-    callback(ledger::Result::LEDGER_OK);
-    return;
-  }
-
-  const std::string query = base::StringPrintf(
-      "DELETE FROM %s WHERE promotion_id IN (%s)",
-      kTableName,
-      GenerateStringInCase(ids).c_str());
-
-  auto transaction = ledger::DBTransaction::New();
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  auto transaction_callback = std::bind(&OnResultCallback,
-      _1,
-      callback);
-
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
-}
-
 void DatabasePromotion::SaveClaimId(
     const std::string& promotion_id,
     const std::string& claim_id,
@@ -472,7 +264,9 @@ void DatabasePromotion::SaveClaimId(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePromotion::UpdateStatus(
@@ -503,7 +297,9 @@ void DatabasePromotion::UpdateStatus(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePromotion::UpdateRecordsStatus(
@@ -534,7 +330,9 @@ void DatabasePromotion::UpdateRecordsStatus(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePromotion::CredentialCompleted(
@@ -568,7 +366,9 @@ void DatabasePromotion::CredentialCompleted(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePromotion::GetRecords(
@@ -616,7 +416,9 @@ void DatabasePromotion::GetRecords(
           _1,
           callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePromotion::OnGetRecords(
@@ -704,7 +506,9 @@ void DatabasePromotion::GetRecordsByType(
           _1,
           callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePromotion::UpdateRecordsBlankPublicKey(
@@ -733,7 +537,9 @@ void DatabasePromotion::UpdateRecordsBlankPublicKey(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 }  // namespace braveledger_database

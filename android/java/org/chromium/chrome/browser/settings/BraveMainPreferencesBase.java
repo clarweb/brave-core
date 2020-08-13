@@ -5,39 +5,33 @@
 
 package org.chromium.chrome.browser.settings;
 
-import android.content.Context;
-import android.content.Intent;
-import android.content.DialogInterface;
+import android.app.AlertDialog;
 import android.content.res.Resources;
-import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v7.app.AlertDialog;
-import androidx.preference.Preference;
 import android.util.DisplayMetrics;
-import android.widget.TextView;
-import android.os.Build;
+
+import androidx.preference.Preference;
 
 import org.chromium.chrome.R;
+import org.chromium.chrome.browser.BraveActivity;
+import org.chromium.chrome.browser.BraveConfig;
 import org.chromium.chrome.browser.BraveFeatureList;
 import org.chromium.chrome.browser.flags.ChromeFeatureList;
 import org.chromium.chrome.browser.homepage.settings.BraveHomepageSettings;
-import org.chromium.chrome.browser.onboarding.OnboardingPrefManager;
-import org.chromium.chrome.browser.preferences.BravePref;
+import org.chromium.chrome.browser.ntp_background_images.NTPBackgroundImagesBridge;
+import org.chromium.chrome.browser.ntp_background_images.util.NTPUtil;
 import org.chromium.chrome.browser.preferences.BravePrefServiceBridge;
 import org.chromium.chrome.browser.privacy.settings.BravePrivacySettings;
-import org.chromium.chrome.browser.search_engines.TemplateUrlServiceFactory;
-import org.chromium.chrome.browser.settings.BravePreferenceFragment;
-import org.chromium.ui.base.DeviceFormFactor;
-import org.chromium.chrome.browser.ntp_background_images.util.NTPUtil;
-import org.chromium.chrome.browser.ntp_background_images.NTPBackgroundImagesBridge;
-import org.chromium.components.browser_ui.settings.ChromeBasePreference;
-import org.chromium.components.browser_ui.settings.SettingsUtils;
-import org.chromium.components.search_engines.TemplateUrl;
-import org.chromium.components.search_engines.TemplateUrlService;
 import org.chromium.chrome.browser.rate.RateDialogFragment;
 import org.chromium.chrome.browser.rate.RateUtils;
-import org.chromium.chrome.browser.BraveActivity;
+import org.chromium.chrome.browser.search_engines.TemplateUrlServiceFactory;
+import org.chromium.chrome.browser.settings.BravePreferenceFragment;
+import org.chromium.components.browser_ui.settings.ChromeBasePreference;
+import org.chromium.components.browser_ui.settings.SettingsUtils;
+import org.chromium.ui.base.DeviceFormFactor;
+import org.chromium.chrome.browser.settings.BraveStatsPreferences;
 
 import java.util.HashMap;
 
@@ -54,13 +48,13 @@ public class BraveMainPreferencesBase extends BravePreferenceFragment {
     private static final String PREF_ACCESSIBILITY = "accessibility";
     private static final String PREF_CONTENT_SETTINGS = "content_settings";
     private static final String PREF_ABOUT_CHROME = "about_chrome";
-    private static final String PREF_WELCOME_TOUR = "welcome_tour";
     private static final String PREF_BACKGROUND_IMAGES = "backgroud_images";
     private static final String PREF_BRAVE_REWARDS = "brave_rewards";
     private static final String PREF_HOMEPAGE = "homepage";
     private static final String PREF_USE_CUSTOM_TABS = "use_custom_tabs";
     private static final String PREF_LANGUAGES = "languages";
     private static final String PREF_RATE_BRAVE = "rate_brave";
+    private static final String PREF_BRAVE_STATS = "brave_stats";
 
     private final HashMap<String, Preference> mRemovedPreferences = new HashMap<>();
 
@@ -74,7 +68,6 @@ public class BraveMainPreferencesBase extends BravePreferenceFragment {
         SettingsUtils.addPreferencesFromResource(this, R.xml.brave_main_preferences);
 
         overrideChromiumPreferences();
-        initWelcomeTourPreference();
         initRateBrave();
     }
 
@@ -106,10 +99,9 @@ public class BraveMainPreferencesBase extends BravePreferenceFragment {
         if (!ChromeFeatureList.isEnabled(BraveFeatureList.BRAVE_REWARDS) ||
                 BravePrefServiceBridge.getInstance().getSafetynetCheckFailed()) {
             removePreferenceIfPresent(PREF_BRAVE_REWARDS);
-            removePreferenceIfPresent(PREF_WELCOME_TOUR);
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP 
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M 
             || (NTPUtil.isReferralEnabled() && NTPBackgroundImagesBridge.enableSponsoredImages())) {
             removePreferenceIfPresent(PREF_BACKGROUND_IMAGES);
         }
@@ -155,6 +147,11 @@ public class BraveMainPreferencesBase extends BravePreferenceFragment {
             findPreference(MainSettings.PREF_DEVELOPER).setOrder(++order);
         }
         findPreference(PREF_ABOUT_CHROME).setOrder(++order);
+
+        // If gn flag enable_brave_sync is false, hide Sync pref
+        if (BraveConfig.SYNC_ENABLED == false) {
+          removePreferenceIfPresent(PREF_SYNC);
+        }
     }
 
     private void removePreferenceIfPresent(String key) {
@@ -189,41 +186,14 @@ public class BraveMainPreferencesBase extends BravePreferenceFragment {
         p.setSummary(ClosingAllTabsClosesBravePreference.getPreferenceSummary());
         p = findPreference(PREF_USE_CUSTOM_TABS);
         p.setSummary(BraveCustomTabsPreference.getPreferenceSummary());
+        p = findPreference(PREF_BRAVE_STATS);
+        p.setSummary(BraveStatsPreferences.getPreferenceSummary());
     }
 
     private void overrideChromiumPreferences() {
         // Replace fragment.
         findPreference(PREF_PRIVACY).setFragment(BravePrivacySettings.class.getName());
         findPreference(PREF_HOMEPAGE).setFragment(BraveHomepageSettings.class.getName());
-    }
-
-    private void initWelcomeTourPreference() {
-        findPreference(PREF_WELCOME_TOUR).setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                final Context context = preference.getContext();
-                final TextView titleTextView = new TextView (context);
-                titleTextView.setText(context.getResources().getString(R.string.welcome_tour_dialog_text));
-                int padding = dp2px(20);
-                titleTextView.setPadding(padding, padding, padding, padding);
-                titleTextView.setTextSize(18);
-                titleTextView.setTextColor(context.getResources().getColor(R.color.default_icon_color_tint_list));
-                titleTextView.setTypeface(null, Typeface.BOLD);
-
-                AlertDialog alertDialog = new AlertDialog.Builder(context, R.style.Theme_Chromium_AlertDialog)
-                    .setView(titleTextView)
-                    .setPositiveButton(R.string.continue_button, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            OnboardingPrefManager.getInstance().showOnboarding(context, true);
-                        }
-                    })
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .create();
-                alertDialog.show();
-                return true;
-            }
-        });
     }
 
     private void initRateBrave() {

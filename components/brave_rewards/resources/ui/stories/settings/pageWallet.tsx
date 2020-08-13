@@ -27,11 +27,6 @@ const guardian = require('../img/guardian.jpg')
 const wiki = require('../img/wiki.jpg')
 
 export interface Props {
-  grants: {
-    amount: number,
-    expiresAt: string,
-    type: number
-  }[]
   content: 'empty' | 'summary' | 'off'
   walletState: WalletState
 }
@@ -218,7 +213,7 @@ class PageWallet extends React.Component<Props, State> {
   }
 
   render () {
-    const { content, walletState, grants } = this.props
+    const { content, walletState } = this.props
     const self = this
 
     return (
@@ -231,12 +226,14 @@ class PageWallet extends React.Component<Props, State> {
               name: 'Add funds',
               action: doNothing,
               icon: <WalletAddIcon />,
-              testId: 'panel-add-funds'
+              testId: 'panel-add-funds',
+              externalWallet: true
             },
             {
               name: 'Withdraw Funds',
               action: doNothing,
-              icon: <WalletWithdrawIcon />
+              icon: <WalletWithdrawIcon />,
+              externalWallet: true
             }
           ]}
           compact={false}
@@ -245,7 +242,6 @@ class PageWallet extends React.Component<Props, State> {
           showCopy={true}
           onlyAnonWallet={false}
           showSecActions={true}
-          grants={grants}
           walletState={walletState}
         >
           {
@@ -276,12 +272,15 @@ class PageWallet extends React.Component<Props, State> {
             ? <ModalBackupRestore
               activeTabId={this.state.activeTabId}
               backupKey={'crouch  hint  glow  recall  round  angry  weasel  luggage save  hood  census  near  still   power  vague  balcony camp  law  now  certain  wagon  affair  butter  choice '}
+              showBackupNotice={false}
               onTabChange={this.onBackupTabChange.bind(self)}
               onClose={this.onBackupModalClose.bind(self)}
               onCopy={doNothing}
               onPrint={doNothing}
               onSaveFile={doNothing}
               onRestore={doNothing}
+              onReset={doNothing}
+              internalFunds={0}
             />
             : null
         }

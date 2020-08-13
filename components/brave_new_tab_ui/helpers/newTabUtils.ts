@@ -55,7 +55,8 @@ export const generateGridSitePropertiesFromDefaultSuperReferralTopSite = (
     id: generateGridSiteId(),
     letter: getCharForSite(defaultSuperReferralTopSite),
     favicon: defaultSuperReferralTopSite.favicon,
-    pinnedIndex: defaultSuperReferralTopSite.pinnedIndex
+    pinnedIndex: defaultSuperReferralTopSite.pinnedIndex,
+    defaultSRTopSite: true
   }
 }
 
@@ -72,20 +73,21 @@ export const generateGridSiteProperties = (
     favicon: generateGridSiteFavicon(topSite.url),
     // In the legacy version of topSites the pinnedIndex
     // was the site index itself.
-    pinnedIndex: fromLegacyData ? index : undefined
+    pinnedIndex: fromLegacyData ? index : undefined,
+    defaultSRTopSite: false
   }
 }
 
-export const getGridSitesWhitelist = (
+export const getTopSitesWhitelist = (
   topSites: chrome.topSites.MostVisitedURL[]
   ): chrome.topSites.MostVisitedURL[] => {
   const defaultChromeWebStoreUrl: string = 'https://chrome.google.com/webstore'
-  const filteredGridSites: chrome.topSites.MostVisitedURL[] = topSites
+  const filteredTopSites: chrome.topSites.MostVisitedURL[] = topSites
     .filter(site => {
       // See https://github.com/brave/brave-browser/issues/5376
       return !site.url.startsWith(defaultChromeWebStoreUrl)
     })
-  return filteredGridSites
+  return filteredTopSites
 }
 
 export const generateGridSitesFromLegacyEntries = (

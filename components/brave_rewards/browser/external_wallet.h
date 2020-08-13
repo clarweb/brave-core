@@ -18,6 +18,7 @@ struct ExternalWallet {
 
   std::string token;
   std::string address;
+  std::string anon_address;
   uint32_t status;
   std::string type;
   std::string verify_url;
@@ -25,6 +26,7 @@ struct ExternalWallet {
   std::string withdraw_url;
   std::string user_name;
   std::string account_url;
+  std::string login_url;
 };
 
 }  // namespace brave_rewards

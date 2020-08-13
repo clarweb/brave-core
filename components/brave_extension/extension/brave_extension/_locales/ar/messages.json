@@ -55,6 +55,18 @@
     "message": "تم حظر برامج التتبع عبر الموقع",
     "description": "Message for the scripts blocked row label"
   },
+  "aggressiveAdsTrackersBlocking": {
+    "message": "المتتبعات والإعلانات محجوبة (شديد)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with aggressive heuristics"
+  },
+  "standardAdsTrackersBlocking": {
+    "message": "المتتبعات والإعلانات محجوبة (قياسي)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with standard heuristics"
+  },
+  "allowAdsTrackers": {
+    "message": "السماح بجميع المتتبعات والإعلانات",
+    "description": "Message for the option in the ads and trackers blocking select field to allow all ads and trackers"
+  },
   "connectionsUpgradedHTTPS": {
     "message": "تم تحديث الاتصالات إلى بروتوكول HTTPS المحمي",
     "description": "Message for the connections upgraded row label and for the main blocked resources text when there is more than one connection upgraded (plural) and no other ads/trackers blocked"
@@ -79,16 +91,16 @@
     "message": "تم السماح بجميع ملفات تعريف الارتباط",
     "description": "Message for the option in the cookies select field to allow all cookies"
   },
-  "thirdPartyFingerprintingBlocked": {
-    "message": "تم حظر مسح البصمة عبر المواقع",
+  "standardFingerprinting": {
+    "message": "حظر بصمات الأصابع (قياسي)",
     "description": "Message for the option in the fingerprinting select field to block all 3rd party recognition attempts"
   },
-  "allFingerprintingBlocked": {
-    "message": "يتم حظر محاولات الدخول بالبصمة",
+  "strictFingerprinting": {
+    "message": "حظر بصمات الأصابع (صارم، قد يفصل المواقع)",
     "description": "Message for the option in the fingerprinting select field to block all fingerprinting attempts"
   },
-  "allFingerprintingAllowed": {
-    "message": "جميع محاولات الدخول بالبصمة مسموح بها",
+  "allowAllFingerprinting": {
+    "message": "السماح بجميع عمليات أخذ البصمات",
     "description": "Message for the option in the fingerprinting select field to allow all fingerprinting attempts"
   },
   "deviceRecognitionAttempts": {

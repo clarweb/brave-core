@@ -7,8 +7,7 @@
 #define BRAVE_COMMON_NETWORK_CONSTANTS_H_
 
 extern const char kBraveProxyPattern[];
-extern const char kBraveUpdatesExtensionsProdEndpoint[];
-extern const char kBraveUpdatesExtensionsDevEndpoint[];
+extern const char kBraveSoftwareProxyPattern[];
 
 extern const char kBraveReferralsServer[];
 extern const char kBraveReferralsHeadersPath[];
@@ -26,8 +25,6 @@ extern const char kEmptyDataURI[];
 extern const char kEmptyImageDataURI[];
 extern const char kJSDataURLPrefix[];
 extern const char kGeoLocationsPattern[];
-extern const char kForbesPattern[];
-extern const char kForbesExtraCookies[];
 extern const char kSafeBrowsingPrefix[];
 extern const char kSafeBrowsingFileCheckPrefix[];
 extern const char kCRLSetPrefix1[];
@@ -35,13 +32,12 @@ extern const char kCRLSetPrefix2[];
 extern const char kCRLSetPrefix3[];
 extern const char kCRLSetPrefix4[];
 extern const char kChromeCastPrefix[];
-extern const char kTwitterPattern[];
-extern const char kGoogleOAuthPattern[];
+extern const char kWidevineGvt1Prefix[];
+extern const char kWidevineGoogleDlPrefix[];
 
-extern const char kCookieHeader[];
-extern const char kRefererHeader[];
 extern const char kUserAgentHeader[];
 extern const char kBravePartnerHeader[];
+extern const char kBraveServicesKeyHeader[];
 
 extern const char kBittorrentMimeType[];
 extern const char kOctetStreamMimeType[];

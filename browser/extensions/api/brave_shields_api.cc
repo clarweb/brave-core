@@ -5,8 +5,6 @@
 
 #include "brave/browser/extensions/api/brave_shields_api.h"
 
-#include <memory>
-#include <string>
 #include <utility>
 
 #include "base/strings/string_number_conversions.h"
@@ -25,6 +23,7 @@
 #include "brave/components/brave_shields/browser/brave_shields_web_contents_observer.h"
 #include "brave/components/brave_shields/common/brave_shield_constants.h"
 #include "chrome/browser/browser_process.h"
+#include "chrome/browser/content_settings/host_content_settings_map_factory.h"
 #include "chrome/browser/extensions/api/tabs/tabs_constants.h"
 #include "chrome/browser/extensions/chrome_extension_function_details.h"
 #include "chrome/browser/extensions/extension_tab_util.h"
@@ -49,46 +48,59 @@ const char kInvalidControlTypeError[] = "Invalid ControlType.";
 
 
 ExtensionFunction::ResponseAction
-BraveShieldsHostnameCosmeticResourcesFunction::Run() {
-  std::unique_ptr<brave_shields::HostnameCosmeticResources::Params> params(
-      brave_shields::HostnameCosmeticResources::Params::Create(*args_));
+BraveShieldsUrlCosmeticResourcesFunction::Run() {
+  std::unique_ptr<brave_shields::UrlCosmeticResources::Params> params(
+      brave_shields::UrlCosmeticResources::Params::Create(*args_));
   EXTENSION_FUNCTION_VALIDATE(params.get());
+  g_brave_browser_process->ad_block_service()->GetTaskRunner()
+      ->PostTaskAndReplyWithResult(
+          FROM_HERE,
+          base::BindOnce(&BraveShieldsUrlCosmeticResourcesFunction::
+                             GetUrlCosmeticResourcesOnTaskRunner,
+                         this, params->url),
+          base::BindOnce(&BraveShieldsUrlCosmeticResourcesFunction::
+                             GetUrlCosmeticResourcesOnUI,
+                         this));
+  return RespondLater();
+}
 
+std::unique_ptr<base::ListValue> BraveShieldsUrlCosmeticResourcesFunction::
+    GetUrlCosmeticResourcesOnTaskRunner(const std::string& url) {
   base::Optional<base::Value> resources = g_brave_browser_process->
-      ad_block_service()->HostnameCosmeticResources(params->hostname);
+      ad_block_service()->UrlCosmeticResources(url);
 
   if (!resources || !resources->is_dict()) {
-    return RespondNow(Error(
-        "Hostname-specific cosmetic resources could not be returned"));
+    return std::unique_ptr<base::ListValue>();
   }
 
   base::Optional<base::Value> regional_resources = g_brave_browser_process->
-      ad_block_regional_service_manager()->
-          HostnameCosmeticResources(params->hostname);
+      ad_block_regional_service_manager()->UrlCosmeticResources(url);
 
   if (regional_resources && regional_resources->is_dict()) {
     ::brave_shields::MergeResourcesInto(
-            &*resources,
-            &*regional_resources,
-            false);
+        std::move(*regional_resources), &*resources, /*force_hide=*/false);
   }
 
   base::Optional<base::Value> custom_resources = g_brave_browser_process->
-      ad_block_custom_filters_service()->
-          HostnameCosmeticResources(params->hostname);
+      ad_block_custom_filters_service()->UrlCosmeticResources(url);
 
   if (custom_resources && custom_resources->is_dict()) {
     ::brave_shields::MergeResourcesInto(
-            &*resources,
-            &*custom_resources,
-            true);
+        std::move(*custom_resources), &*resources, /*force_hide=*/true);
   }
 
   auto result_list = std::make_unique<base::ListValue>();
-
   result_list->Append(std::move(*resources));
+  return result_list;
+}
 
-  return RespondNow(ArgumentList(std::move(result_list)));
+void BraveShieldsUrlCosmeticResourcesFunction::GetUrlCosmeticResourcesOnUI(
+    std::unique_ptr<base::ListValue> resources) {
+  if (!resources) {
+    Respond(Error("Url-specific cosmetic resources could not be returned"));
+    return;
+  }
+  Respond(ArgumentList(std::move(resources)));
 }
 
 ExtensionFunction::ResponseAction
@@ -96,17 +108,34 @@ BraveShieldsHiddenClassIdSelectorsFunction::Run() {
   std::unique_ptr<brave_shields::HiddenClassIdSelectors::Params> params(
       brave_shields::HiddenClassIdSelectors::Params::Create(*args_));
   EXTENSION_FUNCTION_VALIDATE(params.get());
+  g_brave_browser_process->ad_block_service()->GetTaskRunner()
+      ->PostTaskAndReplyWithResult(
+          FROM_HERE,
+          base::BindOnce(&BraveShieldsHiddenClassIdSelectorsFunction::
+                             GetHiddenClassIdSelectorsOnTaskRunner,
+                         this, params->classes, params->ids,
+                         params->exceptions),
+          base::BindOnce(&BraveShieldsHiddenClassIdSelectorsFunction::
+                             GetHiddenClassIdSelectorsOnUI,
+                         this));
+  return RespondLater();
+}
 
+std::unique_ptr<base::ListValue> BraveShieldsHiddenClassIdSelectorsFunction::
+    GetHiddenClassIdSelectorsOnTaskRunner(
+        const std::vector<std::string>& classes,
+        const std::vector<std::string>& ids,
+        const std::vector<std::string>& exceptions) {
   base::Optional<base::Value> hide_selectors = g_brave_browser_process->
-      ad_block_service()->HiddenClassIdSelectors(params->classes,
-                                                 params->ids,
-                                                 params->exceptions);
+      ad_block_service()->HiddenClassIdSelectors(classes, ids, exceptions);
 
   base::Optional<base::Value> regional_selectors = g_brave_browser_process->
       ad_block_regional_service_manager()->
-        HiddenClassIdSelectors(params->classes,
-                               params->ids,
-                               params->exceptions);
+          HiddenClassIdSelectors(classes, ids, exceptions);
+
+  base::Optional<base::Value> custom_selectors = g_brave_browser_process->
+      ad_block_custom_filters_service()->
+          HiddenClassIdSelectors(classes, ids, exceptions);
 
   if (hide_selectors && hide_selectors->is_list()) {
     if (regional_selectors && regional_selectors->is_list()) {
@@ -120,18 +149,20 @@ BraveShieldsHiddenClassIdSelectorsFunction::Run() {
     hide_selectors = std::move(regional_selectors);
   }
 
-  base::Optional<base::Value> custom_selectors = g_brave_browser_process->
-      ad_block_custom_filters_service()->
-          HiddenClassIdSelectors(params->classes,
-                                 params->ids,
-                                 params->exceptions);
-
   auto result_list = std::make_unique<base::ListValue>();
+  if (hide_selectors && hide_selectors->is_list()) {
+    result_list->Append(std::move(*hide_selectors));
+  }
+  if (custom_selectors && custom_selectors->is_list()) {
+    result_list->Append(std::move(*custom_selectors));
+  }
 
-  result_list->Append(std::move(*hide_selectors));
-  result_list->Append(std::move(*custom_selectors));
+  return result_list;
+}
 
-  return RespondNow(ArgumentList(std::move(result_list)));
+void BraveShieldsHiddenClassIdSelectorsFunction::
+    GetHiddenClassIdSelectorsOnUI(std::unique_ptr<base::ListValue> selectors) {
+  Respond(ArgumentList(std::move(selectors)));
 }
 
 
@@ -187,7 +218,11 @@ BraveShieldsSetBraveShieldsEnabledFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  ::brave_shields::SetBraveShieldsEnabled(profile, params->enabled, url);
+  ::brave_shields::SetBraveShieldsEnabled(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      params->enabled,
+      url,
+      g_browser_process->local_state());
 
   return RespondNow(NoArguments());
 }
@@ -205,7 +240,9 @@ BraveShieldsGetBraveShieldsEnabledFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  auto enabled = ::brave_shields::GetBraveShieldsEnabled(profile, url);
+  auto enabled = ::brave_shields::GetBraveShieldsEnabled(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      url);
   auto result = std::make_unique<base::Value>(enabled);
 
   return RespondNow(OneArgument(std::move(result)));
@@ -225,7 +262,9 @@ BraveShieldsShouldDoCosmeticFilteringFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  const bool enabled = ::brave_shields::ShouldDoCosmeticFiltering(profile, url);
+  const bool enabled = ::brave_shields::ShouldDoCosmeticFiltering(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      url);
 
   return RespondNow(OneArgument(std::make_unique<base::Value>(enabled)));
 }
@@ -249,7 +288,11 @@ BraveShieldsSetCosmeticFilteringControlTypeFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  ::brave_shields::SetCosmeticFilteringControlType(profile, control_type, url);
+  ::brave_shields::SetCosmeticFilteringControlType(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      control_type,
+      url,
+      g_browser_process->local_state());
 
   return RespondNow(NoArguments());
 }
@@ -270,7 +313,9 @@ BraveShieldsIsFirstPartyCosmeticFilteringEnabledFunction::Run() {
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
   auto result = std::make_unique<base::Value>(
-      ::brave_shields::IsFirstPartyCosmeticFilteringEnabled(profile, url));
+      ::brave_shields::IsFirstPartyCosmeticFilteringEnabled(
+          HostContentSettingsMapFactory::GetForProfile(profile),
+          url));
 
   return RespondNow(OneArgument(std::move(result)));
 }
@@ -292,7 +337,11 @@ ExtensionFunction::ResponseAction BraveShieldsSetAdControlTypeFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  ::brave_shields::SetAdControlType(profile, control_type, url);
+  ::brave_shields::SetAdControlType(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      control_type,
+      url,
+      g_browser_process->local_state());
 
   return RespondNow(NoArguments());
 }
@@ -309,7 +358,9 @@ ExtensionFunction::ResponseAction BraveShieldsGetAdControlTypeFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  auto type = ::brave_shields::GetAdControlType(profile, url);
+  auto type = ::brave_shields::GetAdControlType(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      url);
   auto result = std::make_unique<base::Value>(ControlTypeToString(type));
 
   return RespondNow(OneArgument(std::move(result)));
@@ -333,7 +384,11 @@ BraveShieldsSetCookieControlTypeFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  ::brave_shields::SetCookieControlType(profile, control_type, url);
+  ::brave_shields::SetCookieControlType(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      control_type,
+      url,
+      g_browser_process->local_state());
 
   return RespondNow(NoArguments());
 }
@@ -351,7 +406,9 @@ BraveShieldsGetCookieControlTypeFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  auto type = ::brave_shields::GetCookieControlType(profile, url);
+  auto type = ::brave_shields::GetCookieControlType(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      url);
   auto result = std::make_unique<base::Value>(ControlTypeToString(type));
 
   return RespondNow(OneArgument(std::move(result)));
@@ -375,7 +432,11 @@ BraveShieldsSetFingerprintingControlTypeFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  ::brave_shields::SetFingerprintingControlType(profile, control_type, url);
+  ::brave_shields::SetFingerprintingControlType(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      control_type,
+      url,
+      g_browser_process->local_state());
 
   return RespondNow(NoArguments());
 }
@@ -393,7 +454,9 @@ BraveShieldsGetFingerprintingControlTypeFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  auto type = ::brave_shields::GetFingerprintingControlType(profile, url);
+  auto type = ::brave_shields::GetFingerprintingControlType(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      url);
   auto result =
       std::make_unique<base::Value>(ControlTypeToString(type));
 
@@ -413,7 +476,11 @@ BraveShieldsSetHTTPSEverywhereEnabledFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  ::brave_shields::SetHTTPSEverywhereEnabled(profile, params->enabled, url);
+  ::brave_shields::SetHTTPSEverywhereEnabled(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      params->enabled,
+      url,
+      g_browser_process->local_state());
 
   return RespondNow(NoArguments());
 }
@@ -431,7 +498,9 @@ BraveShieldsGetHTTPSEverywhereEnabledFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  auto type = ::brave_shields::GetHTTPSEverywhereEnabled(profile, url);
+  auto type = ::brave_shields::GetHTTPSEverywhereEnabled(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      url);
   auto result = std::make_unique<base::Value>(type);
 
   return RespondNow(OneArgument(std::move(result)));
@@ -455,7 +524,11 @@ BraveShieldsSetNoScriptControlTypeFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  ::brave_shields::SetNoScriptControlType(profile, control_type, url);
+  ::brave_shields::SetNoScriptControlType(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      control_type,
+      url,
+      g_browser_process->local_state());
 
   return RespondNow(NoArguments());
 }
@@ -473,7 +546,9 @@ BraveShieldsGetNoScriptControlTypeFunction::Run() {
   }
 
   Profile* profile = Profile::FromBrowserContext(browser_context());
-  auto type = ::brave_shields::GetNoScriptControlType(profile, url);
+  auto type = ::brave_shields::GetNoScriptControlType(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      url);
   auto result = std::make_unique<base::Value>(ControlTypeToString(type));
 
   return RespondNow(OneArgument(std::move(result)));

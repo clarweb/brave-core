@@ -94,7 +94,8 @@ class RewardsTipDOMHandler : public WebUIMessageHandler,
       unsigned int result,
       const std::string& contribution_id,
       const double amount,
-      const int32_t type) override;
+      const int32_t type,
+      const int32_t processor) override;
 
   brave_rewards::RewardsService* rewards_service_;  // NOT OWNED
   base::WeakPtrFactory<RewardsTipDOMHandler> weak_factory_;
@@ -462,6 +463,7 @@ void RewardsTipDOMHandler::OnExternalWallet(
     data.SetString("withdrawUrl", wallet->withdraw_url);
     data.SetString("userName", wallet->user_name);
     data.SetString("accountUrl", wallet->account_url);
+    data.SetString("loginUrl", wallet->login_url);
     data.SetInteger("status", static_cast<int>(wallet->status));
   }
 
@@ -486,7 +488,8 @@ void RewardsTipDOMHandler::OnReconcileComplete(
     unsigned int result,
     const std::string& contribution_id,
     const double amount,
-    const int32_t type) {
+    const int32_t type,
+    const int32_t processor) {
   if (!web_ui()->CanCallJavascript()) {
      return;
   }

@@ -55,6 +55,18 @@
     "message": "עוקבים מרובי-אתרים (cross-site) נחסמו",
     "description": "Message for the scripts blocked row label"
   },
+  "aggressiveAdsTrackersBlocking": {
+    "message": "עוקבים ופרסומות חסומים (אגרסיבי)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with aggressive heuristics"
+  },
+  "standardAdsTrackersBlocking": {
+    "message": "עוקבים ופרסומות חסומים (סטנדרטי)",
+    "description": "Message for the option in the ads and trackers blocking select field to block ads and trackers with standard heuristics"
+  },
+  "allowAdsTrackers": {
+    "message": "אפשר את כל העוקבים והפרסומות",
+    "description": "Message for the option in the ads and trackers blocking select field to allow all ads and trackers"
+  },
   "connectionsUpgradedHTTPS": {
     "message": "החיבורים שודרגו ל-HTTPS",
     "description": "Message for the connections upgraded row label and for the main blocked resources text when there is more than one connection upgraded (plural) and no other ads/trackers blocked"
@@ -79,16 +91,16 @@
     "message": "אפשר את כל קבצי העוגיות",
     "description": "Message for the option in the cookies select field to allow all cookies"
   },
-  "thirdPartyFingerprintingBlocked": {
-    "message": "טביעות אצבע חוצי אתרים נחסמו",
+  "standardFingerprinting": {
+    "message": "טביעות אצבע חסומות (סטנדרטי)",
     "description": "Message for the option in the fingerprinting select field to block all 3rd party recognition attempts"
   },
-  "allFingerprintingBlocked": {
-    "message": "ניסיונות טביעת אצבע נחסמו",
+  "strictFingerprinting": {
+    "message": "טביעות אצבע חסומות (מחמיר, עשוי לשבש פעולה תקינה של אתרים)",
     "description": "Message for the option in the fingerprinting select field to block all fingerprinting attempts"
   },
-  "allFingerprintingAllowed": {
-    "message": "כל ניסיונות טביעת האצבע מותרים",
+  "allowAllFingerprinting": {
+    "message": "אפשר כל לקיחת טביעות אצבע",
     "description": "Message for the option in the fingerprinting select field to allow all fingerprinting attempts"
   },
   "deviceRecognitionAttempts": {

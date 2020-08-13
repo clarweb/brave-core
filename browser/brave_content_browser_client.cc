@@ -22,6 +22,7 @@
 #include "brave/common/pref_names.h"
 #include "brave/common/webui_url_constants.h"
 #include "brave/components/binance/browser/buildflags/buildflags.h"
+#include "brave/components/gemini/browser/buildflags/buildflags.h"
 #include "brave/components/brave_ads/browser/buildflags/buildflags.h"
 #include "brave/components/brave_rewards/browser/buildflags/buildflags.h"
 #include "brave/components/brave_shields/browser/brave_shields_util.h"
@@ -34,10 +35,11 @@
 #include "brave/components/speedreader/buildflags.h"
 #include "brave/components/private_channel/buildflags.h"
 #include "brave/grit/brave_generated_resources.h"
-#include "chrome/browser/content_settings/tab_specific_content_settings.h"
+#include "chrome/browser/content_settings/host_content_settings_map_factory.h"
 #include "chrome/browser/profiles/profile.h"
 #include "chrome/browser/profiles/profile_io_data.h"
 #include "chrome/common/url_constants.h"
+#include "components/content_settings/browser/tab_specific_content_settings.h"
 #include "components/prefs/pref_service.h"
 #include "components/services/heap_profiling/public/mojom/heap_profiling_client.mojom.h"
 #include "content/browser/frame_host/render_frame_host_impl.h"
@@ -49,6 +51,7 @@
 #include "content/public/common/content_switches.h"
 #include "content/public/common/service_names.mojom.h"
 #include "extensions/buildflags/buildflags.h"
+#include "net/base/registry_controlled_domains/registry_controlled_domain.h"
 #include "net/cookies/site_for_cookies.h"
 #include "services/service_manager/public/cpp/manifest_builder.h"
 #include "third_party/blink/public/common/loader/url_loader_throttle.h"
@@ -102,6 +105,10 @@ using extensions::ChromeContentBrowserClientExtensionsPart;
 
 #if BUILDFLAG(BINANCE_ENABLED)
 #include "brave/browser/binance/binance_protocol_handler.h"
+#endif
+
+#if BUILDFLAG(GEMINI_ENABLED)
+#include "brave/browser/gemini/gemini_protocol_handler.h"
 #endif
 
 #if BUILDFLAG(BRAVE_WALLET_ENABLED)
@@ -206,6 +213,15 @@ bool BraveContentBrowserClient::HandleExternalProtocol(
   }
 #endif
 
+#if BUILDFLAG(GEMINI_ENABLED)
+  if (gemini::IsGeminiProtocol(url)) {
+    gemini::HandleGeminiProtocol(url, std::move(web_contents_getter),
+                                 page_transition, has_user_gesture,
+                                 initiating_origin);
+    return true;
+  }
+#endif
+
   return ChromeContentBrowserClient::HandleExternalProtocol(
       url, std::move(web_contents_getter), child_id, navigation_data,
       is_main_frame, page_transition, has_user_gesture, initiating_origin,
@@ -300,7 +316,7 @@ BraveContentBrowserClient::CreateURLLoaderThrottles(
       && request.resource_type
           == static_cast<int>(blink::mojom::ResourceType::kMainFrame)) {
     result.push_back(std::make_unique<speedreader::SpeedReaderThrottle>(
-        g_brave_browser_process->speedreader_whitelist(),
+        g_brave_browser_process->speedreader_rewriter_service(),
         base::ThreadTaskRunnerHandle::Get()));
   }
 #endif  // ENABLE_SPEEDREADER
@@ -374,6 +390,7 @@ void BraveContentBrowserClient::MaybeHideReferrer(
     const GURL& request_url,
     const GURL& document_url,
     bool is_main_frame,
+    const std::string& method,
     blink::mojom::ReferrerPtr* referrer) {
   DCHECK(referrer && !referrer->is_null());
 #if BUILDFLAG(ENABLE_EXTENSIONS)
@@ -383,20 +400,28 @@ void BraveContentBrowserClient::MaybeHideReferrer(
 #endif
 
   Profile* profile = Profile::FromBrowserContext(browser_context);
-  const bool allow_referrers = brave_shields::AllowReferrers(profile,
-                                                             document_url);
-  const bool shields_up = brave_shields::GetBraveShieldsEnabled(profile,
-                                                                document_url);
-  // Top-level navigations get empty referrers (brave/brave-browser#3422).
-  GURL replacement_referrer_url;
-  if (!is_main_frame) {
-    // But iframe navigations get spoofed instead (brave/brave-browser#3988).
-    replacement_referrer_url = request_url.GetOrigin();
+  const bool allow_referrers = brave_shields::AllowReferrers(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      document_url);
+  const bool shields_up = brave_shields::GetBraveShieldsEnabled(
+      HostContentSettingsMapFactory::GetForProfile(profile),
+      document_url);
+  // Some top-level navigations get empty referrers (brave/brave-browser#3422).
+  network::mojom::ReferrerPolicy policy = (*referrer)->policy;
+  if (is_main_frame) {
+    if ((method == "GET" || method == "HEAD") &&
+        !net::registry_controlled_domains::SameDomainOrHost(
+            (*referrer)->url, request_url,
+            net::registry_controlled_domains::INCLUDE_PRIVATE_REGISTRIES)) {
+      policy = network::mojom::ReferrerPolicy::kNever;
+    }
   }
+
   content::Referrer new_referrer;
-  if (brave_shields::ShouldSetReferrer(
+  if (brave_shields::MaybeChangeReferrer(
       allow_referrers, shields_up, (*referrer)->url, document_url, request_url,
-          replacement_referrer_url, (*referrer)->policy, &new_referrer)) {
+      policy,
+      &new_referrer)) {
     (*referrer)->url = new_referrer.url;
     (*referrer)->policy = new_referrer.policy;
   }
@@ -420,11 +445,11 @@ GURL BraveContentBrowserClient::GetEffectiveURL(
 // [static]
 bool BraveContentBrowserClient::HandleURLOverrideRewrite(GURL* url,
     content::BrowserContext* browser_context) {
-  // redirect sync-internals
-  if (url->host() == chrome::kChromeUISyncInternalsHost ||
-      url->host() == chrome::kChromeUISyncHost) {
+
+  if (url->host() == chrome::kChromeUISyncHost) {
     GURL::Replacements replacements;
-    replacements.SetHostStr(chrome::kChromeUISyncHost);
+    replacements.SetHostStr(chrome::kChromeUISettingsHost);
+    replacements.SetPathStr(kBraveSyncPath);
     *url = url->ReplaceComponents(replacements);
     return true;
   }

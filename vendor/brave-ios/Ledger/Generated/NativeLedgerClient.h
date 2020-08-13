@@ -15,22 +15,14 @@ public:
 private:
   __unsafe_unretained id<NativeLedgerClientBridge> bridge_;
 
-  void ConfirmationsTransactionHistoryDidChange() override;
   void FetchFavIcon(const std::string & url, const std::string & favicon_key, ledger::FetchIconCallback callback) override;
-  void KillTimer(const uint32_t timer_id) override;
   void LoadLedgerState(ledger::OnLoadCallback callback) override;
-  void LoadNicewareList(ledger::GetNicewareListCallback callback) override;
   void LoadPublisherState(ledger::OnLoadCallback callback) override;
-  void LoadState(const std::string & name, ledger::OnLoadCallback callback) override;
   void LoadURL(const std::string & url, const std::vector<std::string> & headers, const std::string & content, const std::string & contentType, const ledger::UrlMethod method, ledger::LoadURLCallback callback) override;
   void Log(const char * file, const int line, const int verbose_level, const std::string & message) override;
   void OnPanelPublisherInfo(ledger::Result result, ledger::PublisherInfoPtr publisher_info, uint64_t windowId) override;
-  void OnReconcileComplete(ledger::Result result, const std::string & viewing_id, const double amount, const ledger::RewardsType type) override;
-  void ResetState(const std::string & name, ledger::ResultCallback callback) override;
+  void OnReconcileComplete(ledger::Result result, ledger::ContributionInfoPtr contribution) override;
   void PublisherListNormalized(ledger::PublisherInfoList list) override;
-  void SaveState(const std::string & name, const std::string & value, ledger::ResultCallback callback) override;
-  void SetConfirmationsIsReady(const bool is_ready) override;
-  void SetTimer(uint64_t time_offset, uint32_t * timer_id) override;
   std::string URIEncode(const std::string & value) override;
   void OnContributeUnverifiedPublishers(ledger::Result result, const std::string& publisher_key, const std::string& publisher_name) override;
   void SetBooleanState(const std::string& name, bool value) override;
@@ -46,7 +38,7 @@ private:
   void SetUint64State(const std::string& name, uint64_t value) override;
   uint64_t GetUint64State(const std::string& name) const override;
   void ClearState(const std::string& name) override;
-  void GetExternalWallets(ledger::GetExternalWalletsCallback callback) override;
+  std::map<std::string, ledger::ExternalWalletPtr> GetExternalWallets() override;
   void SaveExternalWallet(const std::string& wallet_type, ledger::ExternalWalletPtr wallet) override;
   void ShowNotification(const std::string& type, const std::vector<std::string>& args,  ledger::ResultCallback callback) override;
   void SetTransferFee(const std::string& wallet_type, ledger::TransferFeePtr transfer_fee) override;
@@ -64,4 +56,6 @@ private:
   void RunDBTransaction(ledger::DBTransactionPtr transaction, ledger::RunDBTransactionCallback callback) override;
   void GetCreateScript(ledger::GetCreateScriptCallback callback) override;
   void PendingContributionSaved(const ledger::Result result) override;
+  void ClearAllNotifications() override;
+  void WalletDisconnected(const std::string& wallet_type) override;
 };

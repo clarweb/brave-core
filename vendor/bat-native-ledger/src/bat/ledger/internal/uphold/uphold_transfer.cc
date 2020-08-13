@@ -5,11 +5,11 @@
 
 #include <utility>
 
-#include "base/json/json_reader.h"
 #include "base/strings/stringprintf.h"
+#include "bat/ledger/internal/ledger_impl.h"
+#include "bat/ledger/internal/response/response_uphold.h"
 #include "bat/ledger/internal/uphold/uphold_transfer.h"
 #include "bat/ledger/internal/uphold/uphold_util.h"
-#include "bat/ledger/internal/ledger_impl.h"
 #include "net/http/http_status_code.h"
 
 using std::placeholders::_1;
@@ -23,26 +23,13 @@ UpholdTransfer::UpholdTransfer(bat_ledger::LedgerImpl* ledger, Uphold* uphold) :
     uphold_(uphold) {
 }
 
-UpholdTransfer::~UpholdTransfer() {
-}
+UpholdTransfer::~UpholdTransfer() = default;
 
 void UpholdTransfer::Start(
     const Transaction& transaction,
-    ledger::ExternalWalletPtr wallet,
     ledger::TransactionCallback callback) {
-  if (!wallet) {
-    BLOG(0, "Wallet is null");
-    callback(ledger::Result::LEDGER_ERROR, "");
-    return;
-  }
-
-  CreateTransaction(transaction, std::move(wallet), callback);
-}
-
-void UpholdTransfer::CreateTransaction(
-    const Transaction& transaction,
-    ledger::ExternalWalletPtr wallet,
-    ledger::TransactionCallback callback) {
+  auto wallets = ledger_->ledger_client()->GetExternalWallets();
+  auto wallet = GetWallet(std::move(wallets));
   if (!wallet) {
     BLOG(0, "Wallet is null");
     callback(ledger::Result::LEDGER_ERROR, "");
@@ -56,20 +43,19 @@ void UpholdTransfer::CreateTransaction(
       wallet->address.c_str());
 
   const std::string payload = base::StringPrintf(
-      "{ "
-      "  \"denomination\": { \"amount\": %f, \"currency\": \"BAT\" }, "
-      "  \"destination\": \"%s\", "
-      "  \"message\": \"%s\" "
-      "}",
+      R"({
+        "denomination": { "amount": %f, "currency": "BAT" },
+        "destination": "%s",
+        "message": "%s"
+      })",
       transaction.amount,
       transaction.address.c_str(),
       transaction.message.c_str());
 
   auto create_callback = std::bind(&UpholdTransfer::OnCreateTransaction,
-                            this,
-                            _1,
-                            *wallet,
-                            callback);
+      this,
+      _1,
+      callback);
   ledger_->LoadURL(
       GetAPIUrl(path),
       headers,
@@ -81,67 +67,56 @@ void UpholdTransfer::CreateTransaction(
 
 void UpholdTransfer::OnCreateTransaction(
     const ledger::UrlResponse& response,
-    const ledger::ExternalWallet& wallet,
     ledger::TransactionCallback callback) {
   BLOG(6, ledger::UrlResponseToString(__func__, response));
 
-  if (response.status_code == net::HTTP_UNAUTHORIZED) {
+  std::string id;
+  const ledger::Result result =
+      braveledger_response_util::ParseUpholdCreateTransaction(response, &id);
+
+  if (result == ledger::Result::EXPIRED_TOKEN) {
     callback(ledger::Result::EXPIRED_TOKEN, "");
     uphold_->DisconnectWallet();
     return;
   }
 
-  if (response.status_code != net::HTTP_ACCEPTED) {
+  if (result != ledger::Result::LEDGER_OK) {
     // TODO(nejczdovc): add retry logic to all errors in this function
     callback(ledger::Result::LEDGER_ERROR, "");
     return;
   }
 
-  base::Optional<base::Value> value = base::JSONReader::Read(response.body);
-  if (!value || !value->is_dict()) {
-    BLOG(0, "Response is not JSON");
-    callback(ledger::Result::LEDGER_ERROR, "");
-    return;
-  }
-
-  base::DictionaryValue* dictionary = nullptr;
-  if (!value->GetAsDictionary(&dictionary)) {
-    BLOG(0, "Response is not JSON");
-    callback(ledger::Result::LEDGER_ERROR, "");
-    return;
-  }
-
-  const auto* id = dictionary->FindStringKey("id");
-  if (!id) {
-    BLOG(0, "ID not found");
-    callback(ledger::Result::LEDGER_ERROR, "");
-    return;
-  }
-
-  CommitTransaction(*id, wallet, callback);
+  CommitTransaction(id, callback);
 }
 
 void UpholdTransfer::CommitTransaction(
     const std::string& transaction_id,
-    const ledger::ExternalWallet& wallet,
     ledger::TransactionCallback callback) {
+  auto wallets = ledger_->ledger_client()->GetExternalWallets();
+  auto wallet = GetWallet(std::move(wallets));
+  if (!wallet) {
+    BLOG(0, "Wallet is null");
+    callback(ledger::Result::LEDGER_ERROR, "");
+    return;
+  }
+
   if (transaction_id.empty()) {
     BLOG(0, "Transaction id not found");
     callback(ledger::Result::LEDGER_ERROR, "");
     return;
   }
-  auto headers = RequestAuthorization(wallet.token);
+  auto headers = RequestAuthorization(wallet->token);
 
   const std::string path = base::StringPrintf(
       "/v0/me/cards/%s/transactions/%s/commit",
-      wallet.address.c_str(),
+      wallet->address.c_str(),
       transaction_id.c_str());
 
   auto commit_callback = std::bind(&UpholdTransfer::OnCommitTransaction,
-                            this,
-                            _1,
-                            transaction_id,
-                            callback);
+      this,
+      _1,
+      transaction_id,
+      callback);
   ledger_->LoadURL(
       GetAPIUrl(path),
       headers,
@@ -157,13 +132,16 @@ void UpholdTransfer::OnCommitTransaction(
     ledger::TransactionCallback callback) {
   BLOG(6, ledger::UrlResponseToString(__func__, response));
 
-  if (response.status_code == net::HTTP_UNAUTHORIZED) {
+  const ledger::Result result =
+      braveledger_response_util::CheckUpholdCommitTransaction(response);
+
+  if (result == ledger::Result::EXPIRED_TOKEN) {
     callback(ledger::Result::EXPIRED_TOKEN, "");
     uphold_->DisconnectWallet();
     return;
   }
 
-  if (response.status_code != net::HTTP_OK) {
+  if (result != ledger::Result::LEDGER_OK) {
     callback(ledger::Result::LEDGER_ERROR, "");
     return;
   }

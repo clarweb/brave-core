@@ -59,6 +59,9 @@ window.cr.define('brave_rewards', function () {
 
   function rewardsParameters (properties: Rewards.RewardsParameters) {
     getActions().onRewardsParameters(properties)
+    // Get the current AC amount after rewards parameters have been
+    // updated, as the default AC amount may have been changed.
+    getActions().getContributionAmount()
   }
 
   function promotions (properties: Rewards.PromotionResponse) {
@@ -73,8 +76,8 @@ window.cr.define('brave_rewards', function () {
     getActions().onWalletPassphrase(pass)
   }
 
-  function recoverWalletData (properties: Rewards.RecoverWallet) {
-    getActions().onRecoverWalletData(properties)
+  function recoverWalletData (result: number) {
+    getActions().onRecoverWalletData(result)
   }
 
   function promotionFinish (properties: Rewards.PromotionFinish) {
@@ -250,6 +253,14 @@ window.cr.define('brave_rewards', function () {
     getActions().onCountryCode(countryCode)
   }
 
+  function initialized (result: number) {
+    getActions().onInitialized(result)
+  }
+
+  function completeReset (success: boolean) {
+    getActions().onCompleteReset(success)
+  }
+
   return {
     initialize,
     walletCreated,
@@ -296,7 +307,9 @@ window.cr.define('brave_rewards', function () {
     monthlyReport,
     reconcileStampReset,
     monthlyReportIds,
-    countryCode
+    countryCode,
+    initialized,
+    completeReset
   }
 })
 

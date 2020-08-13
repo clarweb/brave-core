@@ -20,6 +20,7 @@ public class BraveLauncherActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Disable key checker to avoid asserts on Brave keys in debug
         SharedPreferencesManager.getInstance().disableKeyCheckerForTesting();
 
         BottomToolbarConfiguration.isBottomToolbarEnabled();

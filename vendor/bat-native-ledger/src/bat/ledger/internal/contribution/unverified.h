@@ -13,8 +13,8 @@
 #include <string>
 #include <vector>
 
+#include "base/timer/timer.h"
 #include "bat/ledger/ledger.h"
-#include "bat/ledger/internal/contribution/contribution.h"
 
 namespace bat_ledger {
 class LedgerImpl;
@@ -24,14 +24,11 @@ namespace braveledger_contribution {
 
 class Unverified {
  public:
-  explicit Unverified(
-      bat_ledger::LedgerImpl* ledger,
-      Contribution* contribution);
+  explicit Unverified(bat_ledger::LedgerImpl* ledger);
 
   ~Unverified();
-  void Contribute();
 
-  void OnTimer(uint32_t timer_id);
+  void Contribute();
 
  private:
   void WasPublisherProcessed(
@@ -47,16 +44,19 @@ class Unverified {
   void OnRemovePendingContribution(ledger::Result result);
 
   void OnContributeUnverifiedBalance(
-    ledger::Result result,
-    ledger::BalancePtr properties);
+      ledger::Result result,
+      ledger::BalancePtr properties);
 
   void OnContributeUnverifiedPublishers(
-    double balance,
-    const ledger::PendingContributionInfoList& list);
+      double balance,
+      const ledger::PendingContributionInfoList& list);
+
+  void QueueSaved(
+      const ledger::Result result,
+      const uint64_t pending_contribution_id);
 
   bat_ledger::LedgerImpl* ledger_;  // NOT OWNED
-  Contribution* contribution_;   // NOT OWNED
-  uint32_t unverified_publishers_timer_id_;
+  base::OneShotTimer unverified_publishers_timer_;
 };
 
 }  // namespace braveledger_contribution

@@ -17,6 +17,8 @@ import org.chromium.chrome.browser.BraveFeatureList;
 import org.chromium.chrome.browser.BraveRewardsPanelPopup;
 import org.chromium.chrome.browser.flags.ChromeFeatureList;
 import org.chromium.chrome.browser.notifications.BraveOnboardingNotification;
+import org.chromium.chrome.browser.preferences.BravePref;
+import org.chromium.chrome.browser.preferences.BravePrefServiceBridge;
 import org.chromium.chrome.browser.profiles.Profile;
 import org.chromium.chrome.browser.util.PackageUtils;
 
@@ -25,14 +27,28 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Provides information regarding onboarding enabled states.
+ * Provides information regarding onboarding.
  */
 public class OnboardingPrefManager {
     private static final String PREF_ONBOARDING = "onboarding";
+    private static final String PREF_CROSS_PROMO_MODAL = "cross_promo_modal";
+    private static final String PREF_ONBOARDING_V2 = "onboarding_v2";
     private static final String PREF_NEXT_ONBOARDING_DATE = "next_onboarding_date";
+    private static final String PREF_NEXT_CROSS_PROMO_MODAL_DATE = "next_cross_promo_modal_date";
+    private static final String PREF_ONBOARDING_FOR_SKIP = "onboarding_for_skip";
     private static final String PREF_ONBOARDING_SKIP_COUNT = "onboarding_skip_count";
+    private static final String PREF_SEARCH_ENGINE_ONBOARDING = "search_engine_onboarding";
+    private static final String PREF_SHIELDS_TOOLTIP = "shields_tooltip";
+    public static final String PREF_BRAVE_STATS = "brave_stats";
+    public static final String PREF_BRAVE_STATS_NOTIFICATION = "brave_stats_notification";
     public static final String ONBOARDING_TYPE = "onboarding_type";
-    public static final String FROM_SETTINGS = "from_settings";
+    public static final String FROM_NOTIFICATION = "from_notification";
+    public static final String FROM_STATS = "from_stats";
+    public static final String ONE_TIME_NOTIFICATION = "one_time_notification";
+    public static final String ADS_TRACKERS_NOTIFICATION = "ads_trackers_notification";
+    public static final String DATA_SAVED_NOTIFICATION = "data_saved_notification";
+    public static final String TIME_SAVED_NOTIFICATION = "time_saved_notification";
+    public static final String SHOW_BADGE_ANIMATION = "show_badge_animation";
 
     private static OnboardingPrefManager sInstance;
 
@@ -47,11 +63,12 @@ public class OnboardingPrefManager {
     public static boolean isNotification;
 
     private static final String GOOGLE = "Google";
-    private static final String DUCKDUCKGO = "DuckDuckGo";
+    public static final String DUCKDUCKGO = "DuckDuckGo";
     private static final String DUCKDUCKGOLITE = "DuckDuckGo Lite";
     private static final String QWANT = "Qwant";
     private static final String BING = "Bing";
     private static final String STARTPAGE = "StartPage";
+    private static final String YAHOO = "Yahoo";
 
     private OnboardingPrefManager() {
         mSharedPreferences = ContextUtils.getAppSharedPreferences();
@@ -68,39 +85,34 @@ public class OnboardingPrefManager {
     }
 
     /**
-     * Returns the user preference for whether the onboarding is enabled.
+     * Returns the user preference for whether the onboarding is shown.
      */
-    public boolean getPrefOnboardingEnabled() {
-        return mSharedPreferences.getBoolean(PREF_ONBOARDING, true);
+    public boolean isOnboardingShown() {
+        return mSharedPreferences.getBoolean(PREF_ONBOARDING, false);
     }
 
     /**
-     * Sets the user preference for whether the onboarding is enabled.
+     * Sets the user preference for whether the onboarding is shown.
      */
-    public void setPrefOnboardingEnabled(boolean enabled) {
+    public void setOnboardingShown(boolean isShown) {
         SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
-        sharedPreferencesEditor.putBoolean(PREF_ONBOARDING, enabled);
+        sharedPreferencesEditor.putBoolean(PREF_ONBOARDING, isShown);
         sharedPreferencesEditor.apply();
     }
 
-    public long getPrefNextOnboardingDate() {
-        return mSharedPreferences.getLong(PREF_NEXT_ONBOARDING_DATE, 0);
+    /**
+     * Returns the user preference for whether the onboarding is shown.
+     */
+    public boolean isNewOnboardingShown() {
+        return mSharedPreferences.getBoolean(PREF_ONBOARDING_V2, false);
     }
 
-    public void setPrefNextOnboardingDate(long nextDate) {
+    /**
+     * Sets the user preference for whether the onboarding is shown.
+     */
+    public void setNewOnboardingShown(boolean isShown) {
         SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
-        sharedPreferencesEditor.putLong(PREF_NEXT_ONBOARDING_DATE, nextDate);
-        sharedPreferencesEditor.apply();
-    }
-
-    public int getPrefOnboardingSkipCount() {
-        return mSharedPreferences.getInt(PREF_ONBOARDING_SKIP_COUNT, 0);
-    }
-
-    public void setPrefOnboardingSkipCount() {
-        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
-        sharedPreferencesEditor.putInt(
-                PREF_ONBOARDING_SKIP_COUNT, getPrefOnboardingSkipCount() + 1);
+        sharedPreferencesEditor.putBoolean(PREF_ONBOARDING_V2, isShown);
         sharedPreferencesEditor.apply();
     }
 
@@ -108,92 +120,196 @@ public class OnboardingPrefManager {
         return isOnboardingNotificationShown;
     }
 
+    public boolean isBraveStatsEnabled() {
+        return mSharedPreferences.getBoolean(PREF_BRAVE_STATS, false);
+    }
+
+    public void setBraveStatsEnabled(boolean enabled) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putBoolean(PREF_BRAVE_STATS, enabled);
+        sharedPreferencesEditor.apply();
+    }
+
+    public boolean isBraveStatsNotificationEnabled() {
+        return mSharedPreferences.getBoolean(PREF_BRAVE_STATS_NOTIFICATION, true);
+    }
+
+    public void setBraveStatsNotificationEnabled(boolean enabled) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putBoolean(PREF_BRAVE_STATS_NOTIFICATION, enabled);
+        sharedPreferencesEditor.apply();
+    }
+
+    public long getPrefNextOnboardingDate() {
+        return mSharedPreferences.getLong(PREF_NEXT_ONBOARDING_DATE, 0);
+    }
+
     public void setOnboardingNotificationShown(boolean isShown) {
         isOnboardingNotificationShown = isShown;
     }
 
-    public boolean showOnboardingForSkip() {
-        boolean shouldShow = getPrefNextOnboardingDate() == 0
-                || (getPrefNextOnboardingDate() > 0
-                        && System.currentTimeMillis() > getPrefNextOnboardingDate());
-        return shouldShow;
+    public boolean hasSearchEngineOnboardingShown() {
+        return mSharedPreferences.getBoolean(PREF_SEARCH_ENGINE_ONBOARDING, false);
     }
 
-    private boolean shouldShowNewUserOnboarding(Context context) {
-        boolean shouldShow = getPrefOnboardingEnabled() && showOnboardingForSkip()
-                && PackageUtils.isFirstInstall(context)
-                && ChromeFeatureList.isEnabled(BraveFeatureList.BRAVE_REWARDS);
-
-        return shouldShow;
+    public void setSearchEngineOnboardingShown(boolean isShown) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putBoolean(PREF_SEARCH_ENGINE_ONBOARDING, isShown);
+        sharedPreferencesEditor.apply();
     }
 
-    private boolean shouldShowExistingUserOnboardingIfRewardsIsSwitchedOff(Context context) {
-        boolean shouldShow = getPrefOnboardingEnabled() && showOnboardingForSkip()
-                && isAdsAvailableNewLocale() && !PackageUtils.isFirstInstall(context)
-                && !BraveRewardsPanelPopup.isBraveRewardsEnabled()
-                && !BraveAdsNativeHelper.nativeIsBraveAdsEnabled(Profile.getLastUsedProfile())
-                && ChromeFeatureList.isEnabled(BraveFeatureList.BRAVE_REWARDS);
-
-        return shouldShow;
+    public boolean hasShieldsTooltipShown() {
+        return mSharedPreferences.getBoolean(PREF_SHIELDS_TOOLTIP, false);
     }
 
-    private boolean shouldShowExistingUserOnboardingIfRewardsIsSwitchedOn(Context context) {
-        boolean shouldShow = getPrefOnboardingEnabled() && showOnboardingForSkip()
-                && isAdsAvailableNewLocale() && !PackageUtils.isFirstInstall(context)
-                && BraveRewardsPanelPopup.isBraveRewardsEnabled()
-                && !BraveAdsNativeHelper.nativeIsBraveAdsEnabled(Profile.getLastUsedProfile())
-                && ChromeFeatureList.isEnabled(BraveFeatureList.BRAVE_REWARDS);
+    public void setShieldsTooltipShown(boolean isShown) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putBoolean(PREF_SHIELDS_TOOLTIP, isShown);
+        sharedPreferencesEditor.apply();
+    }
 
+    public long getNextOnboardingDate() {
+        return mSharedPreferences.getLong(PREF_NEXT_ONBOARDING_DATE, 0);
+    }
+
+    public void setNextOnboardingDate(long nextDate) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putLong(PREF_NEXT_ONBOARDING_DATE, nextDate);
+        sharedPreferencesEditor.apply();
+    }
+
+    public boolean hasOnboardingShownForSkip() {
+        return mSharedPreferences.getBoolean(PREF_ONBOARDING_FOR_SKIP, false);
+    }
+
+    public void setOnboardingShownForSkip(boolean isShown) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putBoolean(PREF_ONBOARDING_FOR_SKIP, isShown);
+        sharedPreferencesEditor.apply();
+    }
+
+    public boolean showOnboardingForSkip(Context context) {
+        boolean shouldShow = PackageUtils.isFirstInstall(context)
+                             && !hasOnboardingShownForSkip()
+                             && (ChromeFeatureList.isEnabled(BraveFeatureList.BRAVE_REWARDS) && !BravePrefServiceBridge.getInstance().getBoolean(BravePref.BRAVE_REWARDS_ENABLED))
+                             && !BraveAdsNativeHelper.nativeIsBraveAdsEnabled(Profile.getLastUsedRegularProfile())
+                             && (getNextOnboardingDate() > 0 && System.currentTimeMillis() > getNextOnboardingDate());
         return shouldShow;
     }
 
     public boolean isAdsAvailable() {
-        return BraveAdsNativeHelper.nativeIsSupportedLocale(Profile.getLastUsedProfile());
+        return BraveAdsNativeHelper.nativeIsSupportedLocale(Profile.getLastUsedRegularProfile());
     }
 
-    public boolean isAdsAvailableNewLocale() {
-        return BraveAdsNativeHelper.nativeIsNewlySupportedLocale(Profile.getLastUsedProfile());
+    public void showOnboarding(Context context) {
+        Intent intent = new Intent(context, OnboardingActivity.class);
+        context.startActivity(intent);
     }
 
-    public void showOnboarding(Context context, boolean fromSettings) {
-        int onboardingType = -1;
-        if (fromSettings) {
-            onboardingType = NEW_USER_ONBOARDING;
-        } else {
-            if (shouldShowNewUserOnboarding(context)) {
-                onboardingType = NEW_USER_ONBOARDING;
-            } else if (shouldShowExistingUserOnboardingIfRewardsIsSwitchedOff(context)) {
-                onboardingType = EXISTING_USER_REWARDS_OFF_ONBOARDING;
-            } else if (shouldShowExistingUserOnboardingIfRewardsIsSwitchedOn(context)) {
-                onboardingType = EXISTING_USER_REWARDS_ON_ONBOARDING;
-            }
-        }
-
-        if (onboardingType >= 0) {
-            Intent intent = new Intent(context, OnboardingActivity.class);
-            intent.putExtra(ONBOARDING_TYPE, onboardingType);
-            intent.putExtra(FROM_SETTINGS, fromSettings);
-            context.startActivity(intent);
-        }
-    }
-
-    public void onboardingNotification(Context context, boolean fromSettings) {
-        if (!isOnboardingNotificationShown() || fromSettings) {
+    public void onboardingNotification(Context context) {
+        if (!isOnboardingNotificationShown()) {
             BraveOnboardingNotification.showOnboardingNotification(context);
-
             setOnboardingNotificationShown(true);
         }
     }
 
+    private long getNextCrossPromoModalDate() {
+        return mSharedPreferences.getLong(PREF_NEXT_CROSS_PROMO_MODAL_DATE, 0);
+    }
+
+    public void setNextCrossPromoModalDate(long nextDate) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putLong(PREF_NEXT_CROSS_PROMO_MODAL_DATE, nextDate);
+        sharedPreferencesEditor.apply();
+    }
+
+    public void setCrossPromoModalShown(boolean isShown) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putBoolean(PREF_CROSS_PROMO_MODAL, isShown);
+        sharedPreferencesEditor.apply();
+    }
+
+    private boolean hasCrossPromoModalShown() {
+        return mSharedPreferences.getBoolean(PREF_CROSS_PROMO_MODAL, false);
+    }
+
+    public boolean showCrossPromoModal() {
+        boolean shouldShow = !hasCrossPromoModalShown()
+                             && (getNextCrossPromoModalDate() > 0
+                                 && System.currentTimeMillis() > getNextCrossPromoModalDate());
+        return shouldShow;
+    }
+
     public static Map<String, SearchEngineEnum> searchEngineMap =
-            new HashMap<String, SearchEngineEnum>() {
-                {
-                    put(GOOGLE, SearchEngineEnum.GOOGLE);
-                    put(DUCKDUCKGO, SearchEngineEnum.DUCKDUCKGO);
-                    put(DUCKDUCKGOLITE, SearchEngineEnum.DUCKDUCKGOLITE);
-                    put(QWANT, SearchEngineEnum.QWANT);
-                    put(BING, SearchEngineEnum.BING);
-                    put(STARTPAGE, SearchEngineEnum.STARTPAGE);
-                }
-            };
+    new HashMap<String, SearchEngineEnum>() {
+        {
+            put(GOOGLE, SearchEngineEnum.GOOGLE);
+            put(YAHOO, SearchEngineEnum.YAHOO);
+            put(DUCKDUCKGO, SearchEngineEnum.DUCKDUCKGO);
+            put(DUCKDUCKGOLITE, SearchEngineEnum.DUCKDUCKGOLITE);
+            put(QWANT, SearchEngineEnum.QWANT);
+            put(BING, SearchEngineEnum.BING);
+            put(STARTPAGE, SearchEngineEnum.STARTPAGE);
+        }
+    };
+
+    public boolean isFromNotification() {
+        return mSharedPreferences.getBoolean(FROM_NOTIFICATION, false);
+    }
+
+    public void setFromNotification(boolean isFromNotification) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putBoolean(FROM_NOTIFICATION, isFromNotification);
+        sharedPreferencesEditor.apply();
+    }
+
+    public boolean isOneTimeNotificationStarted() {
+        return mSharedPreferences.getBoolean(ONE_TIME_NOTIFICATION, false);
+    }
+
+    public void setOneTimeNotificationStarted(boolean isOneTimeNotificationStarted) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putBoolean(ONE_TIME_NOTIFICATION, isOneTimeNotificationStarted);
+        sharedPreferencesEditor.apply();
+    }
+
+    public boolean isAdsTrackersNotificationStarted() {
+        return mSharedPreferences.getBoolean(ADS_TRACKERS_NOTIFICATION, false);
+    }
+
+    public void setAdsTrackersNotificationStarted(boolean isAdsTrackersNotificationStarted) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putBoolean(ADS_TRACKERS_NOTIFICATION, isAdsTrackersNotificationStarted);
+        sharedPreferencesEditor.apply();
+    }
+
+    public boolean isDataSavedNotificationStarted() {
+        return mSharedPreferences.getBoolean(DATA_SAVED_NOTIFICATION, false);
+    }
+
+    public void setDataSavedNotificationStarted(boolean isDataSavedNotificationStarted) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putBoolean(DATA_SAVED_NOTIFICATION, isDataSavedNotificationStarted);
+        sharedPreferencesEditor.apply();
+    }
+
+    public boolean isTimeSavedNotificationStarted() {
+        return mSharedPreferences.getBoolean(TIME_SAVED_NOTIFICATION, false);
+    }
+
+    public void setTimeSavedNotificationStarted(boolean isTimeSavedNotificationStarted) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putBoolean(TIME_SAVED_NOTIFICATION, isTimeSavedNotificationStarted);
+        sharedPreferencesEditor.apply();
+    }
+
+    public boolean shouldShowBadgeAnimation() {
+        return mSharedPreferences.getBoolean(SHOW_BADGE_ANIMATION, true);
+    }
+
+    public void setShowBadgeAnimation(boolean shouldShowBadgeAnimation) {
+        SharedPreferences.Editor sharedPreferencesEditor = mSharedPreferences.edit();
+        sharedPreferencesEditor.putBoolean(SHOW_BADGE_ANIMATION, shouldShowBadgeAnimation);
+        sharedPreferencesEditor.apply();
+    }
 }

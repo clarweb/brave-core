@@ -126,23 +126,25 @@ TorProfileServiceImpl::TorProfileServiceImpl(Profile* profile)
     return;
   }
 
-  g_brave_browser_process->tor_client_updater()->AddObserver(this);
-  OnExecutableReady(GetTorExecutablePath());
+  tor_launcher_factory_ = TorLauncherFactory::GetInstance();
+  tor_launcher_factory_->AddObserver(this);
+  if (g_brave_browser_process) {
+    g_brave_browser_process->tor_client_updater()->AddObserver(this);
+  }
 }
 
 TorProfileServiceImpl::~TorProfileServiceImpl() {
   if (tor_launcher_factory_)
     tor_launcher_factory_->RemoveObserver(this);
+
+  if (g_brave_browser_process) {
+    g_brave_browser_process->tor_client_updater()->RemoveObserver(this);
+  }
 }
 
 void TorProfileServiceImpl::OnExecutableReady(const base::FilePath& path) {
   if (path.empty())
     return;
-
-  g_brave_browser_process->tor_client_updater()->RemoveObserver(this);
-
-  tor_launcher_factory_ = TorLauncherFactory::GetInstance();
-  tor_launcher_factory_->AddObserver(this);
 
   if (tor_launcher_factory_->GetTorPid() < 0) {
     LaunchTor();
@@ -184,6 +186,7 @@ void TorProfileServiceImpl::SetNewTorCircuit(WebContents* tab) {
 void TorProfileServiceImpl::KillTor() {
   if (tor_launcher_factory_)
     tor_launcher_factory_->KillTorProcess();
+  UnregisterTorClientUpdater();
 }
 
 void TorProfileServiceImpl::NotifyTorLauncherCrashed() {
@@ -205,6 +208,18 @@ std::unique_ptr<net::ProxyConfigService>
 TorProfileServiceImpl::CreateProxyConfigService() {
   proxy_config_service_ = new net::ProxyConfigServiceTor(GetTorProxyURI());
   return std::unique_ptr<net::ProxyConfigServiceTor>(proxy_config_service_);
+}
+
+bool TorProfileServiceImpl::IsTorLaunched() {
+  if (is_tor_launched_for_test_)
+    return true;
+  if (!tor_launcher_factory_)
+    return false;
+  return tor_launcher_factory_->GetTorPid() > 0;
+}
+
+void TorProfileServiceImpl::SetTorLaunchedForTest() {
+  is_tor_launched_for_test_ = true;
 }
 
 }  // namespace tor

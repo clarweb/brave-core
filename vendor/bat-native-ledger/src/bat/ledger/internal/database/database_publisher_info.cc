@@ -29,124 +29,6 @@ DatabasePublisherInfo::DatabasePublisherInfo(
 
 DatabasePublisherInfo::~DatabasePublisherInfo() = default;
 
-bool DatabasePublisherInfo::CreateTableV1(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "publisher_id LONGVARCHAR PRIMARY KEY NOT NULL UNIQUE,"
-        "verified BOOLEAN DEFAULT 0 NOT NULL,"
-        "excluded INTEGER DEFAULT 0 NOT NULL,"
-        "name TEXT NOT NULL,"
-        "favIcon TEXT NOT NULL,"
-        "url TEXT NOT NULL,"
-        "provider TEXT NOT NULL"
-      ")",
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabasePublisherInfo::CreateTableV7(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string query = base::StringPrintf(
-      "CREATE TABLE %s ("
-        "publisher_id LONGVARCHAR PRIMARY KEY NOT NULL UNIQUE,"
-        "excluded INTEGER DEFAULT 0 NOT NULL,"
-        "name TEXT NOT NULL,"
-        "favIcon TEXT NOT NULL,"
-        "url TEXT NOT NULL,"
-        "provider TEXT NOT NULL"
-      ")",
-      kTableName);
-
-  auto command = ledger::DBCommand::New();
-  command->type = ledger::DBCommand::Type::EXECUTE;
-  command->command = query;
-  transaction->commands.push_back(std::move(command));
-
-  return true;
-}
-
-bool DatabasePublisherInfo::Migrate(
-    ledger::DBTransaction* transaction,
-    const int target) {
-  DCHECK(transaction);
-
-  switch (target) {
-    case 1: {
-      return MigrateToV1(transaction);
-    }
-    case 7: {
-      return MigrateToV7(transaction);
-    }
-    default: {
-      return true;
-    }
-  }
-}
-
-bool DatabasePublisherInfo::MigrateToV1(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  if (!DropTable(transaction, kTableName)) {
-    BLOG(0, "Table couldn't be dropped");
-    return false;
-  }
-
-  if (!CreateTableV1(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  return true;
-}
-
-bool DatabasePublisherInfo::MigrateToV7(ledger::DBTransaction* transaction) {
-  DCHECK(transaction);
-
-  const std::string temp_table_name = base::StringPrintf(
-      "%s_old",
-      kTableName);
-
-  if (!RenameDBTable(transaction, kTableName, temp_table_name)) {
-    BLOG(0, "Table couldn't be renamed");
-    return false;
-  }
-
-  if (!CreateTableV7(transaction)) {
-    BLOG(0, "Table couldn't be created");
-    return false;
-  }
-
-  const std::map<std::string, std::string> columns = {
-    { "publisher_id", "publisher_id" },
-    { "excluded", "excluded" },
-    { "name", "name" },
-    { "favIcon", "favIcon" },
-    { "url", "url" },
-    { "provider", "provider" }
-  };
-
-  if (!MigrateDBTable(
-      transaction,
-      temp_table_name,
-      kTableName,
-      columns,
-      true)) {
-    BLOG(0, "Table migration failed");
-    return false;
-  }
-
-  return true;
-}
-
 void DatabasePublisherInfo::InsertOrUpdate(
     ledger::PublisherInfoPtr info,
     ledger::ResultCallback callback) {
@@ -205,7 +87,9 @@ void DatabasePublisherInfo::InsertOrUpdate(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePublisherInfo::GetRecord(
@@ -221,7 +105,7 @@ void DatabasePublisherInfo::GetRecord(
 
   const std::string query = base::StringPrintf(
     "SELECT pi.publisher_id, pi.name, pi.url, pi.favIcon, pi.provider, "
-    "spi.status, pi.excluded "
+    "spi.status, spi.updated_at, pi.excluded "
     "FROM %s as pi "
     "LEFT JOIN server_publisher_info AS spi "
     "ON spi.publisher_key = pi.publisher_id "
@@ -241,6 +125,7 @@ void DatabasePublisherInfo::GetRecord(
       ledger::DBCommand::RecordBindingType::STRING_TYPE,
       ledger::DBCommand::RecordBindingType::STRING_TYPE,
       ledger::DBCommand::RecordBindingType::INT64_TYPE,
+      ledger::DBCommand::RecordBindingType::INT64_TYPE,
       ledger::DBCommand::RecordBindingType::INT_TYPE
   };
 
@@ -251,7 +136,9 @@ void DatabasePublisherInfo::GetRecord(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePublisherInfo::OnGetRecord(
@@ -279,8 +166,9 @@ void DatabasePublisherInfo::OnGetRecord(
   info->provider = GetStringColumn(record, 4);
   info->status = static_cast<ledger::mojom::PublisherStatus>(
       GetInt64Column(record, 5));
+  info->status_updated_at = GetInt64Column(record, 6);
   info->excluded = static_cast<ledger::PublisherExclude>(
-      GetIntColumn(record, 6));
+      GetIntColumn(record, 7));
 
   callback(ledger::Result::LEDGER_OK, std::move(info));
 }
@@ -336,7 +224,9 @@ void DatabasePublisherInfo::GetPanelRecord(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePublisherInfo::OnGetPanelRecord(
@@ -392,11 +282,20 @@ void DatabasePublisherInfo::RestorePublishers(ledger::ResultCallback callback) {
 
   transaction->commands.push_back(std::move(command));
 
-  auto transaction_callback = std::bind(&OnResultCallback,
-      _1,
-      callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      [this, callback](ledger::DBCommandResponsePtr response) {
+        if (!response ||
+            response->status !=
+              ledger::DBCommandResponse::Status::RESPONSE_OK) {
+          callback(ledger::Result::LEDGER_ERROR);
+          return;
+        }
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+        ledger_->publisher()->OnRestorePublishers(
+            ledger::Result::LEDGER_OK,
+            callback);
+      });
 }
 
 void DatabasePublisherInfo::GetExcludedList(
@@ -432,7 +331,9 @@ void DatabasePublisherInfo::GetExcludedList(
       _1,
       callback);
 
-  ledger_->RunDBTransaction(std::move(transaction), transaction_callback);
+  ledger_->ledger_client()->RunDBTransaction(
+      std::move(transaction),
+      transaction_callback);
 }
 
 void DatabasePublisherInfo::OnGetExcludedList(

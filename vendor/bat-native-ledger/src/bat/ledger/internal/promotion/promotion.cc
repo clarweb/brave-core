@@ -11,22 +11,19 @@
 
 #include "base/json/json_reader.h"
 #include "base/json/json_writer.h"
-#include "base/strings/stringprintf.h"
 #include "base/strings/string_util.h"
-#include "bat/ledger/internal/bat_util.h"
-#include "bat/ledger/internal/ledger_impl.h"
-#include "bat/ledger/internal/state/state_keys.h"
-#include "bat/ledger/internal/static_values.h"
-#include "bat/ledger/internal/legacy/wallet_info_properties.h"
-#include "bat/ledger/internal/request/request_promotion.h"
-#include "bat/ledger/internal/request/request_util.h"
+#include "base/strings/stringprintf.h"
 #include "bat/ledger/internal/common/bind_util.h"
 #include "bat/ledger/internal/common/time_util.h"
 #include "bat/ledger/internal/credentials/credentials_util.h"
-#include "bat/ledger/internal/promotion/promotion_util.h"
+#include "bat/ledger/internal/ledger_impl.h"
+#include "bat/ledger/internal/legacy/wallet_info_properties.h"
 #include "bat/ledger/internal/promotion/promotion_transfer.h"
-#include "brave_base/random.h"
-#include "net/http/http_status_code.h"
+#include "bat/ledger/internal/promotion/promotion_util.h"
+#include "bat/ledger/internal/request/request_promotion.h"
+#include "bat/ledger/internal/request/request_util.h"
+#include "bat/ledger/internal/response/response_promotion.h"
+#include "bat/ledger/internal/static_values.h"
 
 #include "wrapper.hpp"  // NOLINT
 
@@ -43,6 +40,9 @@ using challenge_bypass_ristretto::UnblindedToken;
 namespace braveledger_promotion {
 
 namespace {
+
+const int kFetchPromotionsThresholdInSeconds =
+    10 * base::Time::kSecondsPerMinute;
 
 void HandleExpiredPromotions(
     bat_ledger::LedgerImpl* ledger_impl,
@@ -66,7 +66,7 @@ void HandleExpiredPromotions(
 
     if (item.second->expires_at > 0 &&
         item.second->expires_at <= current_time)  {
-      ledger_impl->UpdatePromotionStatus(
+      ledger_impl->database()->UpdatePromotionStatus(
           item.second->id,
           ledger::PromotionStatus::OVER,
           [](const ledger::Result _){});
@@ -91,27 +91,27 @@ Promotion::Promotion(bat_ledger::LedgerImpl* ledger) :
 Promotion::~Promotion() = default;
 
 void Promotion::Initialize() {
-  if (!ledger_->GetBooleanState(ledger::kStatePromotionCorruptedMigrated)) {
+  if (!ledger_->state()->GetPromotionCorruptedMigrated()) {
     BLOG(1, "Migrating corrupted promotions");
     auto check_callback = std::bind(&Promotion::CheckForCorrupted,
         this,
         _1);
 
-    ledger_->GetAllPromotions(check_callback);
+    ledger_->database()->GetAllPromotions(check_callback);
   }
 
   auto retry_callback = std::bind(&Promotion::Retry,
       this,
       _1);
 
-  ledger_->GetAllPromotions(retry_callback);
+  ledger_->database()->GetAllPromotions(retry_callback);
 }
 
 void Promotion::Fetch(ledger::FetchPromotionCallback callback) {
   // make sure wallet/client state is sane here as this is the first
   // panel call.
-  const std::string& wallet_payment_id = ledger_->GetPaymentId();
-  const std::string& passphrase = ledger_->GetWalletPassphrase();
+  const std::string& wallet_payment_id = ledger_->state()->GetPaymentId();
+  const std::string& passphrase = ledger_->wallet()->GetWalletPassphrase();
   if (wallet_payment_id.empty() || passphrase.empty()) {
     BLOG(0, "Corrupted wallet");
     ledger::PromotionList empty_list;
@@ -119,12 +119,29 @@ void Promotion::Fetch(ledger::FetchPromotionCallback callback) {
     return;
   }
 
+  // If we fetched promotions recently, fulfill this request from the
+  // database instead of querying the server again
+  if (!ledger::is_testing) {
+    const uint64_t last_promo_stamp =
+        ledger_->state()->GetPromotionLastFetchStamp();
+    const uint64_t now = braveledger_time_util::GetCurrentTimeStamp();
+    if (now - last_promo_stamp < kFetchPromotionsThresholdInSeconds) {
+      auto all_callback = std::bind(
+          &Promotion::OnGetAllPromotionsFromDatabase,
+          this,
+          _1,
+          callback);
+      ledger_->database()->GetAllPromotions(all_callback);
+      return;
+    }
+  }
+
   auto url_callback = std::bind(&Promotion::OnFetch,
       this,
       _1,
       std::move(callback));
 
-  auto client_info = ledger_->GetClientInfo();
+  auto client_info = ledger_->ledger_client()->GetClientInfo();
   const std::string client = ParseClientInfoToString(std::move(client_info));
 
   const std::string url = braveledger_request_util::GetFetchPromotionUrl(
@@ -141,7 +158,10 @@ void Promotion::OnFetch(
 
   ledger::PromotionList list;
 
-  if (response.status_code == net::HTTP_NOT_FOUND) {
+  const ledger::Result result =
+      braveledger_response_util::CheckFetchPromotions(response);
+
+  if (result == ledger::Result::NOT_FOUND) {
     ProcessFetchedPromotions(
         ledger::Result::NOT_FOUND,
         std::move(list),
@@ -149,7 +169,7 @@ void Promotion::OnFetch(
     return;
   }
 
-  if (response.status_code != net::HTTP_OK) {
+  if (result != ledger::Result::LEDGER_OK) {
     ProcessFetchedPromotions(
         ledger::Result::LEDGER_ERROR,
         std::move(list),
@@ -160,24 +180,25 @@ void Promotion::OnFetch(
   auto all_callback = std::bind(&Promotion::OnGetAllPromotions,
       this,
       _1,
-      response.body,
+      response,
       callback);
 
-  ledger_->GetAllPromotions(all_callback);
+  ledger_->database()->GetAllPromotions(all_callback);
 }
 
 void Promotion::OnGetAllPromotions(
     ledger::PromotionMap promotions,
-    const std::string& response,
+    const ledger::UrlResponse& response,
     ledger::FetchPromotionCallback callback) {
   HandleExpiredPromotions(ledger_, &promotions);
 
   ledger::PromotionList list;
   std::vector<std::string> corrupted_promotions;
-  ledger::Result result = ParseFetchResponse(
-      response,
-      &list,
-      &corrupted_promotions);
+  const ledger::Result result =
+      braveledger_response_util::ParseFetchPromotions(
+          response,
+          &list,
+          &corrupted_promotions);
 
   if (result == ledger::Result::LEDGER_ERROR) {
     BLOG(0, "Failed to parse promotions");
@@ -195,11 +216,16 @@ void Promotion::OnGetAllPromotions(
         << base::JoinString(corrupted_promotions, ", "));
   }
 
-  for (auto & item : list) {
+  ledger::PromotionList promotions_ui;
+
+  for (const auto& item : list) {
     auto it = promotions.find(item->id);
-    if (it != promotions.end() &&
-        it->second->status != ledger::PromotionStatus::ACTIVE) {
-      continue;
+    if (it != promotions.end()) {
+      const auto status = it->second->status;
+      promotions.erase(item->id);
+      if (status != ledger::PromotionStatus::ACTIVE) {
+        continue;
+      }
     }
 
     // if the server return expiration for ads we need to set it to 0
@@ -213,22 +239,34 @@ void Promotion::OnGetAllPromotions(
           this,
           _1,
           braveledger_bind_util::FromPromotionToString(item->Clone()));
-      ledger_->SavePromotion(item->Clone(), legacy_callback);
+      ledger_->database()->SavePromotion(item->Clone(), legacy_callback);
       continue;
     }
 
-    promotions.insert(std::make_pair(item->id, item->Clone()));
+    promotions_ui.push_back(item->Clone());
 
-    ledger_->SavePromotion(
+    ledger_->database()->SavePromotion(
         item->Clone(),
         [](const ledger::Result _){});
   }
 
-  ledger::PromotionList promotions_ui;
-  for (auto & item : promotions) {
-    if (item.second->status == ledger::PromotionStatus::ACTIVE ||
-        item.second->status == ledger::PromotionStatus::FINISHED) {
-      promotions_ui.push_back(item.second->Clone());
+  // mark as over promotions that are in db with status active,
+  // but are not available on the server anymore
+  for (const auto& promotion : promotions) {
+    if (promotion.second->status != ledger::PromotionStatus::ACTIVE) {
+      break;
+    }
+
+    bool found =
+        std::any_of(list.begin(), list.end(), [&promotion](auto& item) {
+          return item->id == promotion.second->id;
+        });
+
+    if (!found) {
+      ledger_->database()->UpdatePromotionStatus(
+          promotion.second->id,
+          ledger::PromotionStatus::OVER,
+          [](const ledger::Result){});
     }
   }
 
@@ -236,6 +274,20 @@ void Promotion::OnGetAllPromotions(
       ledger::Result::LEDGER_OK,
       std::move(promotions_ui),
       callback);
+}
+
+void Promotion::OnGetAllPromotionsFromDatabase(
+    ledger::PromotionMap promotions,
+    ledger::FetchPromotionCallback callback) {
+  HandleExpiredPromotions(ledger_, &promotions);
+
+  ledger::PromotionList promotions_ui;
+  for (const auto& item : promotions) {
+    if (item.second->status == ledger::PromotionStatus::ACTIVE) {
+      promotions_ui.push_back(item.second->Clone());
+    }
+  }
+  callback(ledger::Result::LEDGER_OK, std::move(promotions_ui));
 }
 
 void Promotion::LegacyClaimedSaved(
@@ -262,7 +314,7 @@ void Promotion::Claim(
       payload,
       callback);
 
-  ledger_->GetPromotion(promotion_id, promotion_callback);
+  ledger_->database()->GetPromotion(promotion_id, promotion_callback);
 }
 
 void Promotion::OnClaimPromotion(
@@ -294,7 +346,7 @@ void Promotion::Attest(
       solution,
       callback);
 
-  ledger_->GetPromotion(promotion_id, promotion_callback);
+  ledger_->database()->GetPromotion(promotion_id, promotion_callback);
 }
 
 void Promotion::OnAttestPromotion(
@@ -336,7 +388,7 @@ void Promotion::OnAttestedPromotion(
       _1,
       callback);
 
-  ledger_->GetPromotion(promotion_id, promotion_callback);
+  ledger_->database()->GetPromotion(promotion_id, promotion_callback);
 }
 
 void Promotion::OnCompletedAttestation(
@@ -362,7 +414,7 @@ void Promotion::OnCompletedAttestation(
       braveledger_bind_util::FromPromotionToString(promotion->Clone()),
       callback);
 
-  ledger_->SavePromotion(promotion->Clone(), save_callback);
+  ledger_->database()->SavePromotion(promotion->Clone(), save_callback);
 }
 
 void Promotion::AttestedSaved(
@@ -402,7 +454,7 @@ void Promotion::Complete(
       _1,
       result,
       callback);
-  ledger_->GetPromotion(promotion_id, promotion_callback);
+  ledger_->database()->GetPromotion(promotion_id, promotion_callback);
 }
 
 void Promotion::OnComplete(
@@ -411,11 +463,12 @@ void Promotion::OnComplete(
     ledger::AttestPromotionCallback callback) {
     BLOG(1, "Promotion completed with result " << result);
   if (promotion && result == ledger::Result::LEDGER_OK) {
-    ledger_->SetBalanceReportItem(
+    ledger_->database()->SaveBalanceReportInfoItem(
         braveledger_time_util::GetCurrentMonth(),
         braveledger_time_util::GetCurrentYear(),
         ConvertPromotionTypeToReportType(promotion->type),
-        promotion->approximate_value);
+        promotion->approximate_value,
+        [](const ledger::Result){});
   }
 
   callback(result, std::move(promotion));
@@ -426,27 +479,12 @@ void Promotion::ProcessFetchedPromotions(
     ledger::PromotionList promotions,
     ledger::FetchPromotionCallback callback) {
   const uint64_t now = braveledger_time_util::GetCurrentTimeStamp();
-  ledger_->SetUint64State(ledger::kStatePromotionLastFetchStamp, now);
-  last_check_timer_id_ = 0;
+  ledger_->state()->SetPromotionLastFetchStamp(now);
+  last_check_timer_.Stop();
   const bool retry = result != ledger::Result::LEDGER_OK &&
       result != ledger::Result::NOT_FOUND;
   Refresh(retry);
   callback(result, std::move(promotions));
-}
-
-void Promotion::OnTimer(const uint32_t timer_id) {
-  if (timer_id == last_check_timer_id_) {
-    last_check_timer_id_ = 0;
-    Fetch([](ledger::Result _, ledger::PromotionList __){});
-    return;
-  }
-
-  if (timer_id == retry_timer_id_) {
-    auto claim_callback = std::bind(&Promotion::Retry,
-      this,
-      _1);
-    ledger_->GetAllPromotions(claim_callback);
-  }
 }
 
 void Promotion::GetCredentials(
@@ -477,8 +515,18 @@ void Promotion::CredentialsProcessed(
     const std::string& promotion_id,
     ledger::ResultCallback callback) {
   if (result == ledger::Result::RETRY) {
-    ledger_->SetTimer(5, &retry_timer_id_);
+    retry_timer_.Start(FROM_HERE, base::TimeDelta::FromSeconds(5),
+        base::BindOnce(&Promotion::OnRetryTimerElapsed,
+            base::Unretained(this)));
     callback(ledger::Result::LEDGER_OK);
+    return;
+  }
+
+  if (result == ledger::Result::NOT_FOUND) {
+    ledger_->database()->UpdatePromotionStatus(
+      promotion_id,
+      ledger::PromotionStatus::OVER,
+      callback);
     return;
   }
 
@@ -488,7 +536,7 @@ void Promotion::CredentialsProcessed(
     return;
   }
 
-  ledger_->UpdatePromotionStatus(
+  ledger_->database()->UpdatePromotionStatus(
       promotion_id,
       ledger::PromotionStatus::FINISHED,
       callback);
@@ -520,13 +568,15 @@ void Promotion::Retry(ledger::PromotionMap promotions) {
 }
 
 void Promotion::Refresh(const bool retry_after_error) {
-  uint64_t start_timer_in = 0ull;
-  if (last_check_timer_id_ != 0) {
+  if (last_check_timer_.IsRunning()) {
     return;
   }
 
+  base::TimeDelta start_timer_in;
+
   if (retry_after_error) {
-    start_timer_in = brave_base::random::Geometric(300);
+    start_timer_in = braveledger_time_util::GetRandomizedDelay(
+        base::TimeDelta::FromSeconds(300));
 
     BLOG(1, "Failed to refresh promotion, will try again in "
         << start_timer_in);
@@ -534,7 +584,7 @@ void Promotion::Refresh(const bool retry_after_error) {
     const auto default_time = braveledger_ledger::_promotion_load_interval;
     const uint64_t now = braveledger_time_util::GetCurrentTimeStamp();
     const uint64_t last_promo_stamp =
-        ledger_->GetUint64State(ledger::kStatePromotionLastFetchStamp);
+        ledger_->state()->GetPromotionLastFetchStamp();
 
     uint64_t time_since_last_promo_check = 0ull;
 
@@ -543,14 +593,17 @@ void Promotion::Refresh(const bool retry_after_error) {
     }
 
     if (now == last_promo_stamp) {
-      start_timer_in = default_time;
+      start_timer_in = base::TimeDelta::FromSeconds(default_time);
     } else if (time_since_last_promo_check > 0 &&
         default_time > time_since_last_promo_check) {
-      start_timer_in = default_time - time_since_last_promo_check;
+      start_timer_in = base::TimeDelta::FromSeconds(
+          default_time - time_since_last_promo_check);
     }
   }
 
-  ledger_->SetTimer(start_timer_in, &last_check_timer_id_);
+  last_check_timer_.Start(FROM_HERE, start_timer_in,
+      base::BindOnce(&Promotion::OnLastCheckTimerElapsed,
+          base::Unretained(this)));
 }
 
 void Promotion::CheckForCorrupted(const ledger::PromotionMap& promotions) {
@@ -583,7 +636,9 @@ void Promotion::CheckForCorrupted(const ledger::PromotionMap& promotions) {
       this,
       _1);
 
-  ledger_->UpdatePromotionsBlankPublicKey(corrupted_promotions, get_callback);
+  ledger_->database()->UpdatePromotionsBlankPublicKey(
+      corrupted_promotions,
+      get_callback);
 }
 
 void Promotion::CorruptedPromotionFixed(const ledger::Result result) {
@@ -596,13 +651,13 @@ void Promotion::CorruptedPromotionFixed(const ledger::Result result) {
         this,
         _1);
 
-  ledger_->GetAllCredsBatches(check_callback);
+  ledger_->database()->GetAllCredsBatches(check_callback);
 }
 
 void Promotion::CheckForCorruptedCreds(ledger::CredsBatchList list) {
   if (list.empty()) {
     BLOG(1, "Creds list is empty");
-    ledger_->SetBooleanState(ledger::kStatePromotionCorruptedMigrated, true);
+    ledger_->state()->SetPromotionCorruptedMigrated(true);
     return;
   }
 
@@ -630,7 +685,7 @@ void Promotion::CheckForCorruptedCreds(ledger::CredsBatchList list) {
 
   if (corrupted_promotions.empty()) {
     BLOG(1, "No corrupted creds");
-    ledger_->SetBooleanState(ledger::kStatePromotionCorruptedMigrated, true);
+    ledger_->state()->SetPromotionCorruptedMigrated(true);
     return;
   }
 
@@ -639,7 +694,7 @@ void Promotion::CheckForCorruptedCreds(ledger::CredsBatchList list) {
       _1,
       corrupted_promotions);
 
-  ledger_->GetPromotionList(corrupted_promotions, get_callback);
+  ledger_->database()->GetPromotionList(corrupted_promotions, get_callback);
 }
 
 void Promotion::CorruptedPromotions(
@@ -657,7 +712,7 @@ void Promotion::CorruptedPromotions(
 
   if (corrupted_claims.GetList().empty()) {
     BLOG(1, "No corrupted creds");
-    ledger_->SetBooleanState(ledger::kStatePromotionCorruptedMigrated, true);
+    ledger_->state()->SetPromotionCorruptedMigrated(true);
     return;
   }
 
@@ -688,18 +743,21 @@ void Promotion::OnCheckForCorrupted(
     const std::vector<std::string>& promotion_id_list) {
   BLOG(6, ledger::UrlResponseToString(__func__, response));
 
-  if (response.status_code != net::HTTP_OK) {
+  const ledger::Result result =
+      braveledger_response_util::CheckCorruptedPromotions(response);
+  if (result != ledger::Result::LEDGER_OK) {
+    BLOG(0, "Failed to parse corrupted promotions response");
     return;
   }
 
-  ledger_->SetBooleanState(ledger::kStatePromotionCorruptedMigrated, true);
+  ledger_->state()->SetPromotionCorruptedMigrated(true);
 
   auto update_callback = std::bind(&Promotion::ErrorStatusSaved,
       this,
       _1,
       promotion_id_list);
 
-  ledger_->UpdatePromotionsStatus(
+  ledger_->database()->UpdatePromotionsStatus(
       promotion_id_list,
       ledger::PromotionStatus::CORRUPTED,
       update_callback);
@@ -717,7 +775,7 @@ void Promotion::ErrorStatusSaved(
       this,
       _1);
 
-  ledger_->UpdateCredsBatchesStatus(
+  ledger_->database()->UpdateCredsBatchesStatus(
       promotion_id_list,
       ledger::CredsBatchType::PROMOTION,
       ledger::CredsBatchStatus::CORRUPTED,
@@ -734,13 +792,19 @@ void Promotion::ErrorCredsStatusSaved(const ledger::Result result) {
     this,
     _1);
 
-  ledger_->GetAllPromotions(retry_callback);
+  ledger_->database()->GetAllPromotions(retry_callback);
 }
 
-void Promotion::TransferTokens(
-    ledger::ExternalWalletPtr wallet,
-    ledger::ResultCallback callback) {
-  transfer_->Start(std::move(wallet), callback);
+void Promotion::TransferTokens(ledger::ResultCallback callback) {
+  transfer_->Start(callback);
+}
+
+void Promotion::OnRetryTimerElapsed() {
+  ledger_->database()->GetAllPromotions(std::bind(&Promotion::Retry, this, _1));
+}
+
+void Promotion::OnLastCheckTimerElapsed() {
+  Fetch([](ledger::Result, ledger::PromotionList) {});
 }
 
 }  // namespace braveledger_promotion
