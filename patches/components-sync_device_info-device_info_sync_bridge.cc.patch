@@ -1,0 +1,12 @@
+diff --git a/components/sync_device_info/device_info_sync_bridge.cc b/components/sync_device_info/device_info_sync_bridge.cc
+index ea25c1eaf23e44d377066dfadd4c2ec70635822a..7ea60e74684957d742f0acff50e316e7d2b20972 100644
+--- a/components/sync_device_info/device_info_sync_bridge.cc
++++ b/components/sync_device_info/device_info_sync_bridge.cc
+@@ -567,6 +567,7 @@ void DeviceInfoSyncBridge::OnReadAllMetadata(
+   device_info_prefs_->AddLocalCacheGuid(local_cache_guid_);
+   ExpireOldEntries();
+   ReconcileLocalAndStored();
++  BRAVE_INIT_SYNC_TABS_PREF_CHANGE_REGISTRAR;
+ }
+ 
+ void DeviceInfoSyncBridge::OnCommit(
