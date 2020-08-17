@@ -22,7 +22,6 @@ import org.chromium.chrome.browser.onboarding.OnboardingPrefManager;
 import org.chromium.chrome.browser.local_database.DatabaseHelper;
 import org.chromium.chrome.browser.notifications.channels.BraveChannelDefinitions;
 import org.chromium.chrome.browser.brave_stats.BraveStatsUtil;
-import org.chromium.chrome.browser.ntp.BraveNewTabPageLayout;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -82,7 +81,7 @@ public class RetentionNotificationUtil {
         DatabaseHelper mDatabaseHelper = DatabaseHelper.getInstance();
         long totalSavedBandwidth = mDatabaseHelper.getTotalSavedBandwidth();
         long adsTrackersCount = mDatabaseHelper.getAllStats().size();
-        long timeSavedCount = adsTrackersCount * BraveNewTabPageLayout.MILLISECONDS_PER_ITEM;
+        long timeSavedCount = adsTrackersCount * BraveStatsUtil.MILLISECONDS_PER_ITEM;
 
         long adsTrackersCountWeekly = mDatabaseHelper.getAllStatsWithDate(BraveStatsUtil.getCalculatedDate("yyyy-MM-dd", 7), BraveStatsUtil.getCalculatedDate("yyyy-MM-dd", 0)).size();
 
